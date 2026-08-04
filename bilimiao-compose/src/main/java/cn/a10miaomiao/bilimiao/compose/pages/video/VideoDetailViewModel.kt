@@ -1,3 +1,4 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/video/VideoDetailViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.video
 
 import android.app.Activity
@@ -125,12 +126,22 @@ class VideoDetailViewModel(
             _loading.value = true
             _fail.value = null
 
-            val aidOrBvid = _id
-            val url = if (aidOrBvid.startsWith("BV", ignoreCase = true)) {
-                "https://api.bilibili.com/x/web-interface/view?bvid=$aidOrBvid"
+            var rawId = _id
+            val paramName: String
+            if (rawId.startsWith("BV", ignoreCase = true)) {
+                paramName = "bvid"
+            } else if (rawId.startsWith("av", ignoreCase = true)) {
+                paramName = "aid"
+                rawId = rawId.substring(2)
             } else {
-                "https://api.bilibili.com/x/web-interface/view?aid=$aidOrBvid"
+                if (rawId.all { it.isDigit() }) {
+                    paramName = "aid"
+                } else {
+                    paramName = "bvid"
+                }
             }
+
+            val url = "https://api.bilibili.com/x/web-interface/view?$paramName=$rawId"
 
             // 使用 Extractor 下的请求代理拉取核心视频详情数据
             val responseBody = withContext(Dispatchers.IO) {
@@ -336,7 +347,7 @@ class VideoDetailViewModel(
                 }
             }
 
-            // 映射 UGC 剧集/合集数据 (将 UgcEpisode 重构为 Episode 构造)
+            // 映射 UGC 剧集/合集数据
             val ugcSeasonJson = data.optJSONObject("ugc_season")
             val ugcSeason = if (ugcSeasonJson != null) {
                 val sectionsJson = ugcSeasonJson.optJSONArray("sections")
@@ -384,7 +395,7 @@ class VideoDetailViewModel(
                 )
             } else null
 
-            // 重新包装生成完美的 ViewReply 对象 (并在构造器中显式传递 bvid)
+            // 重新包装生成完美的 ViewReply 对象
             val res = ViewReply(
                 arc = arc,
                 pages = pagesList,
