@@ -286,10 +286,9 @@ class VideoDetailViewModel(
                 )
             } else null
 
-            // 映射 Arc 主类
+            // 映射 Arc 主类 (移除 constructor 参数中不存在的 bvid)
             val arc = bilibili.app.archive.v1.Arc(
                 aid = aid,
-                bvid = bvid,
                 title = data.optString("title"),
                 pic = data.optString("pic"),
                 desc = data.optString("desc"),
@@ -337,7 +336,7 @@ class VideoDetailViewModel(
                 }
             }
 
-            // 映射 UGC 剧集/合集数据
+            // 映射 UGC 剧集/合集数据 (将 UgcEpisode 重构为 Episode 构造)
             val ugcSeasonJson = data.optJSONObject("ugc_season")
             val ugcSeason = if (ugcSeasonJson != null) {
                 val sectionsJson = ugcSeasonJson.optJSONArray("sections")
@@ -359,11 +358,7 @@ class VideoDetailViewModel(
                                         cid = ep.optLong("cid"),
                                         title = ep.optString("title"),
                                         bvid = ep.optString("bvid"),
-                                        arc = if (epArc != null) bilibili.app.archive.v1.Arc(
-                                            aid = epArc.optLong("aid"),
-                                            title = epArc.optString("title"),
-                                            pic = epArc.optString("pic"),
-                                        ) else null,
+                                        cover = epArc?.optString("pic") ?: "",
                                         page = if (epPage != null) bilibili.app.archive.v1.Page(
                                             cid = epPage.optLong("cid"),
                                             part = epPage.optString("part"),
@@ -389,7 +384,7 @@ class VideoDetailViewModel(
                 )
             } else null
 
-            // 重新包装生成完美的 ViewReply 对象
+            // 重新包装生成完美的 ViewReply 对象 (并在构造器中显式传递 bvid)
             val res = ViewReply(
                 arc = arc,
                 pages = pagesList,
@@ -400,9 +395,8 @@ class VideoDetailViewModel(
                 relates = relates,
                 ugcSeason = ugcSeason,
                 history = history,
-            ).apply {
-                this.bvid = bvid
-            }
+                bvid = bvid,
+            )
 
             _detailData.value = res
             autoStartPlay()
