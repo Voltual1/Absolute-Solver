@@ -108,6 +108,10 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api:1.2")
 
     implementation(project(":DanmakuFlameMaster"))
+    
+    //PipePipe
+    implementation(project(":timeago-parser"))
+    implementation(project(":extractor"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

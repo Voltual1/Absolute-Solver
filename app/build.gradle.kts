@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.a10miaomiao.bilimiao"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.a10miaomiao.bilimiao"
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 117
         versionName = "2.4.8.1"
 

@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.0"
-kotlin = "2.0.20"
+kotlin = "2.2.21"
 # jetpack
 core = "1.13.1"
 appcompat = "1.6.1"
