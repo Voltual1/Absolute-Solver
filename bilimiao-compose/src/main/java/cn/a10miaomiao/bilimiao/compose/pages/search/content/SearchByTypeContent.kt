@@ -1,3 +1,4 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/content/SearchByTypeContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.content
 
 import android.net.Uri
@@ -31,11 +32,15 @@ import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.SearchItemCard
+import cn.a10miaomiao.bilimiao.compose.pages.video.VideoDetailPage
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserSeasonDetailPage
 import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
+import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -194,9 +199,28 @@ private class SearchByTypeContentViewModel(
     }
 
     fun toDetailPage(item: InfoItem) {
-        pageNavigation.navigateByUri(
-            Uri.parse(item.url)
-        )
+        val url = item.url ?: return
+        val parsed = BiliUrlMatcher.findIDByUrl(url)
+        val type = parsed[0]
+        val id = parsed[1]
+        if (id.isNotBlank()) {
+            when (type) {
+                "AV", "BV" -> {
+                    pageNavigation.navigate(VideoDetailPage(id = id))
+                }
+                "UID" -> {
+                    pageNavigation.navigate(UserSpacePage(id = id))
+                }
+                "SS" -> {
+                    pageNavigation.navigate(UserSeasonDetailPage(id = id, title = item.name ?: ""))
+                }
+                else -> {
+                    pageNavigation.navigateByUri(Uri.parse(url))
+                }
+            }
+        } else {
+            pageNavigation.navigateByUri(Uri.parse(url))
+        }
     }
 }
 
