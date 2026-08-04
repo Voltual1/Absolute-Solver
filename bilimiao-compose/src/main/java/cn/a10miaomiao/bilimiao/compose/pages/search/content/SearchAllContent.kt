@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/content/SearchAllContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.content
 
 import android.net.Uri
@@ -49,16 +48,23 @@ import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.search.filter.FilterGroup
 import org.schabi.newpipe.extractor.search.filter.FilterItem
 import org.schabi.newpipe.extractor.services.bilibili.search.filter.BilibiliFilters
 
-typealias SearchItem = org.schabi.newpipe.extractor.InfoItem
+typealias ExtractorSearchItem = org.schabi.newpipe.extractor.InfoItem
 
 private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): FilterItem {
-    for (group in filters.availableGroups) {
-        for (item in group.items) {
-            if (item.name == name) {
-                return item
+    val groups = filters.getAvailableGroups()
+    if (groups != null) {
+        for (group in groups) {
+            val items = group.getItems()
+            if (items != null) {
+                for (item in items) {
+                    if (item.name == name) {
+                        return item
+                    }
+                }
             }
         }
     }
@@ -75,7 +81,7 @@ private class SearchAllContentViewModel(
 
     private var _nextPage: org.schabi.newpipe.extractor.Page? = null
     private var _extractor: org.schabi.newpipe.extractor.search.SearchExtractor? = null
-    val list = FlowPaginationInfo<SearchItem>()
+    val list = FlowPaginationInfo<ExtractorSearchItem>()
     val isRefreshing = MutableStateFlow(false)
 
     val rankOrderList = listOf(
@@ -101,7 +107,7 @@ private class SearchAllContentViewModel(
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
             list.loading.value = true
-            val itemList: List<SearchItem>
+            val itemList: List<ExtractorSearchItem>
             if (!isLoadMore) {
                 val filters = BilibiliFilters()
                 val contentFilterList = mutableListOf<FilterItem>()
@@ -215,7 +221,7 @@ private class SearchAllContentViewModel(
         }
     }
 
-    fun toDetailPage(item: SearchItem) {
+    fun toDetailPage(item: ExtractorSearchItem) {
         pageNavigation.navigateByUri(
             Uri.parse(item.url)
         )

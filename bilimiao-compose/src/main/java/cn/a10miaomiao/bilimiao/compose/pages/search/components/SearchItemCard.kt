@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
-import org.schabi.newpipe.extractor.live.LiveInfoItem
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import cn.a10miaomiao.bilimiao.compose.components.bangumi.BangumiItemBox
 import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
@@ -32,6 +32,21 @@ internal fun SearchItemCard(
                     cover = item.thumbnailUrl ?: "",
                     statusText = "",
                     desc = item.uploaderName ?: "",
+                    isHtml = true,
+                    onClick = onClick
+                )
+            } else if (item.streamType == StreamType.LIVE_STREAM) {
+                VideoItemBox(
+                    modifier = Modifier.padding(
+                        horizontal = 10.dp,
+                        vertical = 5.dp
+                    ),
+                    title = "[直播] " + (item.name ?: ""),
+                    pic = item.thumbnailUrl ?: "",
+                    upperName = item.uploaderName ?: "",
+                    playNum = "直播中",
+                    damukuNum = "",
+                    duration = "LIVE",
                     isHtml = true,
                     onClick = onClick
                 )
@@ -64,22 +79,6 @@ internal fun SearchItemCard(
                 fans = item.subscriberCount.toInt(),
                 archives = item.streamCount.toInt(),
                 level = 0,
-                onClick = onClick
-            )
-        }
-        is LiveInfoItem -> {
-            VideoItemBox(
-                modifier = Modifier.padding(
-                    horizontal = 10.dp,
-                    vertical = 5.dp
-                ),
-                title = "[直播] " + (item.name ?: ""),
-                pic = item.thumbnailUrl ?: "",
-                upperName = item.uploaderName ?: "",
-                playNum = "直播中",
-                damukuNum = "",
-                duration = "LIVE",
-                isHtml = true,
                 onClick = onClick
             )
         }
