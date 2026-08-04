@@ -105,9 +105,9 @@ class CoverViewModel(
     fun resolveUrl(url: String) = viewModelScope.launch(Dispatchers.IO) {
         try {
             val res = MiaoHttp(url).get()
-            val url = res.request.url.toString()
-            val urlInfo = BiliUrlMatcher.findIDByUrl(url)
-            type = urlInfo[0].toUpperCase()
+            val resolvedUrl = res.request.url.toString()
+            val urlInfo = BiliUrlMatcher.findIDByUrl(resolvedUrl)
+            type = urlInfo[0].uppercase()
             id = urlInfo[1]
             withContext(Dispatchers.Main) {
                 setConfig(type, id)

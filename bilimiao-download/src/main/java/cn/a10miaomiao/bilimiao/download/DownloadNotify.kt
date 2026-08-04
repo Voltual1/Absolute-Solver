@@ -10,7 +10,6 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import cn.a10miaomiao.bilimiao.download.entry.CurrentDownloadInfo
-import okhttp3.internal.notify
 
 class DownloadNotify(val context: Context) {
     val ACTION_CMD = "cn.a10miaomiao.bilimiao.download.DownloadNotify"
