@@ -57,7 +57,7 @@ jobs:
 #          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Build Debug APK
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'pull_request'
         run: ./gradlew assembleDebug
 
       - name: Create Draft Release
