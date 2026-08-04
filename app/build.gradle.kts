@@ -36,13 +36,13 @@ android {
         val props = Properties()
         props.load(FileInputStream(signingFile))
         signingConfigs {
-            create("miao") {
-                keyAlias = props.getProperty("KEY_ALIAS")
-                keyPassword = props.getProperty("KEY_PASSWORD")
-                storeFile = file(props.getProperty("KEYSTORE_FILE"))
-                storePassword = props.getProperty("KEYSTORE_PASSWORD")
-            }
-        }
+    create("miao") {
+        storeFile = file(System.getenv("KEYSTORE_PATH") ?: "debug.keystore")
+        storePassword = System.getenv("KEYSTORE_PASSWORD")
+        keyAlias = System.getenv("KEY_ALIAS")
+        keyPassword = System.getenv("KEY_PASSWORD")
+    }
+}
     }
     buildTypes {
         debug {
