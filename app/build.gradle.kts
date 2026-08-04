@@ -44,6 +44,13 @@ android {
     }
 }
     }
+    
+    packaging {
+        resources {
+            excludes.add("/google/protobuf/**")
+        }
+    }
+    
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
