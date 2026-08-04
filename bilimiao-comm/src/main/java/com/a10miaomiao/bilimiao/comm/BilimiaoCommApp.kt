@@ -6,12 +6,15 @@ import android.webkit.CookieManager
 import com.a10miaomiao.bilimiao.comm.entity.auth.LoginInfo
 import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
 import com.a10miaomiao.bilimiao.comm.network.ApiHelper
+import com.a10miaomiao.bilimiao.comm.network.ExtractorDownloader
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.utils.AESUtil
 import com.a10miaomiao.bilimiao.comm.utils.MiaoEncryptDecrypt
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogxmaterialyou.style.MaterialYouStyle
 import kotlinx.serialization.encodeToString
+import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.ServiceList
 import java.io.File
 
 class BilimiaoCommApp(
@@ -32,6 +35,11 @@ class BilimiaoCommApp(
 
     fun onCreate() {
         commApp = this
+        
+        // 1. 初始化 NewPipe Extractor 网络请求器
+        val downloader = ExtractorDownloader(app)
+        NewPipe.init(downloader)
+        
         readAuthInfo()
 
         DialogX.init(app)
@@ -53,6 +61,18 @@ class BilimiaoCommApp(
         return MiaoEncryptDecrypt(key)
     }
 
+    // 2. 桥接登录态同步
+    fun syncTokensToExtractor() {
+        val cookie = CookieManager.getInstance().getCookie("https://bilibili.com")
+        if (!cookie.isNullOrBlank()) {
+            ServiceList.BiliBili.tokens = cookie
+            ServiceList.BiliBili.cookieFunctions = setOf("comments", "video", "bullet_comments")
+        } else {
+            ServiceList.BiliBili.tokens = null
+            ServiceList.BiliBili.cookieFunctions = emptySet()
+        }
+    }
+
     fun saveAuthInfo(loginInfo: LoginInfo) {
         this.loginInfo = loginInfo
         val miaoED = getMiaoEncryptDecrypt()
@@ -63,6 +83,9 @@ class BilimiaoCommApp(
         val file = File(authFilePath)
         file.writeBytes(cipher)
         loginInfo.cookie_info?.let { setCookie(it) }
+        
+        // 授权改变时同步
+        syncTokensToExtractor()
     }
 
     private fun readAuthInfo(): LoginInfo? {
@@ -75,6 +98,9 @@ class BilimiaoCommApp(
             val jsonStr = String(jsonByteArray)
             val loginInfo = MiaoJson.fromJson<LoginInfo>(jsonStr)
             this.loginInfo = loginInfo
+            
+            // 同步登录态
+            syncTokensToExtractor()
             return loginInfo
         } catch (e: Exception) {
             e.printStackTrace()
@@ -90,6 +116,9 @@ class BilimiaoCommApp(
         cookieManager.removeAllCookies(null)
         cookieManager.flush()
         this.loginInfo = null
+        
+        // 同步注销状态
+        syncTokensToExtractor()
     }
 
 
