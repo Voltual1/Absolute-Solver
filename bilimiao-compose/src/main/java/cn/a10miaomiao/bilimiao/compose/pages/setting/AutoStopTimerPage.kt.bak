@@ -32,7 +32,6 @@ import kotlinx.serialization.Serializable
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
 
 @Serializable
 class AutoStopTimerPage : ComposePage() {
