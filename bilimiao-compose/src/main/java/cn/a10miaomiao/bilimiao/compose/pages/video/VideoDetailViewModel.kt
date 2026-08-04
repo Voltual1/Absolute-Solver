@@ -149,7 +149,7 @@ class VideoDetailViewModel(
             val aid = data.optLong("aid")
 
             // 使用 Extractor 请求底层同步并发拉取周边信息（标签、相关推荐、用户状态、播放进度）
-            val (tagsList, relatesList, reqUser, history) = withContext(Dispatchers.IO) {
+            val resultsList = withContext(Dispatchers.IO) {
                 val tags = mutableListOf<bilibili.app.view.v1.Tag>()
                 try {
                     val tagUrl = "https://api.bilibili.com/x/web-interface/view/detail/tag?bvid=$bvid"
@@ -168,7 +168,7 @@ class VideoDetailViewModel(
                             )
                         }
                     }
-                } catch (e: java.lang.Exception) {
+                } catch (e: Exception) {
                     e.printStackTrace()
                 }
 
@@ -204,7 +204,7 @@ class VideoDetailViewModel(
                             )
                         }
                     }
-                } catch (e: java.lang.Exception) {
+                } catch (e: Exception) {
                     e.printStackTrace()
                 }
 
@@ -225,7 +225,7 @@ class VideoDetailViewModel(
                             coin = relationData.optInt("coin")
                             dislike = if (relationData.optBoolean("dislike") || relationData.optInt("dislike") > 0) 1 else 0
                         }
-                    } catch (e: java.lang.Exception) {
+                    } catch (e: Exception) {
                         e.printStackTrace()
                     }
                 }
@@ -238,7 +238,7 @@ class VideoDetailViewModel(
 
                 val historyJson = data.optJSONObject("history")
                 val historyObj = if (historyJson != null) {
-                    bilibili.app.view.v1.ViewReply.History(
+                    bilibili.app.view.v1.History(
                         cid = historyJson.optLong("cid"),
                         progress = historyJson.optLong("progress"),
                     )
@@ -246,15 +246,15 @@ class VideoDetailViewModel(
                     null
                 }
 
-                java.util.Arrays.asList(tags, relates, reqUserObj, historyObj)
+                listOf(tags, relates, reqUserObj, historyObj)
             }
 
             @Suppress("UNCHECKED_CAST")
-            val tags = relatesListAndStates[0] as List<bilibili.app.view.v1.Tag>
+            val tags = resultsList[0] as List<bilibili.app.view.v1.Tag>
             @Suppress("UNCHECKED_CAST")
-            val relates = relatesListAndStates[1] as List<bilibili.app.view.v1.Relate>
-            val reqUser = relatesListAndStates[2] as bilibili.app.view.v1.ReqUser
-            val history = relatesListAndStates[3] as? bilibili.app.view.v1.ViewReply.History
+            val relates = resultsList[1] as List<bilibili.app.view.v1.Relate>
+            val reqUser = resultsList[2] as bilibili.app.view.v1.ReqUser
+            val history = resultsList[3] as? bilibili.app.view.v1.History
 
             // 映射 UP主数据
             val owner = data.getJSONObject("owner")
@@ -341,19 +341,19 @@ class VideoDetailViewModel(
             val ugcSeasonJson = data.optJSONObject("ugc_season")
             val ugcSeason = if (ugcSeasonJson != null) {
                 val sectionsJson = ugcSeasonJson.optJSONArray("sections")
-                val sectionsList = mutableListOf<bilibili.app.view.v1.UgcSection>()
+                val sectionsList = mutableListOf<bilibili.app.view.v1.Section>()
                 if (sectionsJson != null) {
                     for (i in 0 until sectionsJson.length()) {
                         val s = sectionsJson.getJSONObject(i)
                         val episodesJson = s.optJSONArray("episodes")
-                        val episodesList = mutableListOf<bilibili.app.view.v1.UgcEpisode>()
+                        val episodesList = mutableListOf<bilibili.app.view.v1.Episode>()
                         if (episodesJson != null) {
                             for (j in 0 until episodesJson.length()) {
                                 val ep = episodesJson.getJSONObject(j)
                                 val epArc = ep.optJSONObject("arc")
                                 val epPage = ep.optJSONObject("page")
                                 episodesList.add(
-                                    bilibili.app.view.v1.UgcEpisode(
+                                    bilibili.app.view.v1.Episode(
                                         id = ep.optLong("id"),
                                         aid = ep.optLong("aid"),
                                         cid = ep.optLong("cid"),
@@ -373,7 +373,7 @@ class VideoDetailViewModel(
                             }
                         }
                         sectionsList.add(
-                            bilibili.app.view.v1.UgcSection(
+                            bilibili.app.view.v1.Section(
                                 id = s.optLong("id"),
                                 title = s.optString("title"),
                                 episodes = episodesList,
@@ -394,14 +394,15 @@ class VideoDetailViewModel(
                 arc = arc,
                 pages = pagesList,
                 reqUser = reqUser,
-                ownerExt = bilibili.app.view.v1.OwnerExt(),
+                ownerExt = bilibili.app.view.v1.OnwerExt(),
                 staff = staffList,
                 tag = tags,
                 relates = relates,
                 ugcSeason = ugcSeason,
                 history = history,
-                bvid = bvid,
-            )
+            ).apply {
+                this.bvid = bvid
+            }
 
             _detailData.value = res
             autoStartPlay()
