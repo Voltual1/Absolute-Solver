@@ -313,12 +313,12 @@ private fun VideoSettingPageContent(
                 },
                 defaultValue = SettingConstants.PLAYER_SPEED_SETS,
                 valueText = {
-                    Text(
-                        text = it + "倍速",
-                        modifier = Modifier.widthIn(min = 48.dp),
-                        textAlign = TextAlign.Center,
-                    )
-                },
+    Text(
+        text = "$it 倍速",  // 使用字符串模板
+        modifier = Modifier.widthIn(min = 48.dp),
+        textAlign = TextAlign.Center,
+    )
+},
                 valueCanEdit = {
                     it !in SettingConstants.PLAYER_SPEED_SETS
                 },

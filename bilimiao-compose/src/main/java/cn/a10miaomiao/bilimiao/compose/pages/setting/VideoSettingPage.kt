@@ -412,12 +412,12 @@ private fun VideoSettingPageContent(
             )
 
             item("bottom") {
-                Spacer(
-                    modifier = Modifier.height(
-                        windowInsets.bottomDp + windowStore.bottomAppBarHeightDp.dp
-                    )
-                )
-            }
+    Spacer(
+        modifier = Modifier.height(
+            (windowInsets.bottomDp + windowStore.bottomAppBarHeightDp).dp
+        )
+    )
+}
         }
     }
 }
