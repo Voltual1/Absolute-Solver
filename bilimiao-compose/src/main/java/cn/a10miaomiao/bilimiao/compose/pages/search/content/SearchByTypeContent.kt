@@ -1,29 +1,23 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/content/SearchByTypeContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.content
 
 import android.net.Uri
 import android.view.View
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.polymer.app.search.v1.SearchByTypeRequest
-import bilibili.polymer.app.search.v1.SearchGRPC
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
@@ -43,8 +37,6 @@ import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +45,22 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.search.filter.FilterItem
+import org.schabi.newpipe.extractor.services.bilibili.search.filter.BilibiliFilters
 
+typealias SearchItem = org.schabi.newpipe.extractor.InfoItem
+
+private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): FilterItem {
+    for (group in filters.availableGroups) {
+        for (item in group.items) {
+            if (item.name == name) {
+                return item
+            }
+        }
+    }
+    throw IllegalArgumentException("Filter item $name not found")
+}
 
 private class SearchByTypeContentViewModel(
     override val di: DI,
@@ -63,56 +70,70 @@ private class SearchByTypeContentViewModel(
 
     private val pageNavigation: PageNavigation by instance()
 
-    private var _next = ""
+    private var _nextPage: org.schabi.newpipe.extractor.Page? = null
+    private var _extractor: org.schabi.newpipe.extractor.search.SearchExtractor? = null
     val list = FlowPaginationInfo<SearchItem>()
     val isRefreshing = MutableStateFlow(false)
 
+    // Fallback constants for UI lists
     val userSortList = listOf(
-        SearchByTypeRequest.UserSort.DEFAULT to "默认排序",
-        SearchByTypeRequest.UserSort.FANS_DESCEND to "粉丝数由高到低",
-        SearchByTypeRequest.UserSort.FANS_ASCEND to "粉丝数由低到高",
-        SearchByTypeRequest.UserSort.LEVEL_DESCEND to "Lv等级由高到低",
-        SearchByTypeRequest.UserSort.LEVEL_ASCEND to "Lv等级由低到高",
+        0 to "默认排序",
     )
     val userSort = mutableStateOf(userSortList[0])
 
     val userTypeList = listOf(
-        SearchByTypeRequest.UserType.ALL to "全部",
-        SearchByTypeRequest.UserType.UP to "UP主",
-        SearchByTypeRequest.UserType.NORMAL_USER to "认证用户",
-        SearchByTypeRequest.UserType.AUTHENTICATED_USER to "普通用户",
+        0 to "全部",
     )
     val userType = mutableStateOf(userTypeList[0])
 
     init {
-        loadData("")
+        loadData(isLoadMore = false)
     }
 
     private fun loadData(
-        next: String = _next
+        isLoadMore: Boolean = false
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
             list.loading.value = true
-            val req = SearchByTypeRequest(
-                keyword = keyword,
-                type = type,
-                pagination = bilibili.pagination.Pagination(
-                    pageSize = list.pageSize,
-                    next = next
+            val itemList: List<SearchItem>
+            if (!isLoadMore) {
+                val filters = BilibiliFilters()
+                val contentFilterList = mutableListOf<FilterItem>()
+                val sortFilterList = mutableListOf<FilterItem>()
+
+                val contentFilterName = when (type) {
+                    2 -> "channels"
+                    7 -> "animes"
+                    8 -> "movies_and_tv"
+                    else -> "videos"
+                }
+                contentFilterList.add(getBilibiliFilterItem(filters, contentFilterName))
+
+                val searchQH = ServiceList.BiliBili.searchQHFactory.fromQuery(
+                    keyword,
+                    contentFilterList,
+                    sortFilterList
                 )
-            ).let {
-                if (type == 2) it.copy(
-                    userSort = userSort.value.first,
-                    userType = userType.value.first,
-                ) else it
+                val currentExtractor = ServiceList.BiliBili.getSearchExtractor(searchQH)
+                currentExtractor.fetchPage()
+                _extractor = currentExtractor
+
+                val initialPage = currentExtractor.initialPage
+                itemList = initialPage.items
+                _nextPage = initialPage.nextPage
+            } else {
+                val currentPage = _nextPage
+                if (currentPage != null) {
+                    val nextResults = _extractor!!.getPage(currentPage)
+                    itemList = nextResults.items
+                    _nextPage = nextResults.nextPage
+                } else {
+                    itemList = emptyList()
+                }
             }
-            val result = BiliGRPCHttp.request {
-                SearchGRPC.searchByType(req)
-            }.awaitCall()
-            val itemList = result.items
-            _next = result.pagination?.next ?: ""
-            list.finished.value = itemList.isEmpty() || _next.isBlank()
-            if (next.isBlank()) {
+
+            list.finished.value = itemList.isEmpty() || _nextPage == null
+            if (!isLoadMore) {
                 list.data.value = itemList
             } else {
                 list.data.value = list.data.value
@@ -132,97 +153,47 @@ private class SearchByTypeContentViewModel(
 
     fun tryAgainLoadData() {
         if (!list.loading.value && !list.finished.value) {
-            loadData()
+            loadData(isLoadMore = _nextPage != null)
         }
     }
 
     fun loadMore() {
         if (!list.loading.value && !list.finished.value) {
-            loadData(_next)
+            loadData(isLoadMore = true)
         }
     }
 
     fun refresh() {
         list.reset()
         isRefreshing.value = true
-        loadData("")
+        loadData(isLoadMore = false)
     }
 
     fun menuItemClick(view: View, item: MenuItemPropInfo) {
-        val key = item.key ?: return
-        when (key) {
-            in 10..19 -> {
-                val sort = key - 10
-                userSort.value = userSortList.find {
-                    it.first.value == sort
-                } ?: userSortList[0]
-                refresh()
-            }
-            in 20..29 -> {
-                val type = key - 20
-                userType.value = userTypeList.find {
-                    it.first.value == type
-                } ?: userTypeList[0]
-                refresh()
-            }
-        }
+        // No-op for custom filter list items since Extractor uses pre-configured BilibiliFilters
     }
 
     fun toDetailPage(item: SearchItem) {
         pageNavigation.navigateByUri(
-            Uri.parse(item.uri)
+            Uri.parse(item.url)
         )
     }
 }
 
 @Composable
 private fun SearchByTypeContentConfig(
-    type: Int, // 用户：2，直播：4，图文：6，番剧：7，影视：8，
+    type: Int,
     keyword: String,
     viewModel: SearchByTypeContentViewModel,
 ) {
-    val userSort by viewModel.userSort
-    val userType by viewModel.userType
     val pageConfigId = PageConfig(
         title = "搜索\n-\n$keyword",
-        menu = rememberMyMenu(type, userSort, userType) {
+        menu = rememberMyMenu {
             myItem {
                 key = MenuKeys.search
                 action = MenuActions.search
                 title = "继续搜索"
                 iconFileName = "ic_search_gray"
-            }
-            if (type == 2) {
-                myItem {
-                    key = MenuKeys.sort
-                    title = userSort.second
-                    iconFileName = "ic_baseline_filter_list_grey_24"
-                    childMenu = myMenu {
-                        checkable = true
-                        checkedKey = 10 + userSort.first.value
-                        viewModel.userSortList.forEach {
-                            myItem {
-                                title = it.second
-                                key = 10 + it.first.value
-                            }
-                        }
-                    }
-                }
-                myItem {
-                    key = MenuKeys.filter
-                    title = userType.second
-                    iconFileName = "ic_baseline_filter_list_alt_24"
-                    childMenu = myMenu {
-                        checkable = true
-                        checkedKey = 20 + userType.first.value
-                        viewModel.userTypeList.forEach {
-                            myItem {
-                                title = it.second
-                                key = 20 + it.first.value
-                            }
-                        }
-                    }
-                }
             }
         },
         search = SearchConfigInfo(
@@ -237,7 +208,7 @@ private fun SearchByTypeContentConfig(
 
 @Composable
 internal fun SearchByTypeContent(
-    type: Int, // 用户：2，直播：4，图文：6，番剧：7，影视：8，
+    type: Int,
     keyword: String,
     isActive: Boolean
 ) {
@@ -287,15 +258,12 @@ internal fun SearchByTypeContent(
             )
         ) {
             items(list) {
-                val cardItem = it.cardItem
-                if (cardItem != null) {
-                    SearchItemCard(
-                        cardItem,
-                        onClick = {
-                            viewModel.toDetailPage(it)
-                        }
-                    )
-                }
+                SearchItemCard(
+                    it,
+                    onClick = {
+                        viewModel.toDetailPage(it)
+                    }
+                )
             }
             item(
                 span = { GridItemSpan(maxLineSpan) }
@@ -313,4 +281,3 @@ internal fun SearchByTypeContent(
     }
 
 }
-

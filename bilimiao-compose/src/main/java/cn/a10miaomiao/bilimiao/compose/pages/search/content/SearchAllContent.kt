@@ -1,35 +1,23 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/content/SearchAllContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.content
 
 import android.net.Uri
 import android.view.View
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.app.dynamic.v2.DynamicGRPC
-import bilibili.app.dynamic.v2.DynamicItem
-import bilibili.polymer.app.search.v1.Item.CardItem
-import bilibili.polymer.app.search.v1.SearchGRPC
-import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
@@ -41,7 +29,6 @@ import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
-import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicItemCard
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.MoreConditionsDialog
@@ -52,20 +39,31 @@ import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.store.RegionStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.search.filter.FilterItem
+import org.schabi.newpipe.extractor.services.bilibili.search.filter.BilibiliFilters
 
-typealias SearchItem = bilibili.polymer.app.search.v1.Item
+typealias SearchItem = org.schabi.newpipe.extractor.InfoItem
+
+private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): FilterItem {
+    for (group in filters.availableGroups) {
+        for (item in group.items) {
+            if (item.name == name) {
+                return item
+            }
+        }
+    }
+    throw IllegalArgumentException("Filter item $name not found")
+}
 
 private class SearchAllContentViewModel(
     override val di: DI,
@@ -75,7 +73,8 @@ private class SearchAllContentViewModel(
     private val pageNavigation: PageNavigation by instance()
     private val regionStore: RegionStore by instance()
 
-    private var _next = ""
+    private var _nextPage: org.schabi.newpipe.extractor.Page? = null
+    private var _extractor: org.schabi.newpipe.extractor.search.SearchExtractor? = null
     val list = FlowPaginationInfo<SearchItem>()
     val isRefreshing = MutableStateFlow(false)
 
@@ -94,47 +93,69 @@ private class SearchAllContentViewModel(
     val hasFilter = mutableStateOf(false)
 
     init {
-        loadData("")
+        loadData(isLoadMore = false)
     }
 
     private fun loadData(
-        next: String = _next
+        isLoadMore: Boolean = false
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val moreConditions = moreConditionsDialogState.data
-            val order = rankOrder.value.first
-            val timeType = moreConditions.timeType
-                .let { if (it == 0) "" else "${it}d" }
-            val tidList = moreConditions.regionList
-                .joinToString(",")
-            val durationList = moreConditions.durationList
-                .joinToString(",")
             list.loading.value = true
-            val req = bilibili.polymer.app.search.v1.SearchAllRequest(
-                keyword = keyword,
-                order = order,
-                timeType = timeType,
-                tidList = tidList,
-                durationList = durationList,
-                pagination = bilibili.pagination.Pagination(
-                    pageSize = list.pageSize,
-                    next = next
+            val itemList: List<SearchItem>
+            if (!isLoadMore) {
+                val filters = BilibiliFilters()
+                val contentFilterList = mutableListOf<FilterItem>()
+                val sortFilterList = mutableListOf<FilterItem>()
+
+                // Sort Order mapping
+                val order = rankOrder.value.first
+                val sortName = when (order) {
+                    0 -> "sort_overall"
+                    2 -> "sort_publish_time"
+                    1 -> "sort_view"
+                    3 -> "sort_bullet_comments"
+                    else -> "sort_overall"
+                }
+                sortFilterList.add(getBilibiliFilterItem(filters, sortName))
+
+                // Duration mapping
+                val moreConditions = moreConditionsDialogState.data
+                val durationVal = moreConditions.durationList.firstOrNull() ?: 0
+                val durationName = when (durationVal) {
+                    0 -> "all"
+                    1 -> "short_video"
+                    2 -> "medium_length"
+                    3 -> "long_video"
+                    4 -> "extra_long"
+                    else -> "all"
+                }
+                sortFilterList.add(getBilibiliFilterItem(filters, durationName))
+
+                val searchQH = ServiceList.BiliBili.searchQHFactory.fromQuery(
+                    keyword,
+                    contentFilterList,
+                    sortFilterList
                 )
-            )
-            val result = BiliGRPCHttp.request {
-                SearchGRPC.searchAll(req)
-            }.awaitCall()
-            val itemList = if (next.isNotBlank()
-                || hasFilter.value
-                || order != 0
-            ) {
-                result.item.filter { it.cardItem is CardItem.Av }
+                val currentExtractor = ServiceList.BiliBili.getSearchExtractor(searchQH)
+                currentExtractor.fetchPage()
+                _extractor = currentExtractor
+
+                val initialPage = currentExtractor.initialPage
+                itemList = initialPage.items
+                _nextPage = initialPage.nextPage
             } else {
-                result.item
+                val currentPage = _nextPage
+                if (currentPage != null) {
+                    val nextResults = _extractor!!.getPage(currentPage)
+                    itemList = nextResults.items
+                    _nextPage = nextResults.nextPage
+                } else {
+                    itemList = emptyList()
+                }
             }
-            _next = result.pagination?.next ?: ""
-            list.finished.value = itemList.isEmpty() || _next.isBlank()
-            if (next.isBlank()) {
+
+            list.finished.value = itemList.isEmpty() || _nextPage == null
+            if (!isLoadMore) {
                 list.data.value = itemList
             } else {
                 list.data.value = list.data.value
@@ -154,20 +175,20 @@ private class SearchAllContentViewModel(
 
     fun tryAgainLoadData() {
         if (!list.loading.value && !list.finished.value) {
-            loadData()
+            loadData(isLoadMore = _nextPage != null)
         }
     }
 
     fun loadMore() {
         if (!list.loading.value && !list.finished.value) {
-            loadData(_next)
+            loadData(isLoadMore = true)
         }
     }
 
     fun refresh() {
         list.reset()
         isRefreshing.value = true
-        loadData("")
+        loadData(isLoadMore = false)
     }
 
     fun confirmConditions() {
@@ -196,7 +217,7 @@ private class SearchAllContentViewModel(
 
     fun toDetailPage(item: SearchItem) {
         pageNavigation.navigateByUri(
-            Uri.parse(item.uri)
+            Uri.parse(item.url)
         )
     }
 
@@ -299,15 +320,12 @@ internal fun SearchAllContent(
             )
         ) {
             items(list) {
-                val cardItem = it.cardItem
-                if (cardItem != null) {
-                    SearchItemCard(
-                        cardItem,
-                        onClick = {
-                            viewModel.toDetailPage(it)
-                        }
-                    )
-                }
+                SearchItemCard(
+                    it,
+                    onClick = {
+                        viewModel.toDetailPage(it)
+                    }
+                )
             }
             item(
                 span = { GridItemSpan(maxLineSpan) }
