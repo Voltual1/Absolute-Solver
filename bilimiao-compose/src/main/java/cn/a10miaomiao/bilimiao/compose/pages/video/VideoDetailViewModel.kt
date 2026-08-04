@@ -10,17 +10,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.archive.v1.Page
-import bilibili.app.view.v1.ViewGRPC
 import bilibili.app.view.v1.ViewReply
-import bilibili.app.view.v1.ViewReq
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.pages.playlist.PlayListPage
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSeasonDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
-import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserSeasonDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoAddFavoriteDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoCoinDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoDownloadDialogState
@@ -35,24 +31,22 @@ import com.a10miaomiao.bilimiao.comm.entity.player.PlayListFrom
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.store.UserLibraryStore
 import com.a10miaomiao.bilimiao.comm.store.UserStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
-import kotlin.collections.mapNotNull
 
 class VideoDetailViewModel(
     override val di: DI,
@@ -130,18 +124,285 @@ class VideoDetailViewModel(
         try {
             _loading.value = true
             _fail.value = null
-            val req = if (_id.startsWith("BV")) {
-                ViewReq(
-                    bvid = _id,
-                )
+
+            val aidOrBvid = _id
+            val url = if (aidOrBvid.startsWith("BV", ignoreCase = true)) {
+                "https://api.bilibili.com/x/web-interface/view?bvid=$aidOrBvid"
             } else {
-                ViewReq(
-                    aid = _id.toLong(),
-                )
+                "https://api.bilibili.com/x/web-interface/view?aid=$aidOrBvid"
             }
-            val res = BiliGRPCHttp.request {
-                ViewGRPC.view(req)
-            }.awaitCall()
+
+            // 使用 Extractor 下的请求代理拉取核心视频详情数据
+            val responseBody = withContext(Dispatchers.IO) {
+                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
+                org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
+            }
+
+            val json = JSONObject(responseBody)
+            val code = json.optInt("code", -1)
+            if (code != 0) {
+                val message = json.optString("message", "请求错误")
+                throw Exception(message)
+            }
+            val data = json.getJSONObject("data")
+            val bvid = data.optString("bvid")
+            val aid = data.optLong("aid")
+
+            // 使用 Extractor 请求底层同步并发拉取周边信息（标签、相关推荐、用户状态、播放进度）
+            val (tagsList, relatesList, reqUser, history) = withContext(Dispatchers.IO) {
+                val tags = mutableListOf<bilibili.app.view.v1.Tag>()
+                try {
+                    val tagUrl = "https://api.bilibili.com/x/web-interface/view/detail/tag?bvid=$bvid"
+                    val tagHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(tagUrl)
+                    val tagResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(tagUrl, tagHeaders).responseBody()
+                    val tagJson = JSONObject(tagResponse)
+                    val tagArray = tagJson.optJSONArray("data")
+                    if (tagArray != null) {
+                        for (i in 0 until tagArray.length()) {
+                            val t = tagArray.getJSONObject(i)
+                            tags.add(
+                                bilibili.app.view.v1.Tag(
+                                    id = t.optLong("tag_id"),
+                                    name = t.optString("tag_name"),
+                                )
+                            )
+                        }
+                    }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+
+                val relates = mutableListOf<bilibili.app.view.v1.Relate>()
+                try {
+                    val relatesUrl = "https://api.bilibili.com/x/web-interface/archive/related?bvid=$bvid"
+                    val relatesHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(relatesUrl)
+                    val relatesResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(relatesUrl, relatesHeaders).responseBody()
+                    val relatesJson = JSONObject(relatesResponse)
+                    val relatesArray = relatesJson.optJSONArray("data")
+                    if (relatesArray != null) {
+                        for (i in 0 until relatesArray.length()) {
+                            val r = relatesArray.getJSONObject(i)
+                            val rOwner = r.optJSONObject("owner")
+                            val rStat = r.optJSONObject("stat")
+                            relates.add(
+                                bilibili.app.view.v1.Relate(
+                                    aid = r.optLong("aid"),
+                                    title = r.optString("title"),
+                                    pic = r.optString("pic"),
+                                    duration = r.optLong("duration"),
+                                    author = if (rOwner != null) bilibili.app.archive.v1.Author(
+                                        mid = rOwner.optLong("mid"),
+                                        name = rOwner.optString("name"),
+                                        face = rOwner.optString("face"),
+                                    ) else null,
+                                    stat = if (rStat != null) bilibili.app.archive.v1.Stat(
+                                        view = rStat.optInt("view"),
+                                        danmaku = rStat.optInt("danmaku"),
+                                    ) else null,
+                                    uri = "bilibili://video/" + r.optLong("aid"),
+                                )
+                            )
+                        }
+                    }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+
+                var favorite = 0
+                var like = 0
+                var coin = 0
+                var dislike = 0
+                if (userStore.isLogin()) {
+                    try {
+                        val relationUrl = "https://api.bilibili.com/x/web-interface/archive/relation?aid=$aid"
+                        val relationHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(relationUrl)
+                        val relationResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(relationUrl, relationHeaders).responseBody()
+                        val relationJson = JSONObject(relationResponse)
+                        if (relationJson.optInt("code") == 0) {
+                            val relationData = relationJson.getJSONObject("data")
+                            favorite = if (relationData.optBoolean("favorite") || relationData.optInt("favorite") > 0) 1 else 0
+                            like = if (relationData.optBoolean("like") || relationData.optInt("like") > 0) 1 else 0
+                            coin = relationData.optInt("coin")
+                            dislike = if (relationData.optBoolean("dislike") || relationData.optInt("dislike") > 0) 1 else 0
+                        }
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                val reqUserObj = bilibili.app.view.v1.ReqUser(
+                    favorite = favorite,
+                    like = like,
+                    coin = coin,
+                    dislike = dislike,
+                )
+
+                val historyJson = data.optJSONObject("history")
+                val historyObj = if (historyJson != null) {
+                    bilibili.app.view.v1.ViewReply.History(
+                        cid = historyJson.optLong("cid"),
+                        progress = historyJson.optLong("progress"),
+                    )
+                } else {
+                    null
+                }
+
+                java.util.Arrays.asList(tags, relates, reqUserObj, historyObj)
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val tags = relatesListAndStates[0] as List<bilibili.app.view.v1.Tag>
+            @Suppress("UNCHECKED_CAST")
+            val relates = relatesListAndStates[1] as List<bilibili.app.view.v1.Relate>
+            val reqUser = relatesListAndStates[2] as bilibili.app.view.v1.ReqUser
+            val history = relatesListAndStates[3] as? bilibili.app.view.v1.ViewReply.History
+
+            // 映射 UP主数据
+            val owner = data.getJSONObject("owner")
+            val author = bilibili.app.archive.v1.Author(
+                mid = owner.optLong("mid"),
+                name = owner.optString("name"),
+                face = owner.optString("face"),
+            )
+
+            // 映射视频数据统计
+            val statJson = data.getJSONObject("stat")
+            val stat = bilibili.app.archive.v1.Stat(
+                view = statJson.optInt("view"),
+                danmaku = statJson.optInt("danmaku"),
+                reply = statJson.optInt("reply"),
+                fav = statJson.optInt("favorite"),
+                coin = statJson.optInt("coin"),
+                share = statJson.optInt("share"),
+                like = statJson.optInt("like"),
+            )
+
+            // 映射分辨率数据
+            val dimensionJson = data.optJSONObject("dimension")
+            val dimension = if (dimensionJson != null) {
+                bilibili.app.archive.v1.Dimension(
+                    width = dimensionJson.optLong("width"),
+                    height = dimensionJson.optLong("height"),
+                    rotate = dimensionJson.optLong("rotate"),
+                )
+            } else null
+
+            // 映射 Arc 主类
+            val arc = bilibili.app.archive.v1.Arc(
+                aid = aid,
+                bvid = bvid,
+                title = data.optString("title"),
+                pic = data.optString("pic"),
+                desc = data.optString("desc"),
+                duration = data.optLong("duration"),
+                pubdate = data.optLong("pubdate"),
+                author = author,
+                stat = stat,
+                dimension = dimension,
+            )
+
+            // 映射多分P数据
+            val pagesJson = data.optJSONArray("pages")
+            val pagesList = mutableListOf<bilibili.app.view.v1.ViewPage>()
+            if (pagesJson != null) {
+                for (i in 0 until pagesJson.length()) {
+                    val pageItem = pagesJson.getJSONObject(i)
+                    val pageObj = bilibili.app.archive.v1.Page(
+                        cid = pageItem.optLong("cid"),
+                        page = pageItem.optInt("page"),
+                        part = pageItem.optString("part"),
+                        duration = pageItem.optLong("duration"),
+                    )
+                    pagesList.add(
+                        bilibili.app.view.v1.ViewPage(
+                            page = pageObj
+                        )
+                    )
+                }
+            }
+
+            // 映射 Staff 制作人员列表
+            val staffJson = data.optJSONArray("staff")
+            val staffList = mutableListOf<bilibili.app.view.v1.Staff>()
+            if (staffJson != null) {
+                for (i in 0 until staffJson.length()) {
+                    val s = staffJson.getJSONObject(i)
+                    staffList.add(
+                        bilibili.app.view.v1.Staff(
+                            mid = s.optLong("mid"),
+                            name = s.optString("name"),
+                            face = s.optString("face"),
+                            title = s.optString("title"),
+                        )
+                    )
+                }
+            }
+
+            // 映射 UGC 剧集/合集数据
+            val ugcSeasonJson = data.optJSONObject("ugc_season")
+            val ugcSeason = if (ugcSeasonJson != null) {
+                val sectionsJson = ugcSeasonJson.optJSONArray("sections")
+                val sectionsList = mutableListOf<bilibili.app.view.v1.UgcSection>()
+                if (sectionsJson != null) {
+                    for (i in 0 until sectionsJson.length()) {
+                        val s = sectionsJson.getJSONObject(i)
+                        val episodesJson = s.optJSONArray("episodes")
+                        val episodesList = mutableListOf<bilibili.app.view.v1.UgcEpisode>()
+                        if (episodesJson != null) {
+                            for (j in 0 until episodesJson.length()) {
+                                val ep = episodesJson.getJSONObject(j)
+                                val epArc = ep.optJSONObject("arc")
+                                val epPage = ep.optJSONObject("page")
+                                episodesList.add(
+                                    bilibili.app.view.v1.UgcEpisode(
+                                        id = ep.optLong("id"),
+                                        aid = ep.optLong("aid"),
+                                        cid = ep.optLong("cid"),
+                                        title = ep.optString("title"),
+                                        bvid = ep.optString("bvid"),
+                                        arc = if (epArc != null) bilibili.app.archive.v1.Arc(
+                                            aid = epArc.optLong("aid"),
+                                            title = epArc.optString("title"),
+                                            pic = epArc.optString("pic"),
+                                        ) else null,
+                                        page = if (epPage != null) bilibili.app.archive.v1.Page(
+                                            cid = epPage.optLong("cid"),
+                                            part = epPage.optString("part"),
+                                        ) else null,
+                                    )
+                                )
+                            }
+                        }
+                        sectionsList.add(
+                            bilibili.app.view.v1.UgcSection(
+                                id = s.optLong("id"),
+                                title = s.optString("title"),
+                                episodes = episodesList,
+                            )
+                        )
+                    }
+                }
+                bilibili.app.view.v1.UgcSeason(
+                    id = ugcSeasonJson.optLong("id"),
+                    title = ugcSeasonJson.optString("title"),
+                    cover = ugcSeasonJson.optString("cover"),
+                    sections = sectionsList,
+                )
+            } else null
+
+            // 重新包装生成完美的 ViewReply 对象
+            val res = ViewReply(
+                arc = arc,
+                pages = pagesList,
+                reqUser = reqUser,
+                ownerExt = bilibili.app.view.v1.OwnerExt(),
+                staff = staffList,
+                tag = tags,
+                relates = relates,
+                ugcSeason = ugcSeason,
+                history = history,
+                bvid = bvid,
+            )
+
             _detailData.value = res
             autoStartPlay()
         } catch (e: Exception) {
