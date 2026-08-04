@@ -1,27 +1,20 @@
+// File: bilimiao-comm/src/main/java/com/a10miaomiao/bilimiao/comm/apis/PlayerAPI.kt
 package com.a10miaomiao.bilimiao.comm.apis
 
 import android.os.SystemClock
-import android.widget.Toast
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.exception.AreaLimitException
-import com.a10miaomiao.bilimiao.comm.network.ApiHelper
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.schabi.newpipe.extractor.ServiceList
 
 class PlayerAPI {
 
     val DEFAULT_REFERER = "https://www.bilibili.com/"
     val DEFAULT_USER_AGENT = "Bilibili Freedoooooom/MarkII"
-
-    private fun getVideoHeaders(avid: String) = mapOf(
-        "Referer" to "https://www.bilibili.com/av$avid",
-        "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"
-    )
-
 
     fun getPlayerV2Info(
         aid: String,
@@ -50,8 +43,7 @@ class PlayerAPI {
     }
 
     /**
-     * 获取视频播放地址
-     * fnval: 976:flv,1:mp4,4048:dash
+     * 获取视频播放地址 (重构为对接 Extractor 提取器)
      */
     suspend fun getVideoPalyUrl(
         avid: String,
@@ -59,32 +51,18 @@ class PlayerAPI {
         quality: Int = 64,
         fnval: Int = 4048,
     ): PlayurlData {
-        val params = mutableMapOf<String, String?>(
-            "avid" to avid,
-            "cid" to cid,
-            "qn" to quality.toString(),
-            "fnval" to fnval.toString(),
-            "fnver" to "0",
-            "force_host" to "2", // 强制音视频返回 https
-            "type" to "",
-            "otype" to "json",
-        )
-        if (fnval > 2) {
-            params.put("fourk", "1")
-        }
-        val res = MiaoHttp.request {
-            url = BiliApiService.biliApi("x/player/playurl", *params.toList().toTypedArray())
-            headers.putAll(getVideoHeaders(avid))
-        }.awaitCall().json<ResponseData<PlayurlData>>()
-        if (res.isSuccess) {
-            return res.requireData()
-        } else {
-            throw Exception(res.message)
+        return withContext(Dispatchers.IO) {
+            val service = ServiceList.BiliBili
+            val url = "https://www.bilibili.com/video/av$avid?p=1"
+            val linkHandler = service.streamLHFactory.fromUrl(url)
+            val extractor = service.getStreamExtractor(linkHandler)
+            extractor.fetchPage()
+            getPlayurlDataFromExtractor(extractor, quality)
         }
     }
 
     /**
-     * 获取番剧播放地址
+     * 获取番剧播放地址 (重构为对接 Extractor 提取器)
      */
     suspend fun getBangumiUrl(
         epid: String,
@@ -92,39 +70,19 @@ class PlayerAPI {
         qn: Int = 64,
         fnval: Int = 4048
     ): PlayurlData {
-        val params = mutableMapOf<String, String?>(
-            "ep_id" to epid,
-            "cid" to cid,
-            "fnval" to fnval.toString(),
-            "fnver" to "0",
-            "force_host" to "2", // 强制音视频返回 https
-            "module" to "bangumi",
-            "qn" to qn.toString(),
-            "season_type" to "1",
-            "session" to ApiHelper.getMD5((System.currentTimeMillis() - SystemClock.currentThreadTimeMillis()).toString()),
-            "track_path" to "",
-            "device" to "android",
-            "mobi_app" to "android",
-            "platform" to "android"
-        )
-        if (fnval > 2) {
-            params["fourk"] = "1"
-        }
-        val res = MiaoHttp.request {
-            url = BiliApiService.biliApi(
-                "pgc/player/api/playurl",
-                *params.toList().toTypedArray()
-            )
-        }.awaitCall().json<PlayurlData>()
-        if (res.code == 0) {
-            return res
-        } else if (res.code == -10403) {
-            throw AreaLimitException()
-        } else {
-            throw Exception(res.message)
+        return withContext(Dispatchers.IO) {
+            val service = ServiceList.BiliBili
+            val url = "https://www.bilibili.com/bangumi/play/ep$epid"
+            val linkHandler = service.streamLHFactory.fromUrl(url)
+            val extractor = service.getStreamExtractor(linkHandler)
+            extractor.fetchPage()
+            getPlayurlDataFromExtractor(extractor, qn)
         }
     }
 
+    /**
+     * 代理番剧播放地址
+     */
     suspend fun getProxyBangumiUrl(
         epid: String,
         cid: String,
@@ -132,56 +90,151 @@ class PlayerAPI {
         fnval: Int = 4048,
         proxyServer: ProxyServerInfo,
     ): PlayurlData {
-        val params = mutableMapOf<String, String?>(
-            "ep_id" to epid,
-            "cid" to cid,
-            "fnval" to fnval.toString(),
-            "fnver" to "0",
-            "force_host" to "2", // 强制音视频返回 https
-            "module" to "bangumi",
-            "qn" to qn.toString(),
-            "season_type" to "1",
-            "session" to ApiHelper.getMD5((System.currentTimeMillis() - SystemClock.currentThreadTimeMillis()).toString()),
-            "track_path" to "",
-            "device" to "android",
-            "mobi_app" to "android",
-            "platform" to "android",
-        )
-        if (fnval > 2) {
-            params["fourk"] = "1"
-        }
-        if (!proxyServer.isTrust) {
-            params["notoken"] = "1"
-        }
-        val res = MiaoHttp.request {
-            if (proxyServer.enableAdvanced == true) {
-                // 启用高级设置，自定义请求参数和请求头
-//                headers["x-from-biliroaming"] = "1.6.12"
-//                params["area"] = "hk"
-                proxyServer.queryArgs?.forEach {
-                    if (it.enable && it.key.isNotBlank()) {
-                        params[it.key] = it.value
-                    }
+        return withContext(Dispatchers.IO) {
+            val originalPaidUrl = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.PAID_VIDEO_BASE_URL
+            try {
+                if (proxyServer.host.isNotBlank()) {
+                    org.schabi.newpipe.extractor.services.bilibili.BilibiliService.PAID_VIDEO_BASE_URL = 
+                        "https://${proxyServer.host}/pgc/player/web/v2/playurl"
                 }
-                proxyServer.headers?.forEach {
-                    if (it.enable
-                        && it.name.isNotBlank()
-                        && it.value.isNotBlank()) {
-                        headers[it.name] = it.value
-                    }
-                }
+                val service = ServiceList.BiliBili
+                val url = "https://www.bilibili.com/bangumi/play/ep$epid"
+                val linkHandler = service.streamLHFactory.fromUrl(url)
+                val extractor = service.getStreamExtractor(linkHandler)
+                extractor.fetchPage()
+                getPlayurlDataFromExtractor(extractor, qn)
+            } finally {
+                org.schabi.newpipe.extractor.services.bilibili.BilibiliService.PAID_VIDEO_BASE_URL = originalPaidUrl
             }
-            url = BiliApiService.createUrl(
-                "https://${proxyServer.host}/pgc/player/api/playurl",
-                *params.toList().toTypedArray()
+        }
+    }
+
+    private fun getPlayurlDataFromExtractor(
+        extractor: org.schabi.newpipe.extractor.stream.StreamExtractor,
+        quality: Int
+    ): PlayurlData {
+        val videoOnlyStreams = extractor.videoOnlyStreams
+        val audioStreams = extractor.audioStreams
+        val videoStreams = extractor.videoStreams
+
+        val hasDash = videoOnlyStreams != null && videoOnlyStreams.isNotEmpty()
+
+        val dash = if (hasDash) {
+            val dashVideoItems = videoOnlyStreams.map { vs ->
+                val qn = mapResolutionToQuality(vs.resolution)
+                val codecId = when {
+                    vs.codec?.contains("avc", ignoreCase = true) == true -> 7
+                    vs.codec?.contains("hev", ignoreCase = true) == true -> 12
+                    vs.codec?.contains("av01", ignoreCase = true) == true -> 13
+                    else -> 7
+                }
+                DashItem(
+                    id = qn,
+                    bandwidth = vs.bitrate.toInt(),
+                    base_url = vs.content,
+                    backup_url = emptyList(),
+                    mime_type = "video/mp4",
+                    codecid = codecId,
+                    codecs = vs.codec ?: "",
+                    width = vs.width,
+                    height = vs.height,
+                    frame_rate = vs.fps.toString(),
+                    segment_base = SegmentBase(
+                        initialization = "${vs.initStart}-${vs.initEnd}",
+                        index_range = "${vs.indexStart}-${vs.indexEnd}"
+                    )
+                )
+            }
+
+            val dashAudioItems = audioStreams?.map { asStream ->
+                val qn = when (asStream.quality) {
+                    "Hi-Res无损" -> 30251
+                    "杜比全景声" -> 30250
+                    "192K" -> 30280
+                    "132K" -> 30232
+                    "64K" -> 30216
+                    else -> 30280
+                }
+                DashItem(
+                    id = qn,
+                    bandwidth = asStream.bitrate.toInt(),
+                    base_url = asStream.content,
+                    backup_url = emptyList(),
+                    mime_type = "audio/mp4",
+                    codecid = 0,
+                    codecs = asStream.codec ?: "",
+                    width = 0,
+                    height = 0,
+                    frame_rate = "",
+                    segment_base = SegmentBase(
+                        initialization = "${asStream.initStart}-${asStream.initEnd}",
+                        index_range = "${asStream.indexStart}-${asStream.indexEnd}"
+                    )
+                )
+            }
+
+            Dash(
+                duration = extractor.length,
+                min_buffer_time = 1.5,
+                video = dashVideoItems,
+                audio = dashAudioItems
             )
-        }.awaitCall().json<PlayurlData>()
-        if (res.code == 0) {
-            return res
-        } else if (res.code == -10403) {
-            throw AreaLimitException()
-        } else {
-            throw Exception(res.message)
+        } else null
+
+        val durl = if (!hasDash && videoStreams != null && videoStreams.isNotEmpty()) {
+            videoStreams.mapIndexed { index, vs ->
+                Durl(
+                    ahead = "",
+                    length = extractor.length * 1000,
+                    order = index + 1,
+                    size = 0,
+                    url = vs.content,
+                    vhead = ""
+                )
+            }
+        } else null
+
+        val supportFormats = videoOnlyStreams?.map { vs ->
+            val qn = mapResolutionToQuality(vs.resolution)
+            SupportFormats(
+                quality = qn,
+                format = "mp4",
+                new_description = vs.resolution ?: "",
+                display_desc = vs.resolution ?: "",
+                superscript = ""
+            )
+        } ?: emptyList()
+
+        return PlayurlData(
+            accept_description = supportFormats.map { it.display_desc },
+            accept_quality = supportFormats.map { it.quality },
+            format = if (hasDash) "mp4/dash" else "mp4",
+            quality = quality,
+            timelength = extractor.length.toInt() * 1000,
+            durl = durl,
+            dash = dash,
+            code = 0,
+            message = "OK",
+            support_formats = supportFormats
+        )
+    }
+
+    private fun mapResolutionToQuality(resolution: String?): Int {
+        if (resolution == null) return 32
+        return when (resolution) {
+            "8K 超高清" -> 127
+            "杜比视界" -> 126
+            "HDR 真彩色" -> 125
+            "4K 超清" -> 120
+            "1080P60 高帧率" -> 116
+            "1080P+ 高码率" -> 112
+            "1080P 高清" -> 80
+            "720P60 高帧率" -> 74
+            "720P 高清" -> 64
+            "480P 清晰" -> 32
+            "360P 流畅" -> 16
+            "240P 极速" -> 6
+            else -> 32
         }
     }
 
@@ -288,5 +341,4 @@ class PlayerAPI {
         val initialization: String,
         val index_range: String,
     )
-
 }
