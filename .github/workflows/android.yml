@@ -58,7 +58,7 @@ jobs:
 
       - name: Build Debug APK
         if: github.event_name != 'pull_request'
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleFossDebug
 
       - name: Create Draft Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
