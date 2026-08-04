@@ -52,10 +52,12 @@ import org.schabi.newpipe.extractor.services.bilibili.search.filter.BilibiliFilt
 
 private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): FilterItem {
     val sortFilter = filters.sortFilters
-    if (sortFilter != null && sortFilter.filterGroups != null) {
-        for (group in sortFilter.filterGroups) {
-            if (group.filterItems != null) {
-                for (item in group.filterItems) {
+    val sortGroups = sortFilter?.filterGroups
+    if (sortGroups != null) {
+        for (group in sortGroups) {
+            val items = group.filterItems
+            if (items != null) {
+                for (item in items) {
                     if (item.name == name) {
                         return item
                     }
@@ -64,10 +66,12 @@ private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): Filte
         }
     }
     val contentFilter = filters.contentFilters
-    if (contentFilter != null && contentFilter.filterGroups != null) {
-        for (group in contentFilter.filterGroups) {
-            if (group.filterItems != null) {
-                for (item in group.filterItems) {
+    val contentGroups = contentFilter?.filterGroups
+    if (contentGroups != null) {
+        for (group in contentGroups) {
+            val items = group.filterItems
+            if (items != null) {
+                for (item in items) {
                     if (item.name == name) {
                         return item
                     }
