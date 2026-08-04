@@ -5,6 +5,8 @@ buildscript {
         set("compile_sdk_version", 36)
         set("build_tools_version", 36)
         set("target_sdk_version", 36)
+        set("nanojsonVersion", "1d9e1aea9049fc9f85e68b43ba39fe7be1c1f751")
+        set("spotbugsVersion", "4.10.2")
     }
 
     repositories {
