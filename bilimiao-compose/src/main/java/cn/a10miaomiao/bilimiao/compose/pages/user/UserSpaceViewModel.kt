@@ -108,21 +108,32 @@ class UserSpaceViewModel(
             val card = SpaceInfo.CardInfo(
                 approve = false,
                 article = 0,
-                attention = 0,
+                attention = extractor.attentionCount,
                 birthday = "",
                 description = extractor.description ?: "",
                 face = extractor.avatarUrl,
                 fans = extractor.subscriberCount.toInt(),
                 friend = 0,
-                level_info = SpaceInfo.LevelInfo(current_level = 0, current_min = 0, current_exp = 0, next_exp = "0"),
-                likes = SpaceInfo.LikesInfo(like_num = 0, skr_tip = "点赞数"),
+                level_info = SpaceInfo.LevelInfo(
+                    current_level = extractor.level, 
+                    current_min = 0, 
+                    current_exp = 0, 
+                    next_exp = "0"
+                ),
+                likes = SpaceInfo.LikesInfo(
+                    like_num = extractor.likeCount.toInt(), 
+                    skr_tip = "获赞数"
+                ),
                 mid = vmid,
                 name = extractor.name,
                 official_verify = SpaceInfo.OfficialVerifyInfo(desc = "", type = -1, role = 0, title = "", icon = ""),
                 place = "",
                 rank = "0",
                 regtime = 0,
-                relation = SpaceInfo.RelationInfo(status = 0, is_follow = if (extractor.subscriberCount > 0) 1 else 0),
+                relation = SpaceInfo.RelationInfo(
+                    status = 0, 
+                    is_follow = if (extractor.isFollowing) 1 else 0
+                ),
                 sex = "",
                 sign = extractor.description ?: "",
                 spacesta = 0,
@@ -161,7 +172,7 @@ class UserSpaceViewModel(
 
             withContext(Dispatchers.Main) {
                 _detailData.value = spaceInfo
-                _isFollow.value = false
+                _isFollow.value = extractor.isFollowing
             }
         } catch (e: Exception) {
             _fail.value = e

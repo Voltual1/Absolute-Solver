@@ -1,3 +1,4 @@
+// File: extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliChannelExtractor.java
 package org.schabi.newpipe.extractor.services.bilibili.extractors;
 
 import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.*;
@@ -164,6 +165,62 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         );
     }
 
+    // 新增公开属性：获取点赞数
+    public long getLikeCount() {
+        try {
+            if (userInfoData != null && userInfoData.getObject("data") != null) {
+                return userInfoData.getObject("data").getLong("like_num");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // 新增公开属性：获取关注数（UP主关注了多少人）
+    public int getAttentionCount() {
+        try {
+            if (userInfoData != null && userInfoData.getObject("data") != null) {
+                JsonObject card = userInfoData.getObject("data").getObject("card");
+                if (card != null) {
+                    return card.getInt("attention");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // 新增公开属性：获取等级数
+    public int getLevel() {
+        try {
+            if (userInfoData != null && userInfoData.getObject("data") != null) {
+                JsonObject card = userInfoData.getObject("data").getObject("card");
+                if (card != null) {
+                    JsonObject levelInfo = card.getObject("level_info");
+                    if (levelInfo != null) {
+                        return levelInfo.getInt("current_level");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // 新增公开属性：获取是否已关注
+    public boolean isFollowing() {
+        try {
+            if (userInfoData != null && userInfoData.getObject("data") != null) {
+                return userInfoData.getObject("data").getBoolean("following");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     /**
      * Abstract Implementation of extracting User Videos
@@ -285,7 +342,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
                 @Nonnull Downloader downloader,
                 @Nonnull ChannelExtractor extractor,
                 @Nonnull String id
-        ) throws IOException, ExtractionException {
+                ) throws IOException, ExtractionException {
 
             fetchViaAPI(downloader, id, Long.parseLong(page.getId()));
 
@@ -462,9 +519,6 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
 
             params.putAll(utils.getDmImgParams());
 
-            // no longer needed currently
-            // params.put("w_webid", webIdCache.get(id));
-
             return utils.getWbiResult(QUERY_USER_VIDEOS_WEB_API_URL, params);
         }
 
@@ -552,8 +606,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         while (currentTry > 0) {
             responseBody = downloader.get(url, headers).responseBody();
             if (responseBody.startsWith("<!DOCTYPE html>")) {
-                // returns HTML, due to risk control
-                DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
+                DeviceForger.regenerateRandomDevice();
                 currentTry -= 1;
                 continue;
             }
@@ -562,8 +615,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
                 long code = responseJson.getLong("code");
                 if (code != 0) {
                     if (code == -352) {
-                        // blocked risk control
-                        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
+                        DeviceForger.regenerateRandomDevice();
                     }
                     currentTry -= 1;
                 } else {
@@ -581,8 +633,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
                 + "\nTry to refresh, or report this!\n"
                 + responseBody;
         rotateVideoApiMode();
-        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
+        DeviceForger.regenerateRandomDevice();
         throw new ParsingException(msg);
     }
-
 }
