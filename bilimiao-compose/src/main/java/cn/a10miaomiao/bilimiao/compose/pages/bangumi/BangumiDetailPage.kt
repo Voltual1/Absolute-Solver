@@ -723,7 +723,7 @@ private fun BangumiDetailPageContent(
                             vertical = 4.dp,
                         ),
                         item = item,
-                        desc = if (item.id.toLongOrNull() == userProgress?.last_ep_id) {
+                        desc = if (userProgress != null && item.id.toLongOrNull() == userProgress.last_ep_id) {
                             val time = NumberUtil.converDuration(userProgress.last_time.toInt())
                             "上次看到 $time"
                         } else null,
@@ -742,58 +742,60 @@ private fun BangumiDetailPageContent(
             }
         }
 
-        detailInfo?.user_status?.watch_progress?.let { progress ->
-            if (playerState.sid == detailInfo.season_id) {
-                return@let
-            }
-            val lastEpIndex = progress.last_ep_index.ifBlank {
-                episodes.firstOrNull { episode ->
-                    progress.last_ep_id.toString() == episode.id
-                }?.index ?: return@let
-            }
-            FloatingActionButton(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(8.dp)
-                    .padding(
-                        bottom = windowStore.bottomAppBarHeightDp.dp
-                                + windowInsets.bottomDp.dp
-                    ),
-                onClick = {
-                    scope.launch {
-                        chainScrollableLayoutState.scrollToMax()
-                        val (section, index) = viewModel.findSectionEpisodeIndex(
-                            progress.last_ep_id.toString()
-                        )
-                        if (section != null && index != -1) {
-                            val offset = if (sectionList.size > 1) {
-                                2
-                            } else {
-                                1
+        val userProgress = detailInfo?.user_status?.watch_progress
+        if (userProgress != null) {
+            if (playerState.sid != detailInfo?.season_id) {
+                val lastEpIndex = userProgress.last_ep_index.ifBlank {
+                    episodes.firstOrNull { episode ->
+                        userProgress.last_ep_id.toString() == episode.id
+                    }?.index ?: ""
+                }
+                if (lastEpIndex.isNotBlank()) {
+                    FloatingActionButton(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                            .padding(
+                                bottom = windowStore.bottomAppBarHeightDp.dp
+                                        + windowInsets.bottomDp.dp
+                            ),
+                        onClick = {
+                            scope.launch {
+                                chainScrollableLayoutState.scrollToMax()
+                                val (section, index) = viewModel.findSectionEpisodeIndex(
+                                    userProgress.last_ep_id.toString()
+                                )
+                                if (section != null && index != -1) {
+                                    val offset = if (sectionList.size > 1) {
+                                        2
+                                    } else {
+                                        1
+                                    }
+                                    viewModel.changeSection(section)
+                                    episodesListState.scrollToItem(
+                                        index = index + offset,
+                                        scrollOffset = -windowInsets.top
+                                    )
+                                }
                             }
-                            viewModel.changeSection(section)
-                            episodesListState.scrollToItem(
-                                index = index + offset,
-                                scrollOffset = -windowInsets.top
+                        }
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Text(text = "上次看到")
+                            Text(
+                                text = "${if (NumberUtil.isNumber(lastEpIndex)) {
+                                    "第${lastEpIndex}话"
+                                } else {
+                                    lastEpIndex
+                                }} ${NumberUtil.converDuration(userProgress.last_time.toInt())}"
                             )
+
                         }
                     }
-                }
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Text(text = "上次看到")
-                    Text(
-                        text = "${if (NumberUtil.isNumber(lastEpIndex)) {
-                            "第${lastEpIndex}话"
-                        } else {
-                            lastEpIndex
-                        }} ${NumberUtil.converDuration(progress.last_time.toInt())}"
-                    )
-
                 }
             }
         }
