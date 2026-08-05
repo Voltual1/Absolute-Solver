@@ -61,12 +61,21 @@ class BilimiaoCommApp(
         return MiaoEncryptDecrypt(key)
     }
 
-    // 2. 桥接登录态同步
+    /**
+     * 3. 桥接登录态到 PipePipe Extractor 核心
+     */
     fun syncTokensToExtractor() {
         val cookie = CookieManager.getInstance().getCookie("https://bilibili.com")
         if (!cookie.isNullOrBlank()) {
             ServiceList.BiliBili.tokens = cookie
-            ServiceList.BiliBili.cookieFunctions = setOf("comments", "video", "bullet_comments")
+            // 声明支持特权 Cookie 功能函数
+            ServiceList.BiliBili.cookieFunctions = setOf(
+                "comments",
+                "video",
+                "bullet_comments",
+                "high_res",
+                "ai_subtitle"
+            )
         } else {
             ServiceList.BiliBili.tokens = null
             ServiceList.BiliBili.cookieFunctions = emptySet()
@@ -84,7 +93,7 @@ class BilimiaoCommApp(
         file.writeBytes(cipher)
         loginInfo.cookie_info?.let { setCookie(it) }
         
-        // 授权改变时同步
+        // 授权改变时同步到 Extractor 管道
         syncTokensToExtractor()
     }
 
@@ -99,7 +108,7 @@ class BilimiaoCommApp(
             val loginInfo = MiaoJson.fromJson<LoginInfo>(jsonStr)
             this.loginInfo = loginInfo
             
-            // 同步登录态
+            // 读取本地授权信息时同步到 Extractor 管道
             syncTokensToExtractor()
             return loginInfo
         } catch (e: Exception) {
@@ -112,15 +121,14 @@ class BilimiaoCommApp(
         val file = File(authFilePath)
         file.delete()
         val cookieManager = CookieManager.getInstance()
-        cookieManager.removeSessionCookies(null)//移除
+        cookieManager.removeSessionCookies(null)
         cookieManager.removeAllCookies(null)
         cookieManager.flush()
         this.loginInfo = null
         
-        // 同步注销状态
+        // 清理 Extractor 状态
         syncTokensToExtractor()
     }
-
 
     fun getBilibiliBuvid(): String {
         if (_bilibiliBuvid.isNotBlank()) {
@@ -135,6 +143,4 @@ class BilimiaoCommApp(
         _bilibiliBuvid = buvid
         return buvid
     }
-
-
 }

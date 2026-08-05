@@ -64,6 +64,8 @@ class UserStore(override val di: DI) :
         if (userInfo != null) {
             messageStore.getUnreadMessage()
         }
+        // 当用户信息设置/清空时，同步登录 Cookie 至提取器核心
+        BilimiaoCommApp.commApp.syncTokensToExtractor()
     }
 
     fun logout () {
@@ -109,11 +111,18 @@ class UserStore(override val di: DI) :
                     info = res.data
                 }
                 seveUserInfo(res.data)
+                // 成功拉取完最新信息后触发同步
+                withContext(Dispatchers.Main) {
+                    BilimiaoCommApp.commApp.syncTokensToExtractor()
+                }
             } else {
                 setState {
                     info = null
                 }
                 PopTip.show("登录失效，请重新登录")
+                withContext(Dispatchers.Main) {
+                    BilimiaoCommApp.commApp.syncTokensToExtractor()
+                }
             }
         } catch (e: Exception) { 
             PopTip.show("无法连接到御坂网络")
