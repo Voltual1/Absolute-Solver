@@ -114,9 +114,9 @@ class UserSpaceViewModel(
                 fans = extractor.subscriberCount.toInt(),
                 friend = 0,
                 level_info = SpaceInfo.LevelInfo(
+                    current_exp = 0,
                     current_level = extractor.level, 
                     current_min = 0, 
-                    current_exp = 0, 
                     next_exp = "0"
                 ),
                 likes = SpaceInfo.LikesInfo(
@@ -136,8 +136,7 @@ class UserSpaceViewModel(
                 sex = "",
                 sign = extractor.description ?: "",
                 spacesta = 0,
-                space_tag = emptyList(),
-                level = extractor.level // 这里的 level 字段也要赋值，用于 UserLevelIcon 显示
+                space_tag = emptyList()
             )
 
             val images = SpaceInfo.ImagesInfo(
