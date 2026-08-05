@@ -1,3 +1,4 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpaceViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 import android.content.ClipData
@@ -33,9 +34,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliChannelExtractor
 
 class UserSpaceViewModel(
     override val di: DI,
@@ -49,7 +53,7 @@ class UserSpaceViewModel(
     val userStore: UserStore by instance()
     val filterStore: FilterStore by instance()
 
-    private val _loading = MutableStateFlow(false);
+    private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> get() = _loading
 
     private val _fail = MutableStateFlow<Any?>(null)
@@ -93,18 +97,54 @@ class UserSpaceViewModel(
         try {
             _loading.value = true
             _fail.value = null
-            val res = BiliApiService
-                .userApi
-                .space(vmid)
-                .awaitCall()
-                .json<ResponseData<SpaceInfo>>()
-            if (res.code == 0) {
-                val result = res.requireData()
-                _detailData.value = result
-                _isFollow.value = result.card.relation.is_follow == 1
-            } else {
-                _fail.value = res.message
-                PopTip.show(res.message)
+
+            // 1. 初始化 Extractor 载入个人空间数据
+            val url = "https://space.bilibili.com/$vmid"
+            val linkHandler = ServiceList.BiliBili.channelLHFactory.fromUrl(url)
+            val extractor = BilibiliChannelExtractor(ServiceList.BiliBili, linkHandler)
+            extractor.fetchPage()
+
+            // 2. 将 Extractor 数据组装为 UI 所需的 SpaceInfo
+            val card = SpaceInfo.Card(
+                mid = vmid,
+                name = extractor.name,
+                approve = false,
+                sex = "",
+                face = extractor.avatarUrl,
+                face_nft = 0,
+                face_nft_type = 0,
+                sign = extractor.description ?: "",
+                rank = 0,
+                level_info = SpaceInfo.LevelInfo(current_level = 0, current_min = 0, current_exp = 0, next_exp = 0),
+                pendant = SpaceInfo.Pendant(pid = 0, name = "", image = "", expire = 0, image_enhance = "", image_enhance_frame = ""),
+                nameplate = SpaceInfo.Nameplate(nid = 0, name = "", image = "", image_small = "", level = "", condition = ""),
+                official = SpaceInfo.Official(role = 0, title = "", desc = "", type = -1),
+                official_verify = SpaceInfo.OfficialVerify(type = -1, desc = ""),
+                vip = SpaceInfo.Vip(type = 0, status = 0, due_date = 0, vip_pay_type = 0, theme_type = 0, label = SpaceInfo.VipLabel(path = "", text = "", label_theme = "", text_color = "", bg_style = 0, bg_color = "", border_color = "", use_img_label = false, img_label_uri_hans = "", img_label_uri_hant = "", img_label_uri_hans_static = "", img_label_uri_hant_static = ""), avatar_subscript = 0, nickname_color = "", role = 0, avatar_subscript_url = "", tv_vip_status = 0, tv_vip_pay_type = 0, tv_due_date = 0, vipType = 0, vipStatus = 0),
+                fans = extractor.subscriberCount.toInt(),
+                friend = 0,
+                attention = 0,
+                sign_use = false,
+                level = 0,
+                is_senior_member = 0,
+                likes = SpaceInfo.Likes(like_num = 0, skr_tip = "点赞数"),
+                relation = SpaceInfo.Relation(status = 0, is_follow = if (extractor.subscriberCount > 0) 1 else 0)
+            )
+
+            val spaceInfo = SpaceInfo(
+                card = card,
+                archive = SpaceInfo.Archive(item = emptyList(), count = 0),
+                season = SpaceInfo.Season(item = emptyList(), count = 0),
+                favourite = SpaceInfo.Favourite(item = emptyList(), count = 0),
+                favourite2 = SpaceInfo.Favourite2(item = emptyList(), count = 0),
+                nav = SpaceInfo.Nav(record = 0),
+                bg_img = extractor.bannerUrl ?: ""
+            )
+
+            withContext(Dispatchers.Main) {
+                _detailData.value = spaceInfo
+                // 由于目前 Extractor 无法直接获取具体是否已关注，我们暂时回退至 WebView 获取到的 Cookie 判断
+                _isFollow.value = false
             }
         } catch (e: Exception) {
             _fail.value = e
