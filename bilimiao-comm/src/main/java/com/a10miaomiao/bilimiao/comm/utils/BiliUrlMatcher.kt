@@ -35,11 +35,7 @@ object BiliUrlMatcher {
         if (a != "") {
             return arrayOf("AV", a)
         }
-        a = matchingID(text,".*://m.bilibili.com/bangumi/play/ep(\\d+).*")
-        if (a != "") {
-            return arrayOf("EP", a)
-        }
-        a = matchingID(text,".*://www.bilibili.com/bangumi/play/ep(\\d+).*")
+        a = matchingID(text, ".*://(?:[a-zA-Z0-9]+\\.)?bilibili.com/bangumi/play/ep(\\d+).*")
         if (a != "") {
             return arrayOf("EP", a)
         }
@@ -63,7 +59,7 @@ object BiliUrlMatcher {
         if (a != "") {
             return arrayOf("CV", a)
         }
-        a = matchingID(text, ".*://m.bilibili.com/bangumi/play/ss(\\d+)")
+        a = matchingID(text, ".*://(?:[a-zA-Z0-9]+\\.)?bilibili.com/bangumi/play/ss(\\d+).*")
         if (a != "") {
             return arrayOf("SS", a)
         }
@@ -92,11 +88,10 @@ object BiliUrlMatcher {
      * 用正则获取视频id
      */
     fun matchingID(text: String, regex: String): String {
-//        regex.toRegex().find(text).
         val compile = Pattern.compile(regex)
         val matcher = compile.matcher(text)
         if (matcher.find())
-            return matcher.group(1)//提取匹配到的结果
+            return matcher.group(1)
         return ""
     }
 
@@ -119,27 +114,17 @@ object BiliUrlMatcher {
             }
         )
 
-//        if (isChromeSupported(context)) {
-            val typedValue = TypedValue()
-            val attrId = com.google.android.material.R.attr.colorSurfaceVariant
-            context.theme.resolveAttribute(attrId, typedValue, true)
-            val intent = CustomTabsIntent.Builder()
-                .setDefaultColorSchemeParams(
-                    CustomTabColorSchemeParams.Builder()
-                        .setToolbarColor(ContextCompat.getColor(context, typedValue.resourceId))
-                        .build()
-                )
-                .build()
-            intent.launchUrl(context, uri)
-//        } else {
-//            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-//        }
+        val typedValue = TypedValue()
+        val attrId = com.google.android.material.R.attr.colorSurfaceVariant
+        context.theme.resolveAttribute(attrId, typedValue, true)
+        val intent = CustomTabsIntent.Builder()
+            .setDefaultColorSchemeParams(
+                CustomTabColorSchemeParams.Builder()
+                    .setToolbarColor(ContextCompat.getColor(context, typedValue.resourceId))
+                    .build()
+            )
+            .build()
+        intent.launchUrl(context, uri)
     }
-
-//    private fun isChromeSupported(context: Context): Boolean {
-//        val packageName = CustomTabsClient.getPackageName(context, Collections.emptyList())
-//        return packageName == null
-//    }
-
 
 }

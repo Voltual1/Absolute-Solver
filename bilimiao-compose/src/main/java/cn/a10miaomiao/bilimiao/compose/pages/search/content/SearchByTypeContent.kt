@@ -27,10 +27,12 @@ import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
+import cn.a10miaomiao.bilimiao.compose.common.navigation.BilibiliNavigation
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
+import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.SearchItemCard
 import cn.a10miaomiao.bilimiao.compose.pages.video.VideoDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
@@ -89,7 +91,7 @@ private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): Filte
 
 private class SearchByTypeContentViewModel(
     override val di: DI,
-    val type: Int, // 用户：2，直播：4，图文：6，番剧：7，影视：8，
+    val type: Int,
     val keyword: String,
 ) : ViewModel(), DIAware {
 
@@ -100,7 +102,6 @@ private class SearchByTypeContentViewModel(
     val list = FlowPaginationInfo<InfoItem>()
     val isRefreshing = MutableStateFlow(false)
 
-    // Fallback constants for UI lists
     val userSortList = listOf(
         0 to "默认排序",
     )
@@ -195,11 +196,13 @@ private class SearchByTypeContentViewModel(
     }
 
     fun menuItemClick(view: View, item: MenuItemPropInfo) {
-        // No-op for custom filter list items since Extractor uses pre-configured BilibiliFilters
     }
 
     fun toDetailPage(item: InfoItem) {
         val url = item.url ?: return
+        if (BilibiliNavigation.navigationTo(pageNavigation, url)) {
+            return
+        }
         val parsed = BiliUrlMatcher.findIDByUrl(url)
         val type = parsed[0]
         val id = parsed[1]
@@ -212,7 +215,10 @@ private class SearchByTypeContentViewModel(
                     pageNavigation.navigate(UserSpacePage(id = id))
                 }
                 "SS" -> {
-                    pageNavigation.navigate(UserSeasonDetailPage(id = id, title = item.name ?: ""))
+                    pageNavigation.navigate(BangumiDetailPage(id = id))
+                }
+                "EP" -> {
+                    pageNavigation.navigate(BangumiDetailPage(epId = id))
                 }
                 else -> {
                     pageNavigation.navigateByUri(Uri.parse(url))

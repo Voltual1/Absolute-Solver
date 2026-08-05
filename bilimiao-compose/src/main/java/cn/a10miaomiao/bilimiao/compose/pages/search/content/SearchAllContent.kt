@@ -27,10 +27,12 @@ import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
+import cn.a10miaomiao.bilimiao.compose.common.navigation.BilibiliNavigation
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
+import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.MoreConditionsDialog
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.MoreConditionsDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.search.components.SearchItemCard
@@ -132,10 +134,8 @@ private class SearchAllContentViewModel(
                 val contentFilterList = mutableListOf<FilterItem>()
                 val sortFilterList = mutableListOf<FilterItem>()
 
-                // 综合搜索必须指定 search_type，这里默认设为视频搜索 "videos"
                 contentFilterList.add(getBilibiliFilterItem(filters, "videos"))
 
-                // Sort Order mapping
                 val order = rankOrder.value.first
                 val sortName = when (order) {
                     0 -> "sort_overall"
@@ -146,7 +146,6 @@ private class SearchAllContentViewModel(
                 }
                 sortFilterList.add(getBilibiliFilterItem(filters, sortName))
 
-                // Duration mapping
                 val moreConditions = moreConditionsDialogState.data
                 val durationVal = moreConditions.durationList.firstOrNull() ?: 0
                 val durationName = when (durationVal) {
@@ -245,6 +244,9 @@ private class SearchAllContentViewModel(
 
     fun toDetailPage(item: InfoItem) {
         val url = item.url ?: return
+        if (BilibiliNavigation.navigationTo(pageNavigation, url)) {
+            return
+        }
         val parsed = BiliUrlMatcher.findIDByUrl(url)
         val type = parsed[0]
         val id = parsed[1]
@@ -257,7 +259,10 @@ private class SearchAllContentViewModel(
                     pageNavigation.navigate(UserSpacePage(id = id))
                 }
                 "SS" -> {
-                    pageNavigation.navigate(UserSeasonDetailPage(id = id, title = item.name ?: ""))
+                    pageNavigation.navigate(BangumiDetailPage(id = id))
+                }
+                "EP" -> {
+                    pageNavigation.navigate(BangumiDetailPage(epId = id))
                 }
                 else -> {
                     pageNavigation.navigateByUri(Uri.parse(url))
