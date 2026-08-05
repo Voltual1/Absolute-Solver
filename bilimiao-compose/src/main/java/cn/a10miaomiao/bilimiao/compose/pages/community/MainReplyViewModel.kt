@@ -346,7 +346,7 @@ class MainReplyViewModel(
             type = type.toLong(),
             mid = memberMid,
             like = this.likeCount.toLong(),
-            ctime = this.uploadDate?.date?.toEpochSecond(java.time.ZoneOffset.UTC) ?: 0L,
+            ctime = this.uploadDate?.date()?.toEpochSecond() ?: 0L,
             count = this.replyCount.toLong(),
             content = content,
             member = member,
