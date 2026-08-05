@@ -841,4 +841,8 @@ public class BillibiliStreamExtractor extends StreamExtractor {
     public JsonObject getPremiumData() {
         return premiumData;
     }
+
+    public String getPremiumDataJson() {
+        return premiumData == null ? null : premiumData.toString();
+    }
 }

@@ -155,9 +155,8 @@ private class BangumiDetailPageViewModel(
             )
             extractor.fetchPage()
 
-            val premiumData = extractor.premiumData
-            if (premiumData != null) {
-                val premiumDataJson = premiumData.toString()
+            val premiumDataJson = extractor.premiumDataJson
+            if (!premiumDataJson.isNullOrBlank()) {
                 val result = MiaoJson.fromJson<BangumiInfo>(premiumDataJson)
                 detailInfo.value = result
                 seasons.value = result.seasons
@@ -743,13 +742,13 @@ private fun BangumiDetailPageContent(
             }
         }
 
-        detailInfo?.user_status?.watch_progress?.let {
+        detailInfo?.user_status?.watch_progress?.let { progress ->
             if (playerState.sid == detailInfo.season_id) {
                 return@let
             }
-            val lastEpIndex = it.last_ep_index.ifBlank {
+            val lastEpIndex = progress.last_ep_index.ifBlank {
                 episodes.firstOrNull { episode ->
-                    it.last_ep_id.toString() == episode.id
+                    progress.last_ep_id.toString() == episode.id
                 }?.index ?: return@let
             }
             FloatingActionButton(
@@ -765,7 +764,7 @@ private fun BangumiDetailPageContent(
                     scope.launch {
                         chainScrollableLayoutState.scrollToMax()
                         val (section, index) = viewModel.findSectionEpisodeIndex(
-                            it.last_ep_id.toString()
+                            progress.last_ep_id.toString()
                         )
                         if (section != null && index != -1) {
                             val offset = if (sectionList.size > 1) {
@@ -792,7 +791,7 @@ private fun BangumiDetailPageContent(
                             "第${lastEpIndex}话"
                         } else {
                             lastEpIndex
-                        }} ${NumberUtil.converDuration(it.last_time.toInt())}"
+                        }} ${NumberUtil.converDuration(progress.last_time.toInt())}"
                     )
 
                 }
