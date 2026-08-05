@@ -1,3 +1,4 @@
+// File: extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliRecommendedVideosInfoItemExtractor.java
 package org.schabi.newpipe.extractor.services.bilibili.extractors;
 
 import java.text.SimpleDateFormat;
@@ -13,6 +14,7 @@ import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.StreamInfoItemExtractor;
 import org.schabi.newpipe.extractor.stream.StreamType;
+import org.schabi.newpipe.extractor.services.bilibili.linkHandler.BilibiliChannelLinkHandlerFactory;
 
 public class BilibiliRecommendedVideosInfoItemExtractor implements StreamInfoItemExtractor {
 
@@ -49,17 +51,34 @@ public class BilibiliRecommendedVideosInfoItemExtractor implements StreamInfoIte
 
     @Override
     public long getViewCount() throws ParsingException {
-        return item.getObject("stat").getInt("view");
+        if (item.has("stat")) {
+            return item.getObject("stat").getInt("view");
+        }
+        return 0;
+    }
+
+    @Override
+    public String getUploaderUrl() throws ParsingException {
+        if (item.has("owner")) {
+            return BilibiliChannelLinkHandlerFactory.baseUrl + item.getObject("owner").getLong("mid");
+        }
+        return "";
     }
 
     @Override
     public String getUploaderName() throws ParsingException {
-        return item.getObject("owner").getString("name");
+        if (item.has("owner")) {
+            return item.getObject("owner").getString("name");
+        }
+        return "";
     }
 
     @Override
     public String getUploaderAvatarUrl() throws ParsingException {
-        return item.getObject("owner").getString("face");
+        if (item.has("owner")) {
+            return item.getObject("owner").getString("face");
+        }
+        return "";
     }
 
     @SuppressWarnings("SimpleDateFormat")

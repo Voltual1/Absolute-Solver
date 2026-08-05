@@ -1,40 +1,24 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/home/content/HomeRecommendContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.home.content
 
 import android.content.Context
-import android.net.Uri
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.app.card.v1.Card
-import bilibili.app.card.v1.SmallCoverV5
-import bilibili.app.show.v1.EntranceShow
-import bilibili.app.show.v1.PopularGRPC
-import bilibili.app.show.v1.PopularResultReq
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
@@ -49,21 +33,12 @@ import cn.a10miaomiao.bilimiao.compose.components.video.MiniVideoItemBox
 import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
-import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.home.HomeRecommendInfo
+import com.a10miaomiao.bilimiao.comm.entity.home.RecommendCardArgsInfo
 import com.a10miaomiao.bilimiao.comm.entity.home.RecommendCardInfo
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
-import com.a10miaomiao.bilimiao.comm.utils.UrlUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -72,7 +47,10 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
-
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
+import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliFeedExtractor
+import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 @Stable
 private class HomeRecommendContentViewModel(
@@ -84,12 +62,11 @@ private class HomeRecommendContentViewModel(
     private val filterStore: FilterStore by instance()
 
     private val lastIdx
-        get() = list.data.value.lastOrNull()?.idx ?: 0
+        get() = list.data.value.lastOrNull()?.idx ?: 0L
+        
     val list = FlowPaginationInfo<RecommendCardInfo>()
     val isRefreshing = MutableStateFlow(false)
     val listStyle = MutableStateFlow(0)
-
-
 
     init {
         viewModelScope.launch {
@@ -109,42 +86,95 @@ private class HomeRecommendContentViewModel(
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
             list.loading.value = true
-            val res = BiliApiService.homeApi.recommendList(
-                idx = idx,
-            ).awaitCall().json<ResponseData<HomeRecommendInfo>>()
-            if (res.isSuccess) {
-                val itemsList = res.requireData().items
-                val filterList = itemsList.filter {
-                    (it.goto?.isNotEmpty() ?: false)
-                            && filterStore.filterWord(it.title)
-                            && it.args != null
-                            && it.args!!.up_id != null
-                            && filterStore.filterUpper(it.args!!.up_id!!)
-                }
-                val newList = if (idx == 0L) mutableListOf()
-                else list.data.value.toMutableList()
-                if (filterStore.filterTagListIsEmpty()) {
-                    newList.addAll(filterList)
-                    list.data.value = newList
+
+            // 构建 Extractor 并拉取数据
+            val linkHandler = ListLinkHandler(
+                "https://bilibili.com",
+                "https://bilibili.com",
+                "Recommended Videos",
+                emptyList(),
+                ""
+            )
+            val extractor = BilibiliFeedExtractor(ServiceList.BiliBili, linkHandler, "Recommended Videos")
+            extractor.fetchPage()
+
+            val initialPage = extractor.initialPage
+            val infoItems = initialPage.items ?: emptyList()
+
+            // 映射为 RecommendCardInfo
+            val newCardInfos = infoItems.mapNotNull { item ->
+                if (item !is StreamInfoItem) return@mapNotNull null
+                
+                // param 处理（处理形如 bilibili://video/BV... 或者 https://...）
+                val param = if (item.url.contains("bvid=")) {
+                    item.url.substringAfter("bvid=").substringBefore("&")
+                } else if (item.url.contains("bilibili://video/")) {
+                    item.url.substringAfter("bilibili://video/").substringBefore("?")
                 } else {
-                    filterList.forEach {
-                        if (filterStore.filterTag(it.param)) {
-                            newList.add(it)
-                            list.data.value = newList.toList()
-                        }
+                    item.url.substringAfter("/video/").substringBefore("?")
+                }
+                
+                // upId 处理
+                val upId = item.uploaderUrl?.substringAfterLast("/") ?: ""
+
+                RecommendCardInfo(
+                    card_type = "small_cover_v2",
+                    card_goto = "av",
+                    goto = "av",
+                    param = param,
+                    cover = item.thumbnailUrl,
+                    title = item.name ?: "",
+                    uri = item.url,
+                    idx = idx + 1, // 增加 idx 以确保唯一和触底加载机制
+                    args = RecommendCardArgsInfo(
+                        up_id = upId,
+                        up_name = item.uploaderName
+                    ),
+                    cover_left_text_1 = com.a10miaomiao.bilimiao.comm.utils.NumberUtil.converString(item.viewCount.toInt()),
+                    cover_left_text_2 = "", // B站Web接口无弹幕数据返回
+                    cover_right_text = com.a10miaomiao.bilimiao.comm.utils.NumberUtil.converDuration(item.duration),
+                    three_point_v2 = emptyList()
+                )
+            }
+
+            val filterList = newCardInfos.filter {
+                (it.goto?.isNotEmpty() ?: false)
+                        && filterStore.filterWord(it.title)
+                        && it.args != null
+                        && it.args.up_id != null
+                        && filterStore.filterUpper(it.args.up_id!!)
+            }
+
+            val newList = if (idx == 0L) mutableListOf() else list.data.value.toMutableList()
+            if (filterStore.filterTagListIsEmpty()) {
+                newList.addAll(filterList)
+                withContext(Dispatchers.Main) {
+                    list.data.value = newList
+                }
+            } else {
+                filterList.forEach {
+                    if (filterStore.filterTag(it.param)) {
+                        newList.add(it)
                     }
                 }
-                list.finished.value = itemsList.isEmpty()
-            } else {
-                PopTip.show(res.message)
-                throw Exception(res.message)
+                withContext(Dispatchers.Main) {
+                    list.data.value = newList.toList()
+                }
+            }
+            
+            withContext(Dispatchers.Main) {
+                list.finished.value = infoItems.isEmpty()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            list.fail.value = e.message ?: e.toString()
+            withContext(Dispatchers.Main) {
+                list.fail.value = e.message ?: e.toString()
+            }
         } finally {
-            list.loading.value = false
-            isRefreshing.value = false
+            withContext(Dispatchers.Main) {
+                list.loading.value = false
+                isRefreshing.value = false
+            }
         }
     }
 
@@ -176,8 +206,6 @@ private class HomeRecommendContentViewModel(
             BilibiliNavigation.navigationToWeb(pageNavigation, item.uri)
         }
     }
-
-
 }
 
 @Composable
@@ -221,7 +249,7 @@ internal fun HomeRecommendContent() {
                 top = 0.dp,
             )
         ) {
-            items(list, { it.idx }) {
+            items(list, { it.param + it.idx }) {
                 if (listStyle == 0) {
                     VideoItemBox(
                         modifier = Modifier.padding(
@@ -229,7 +257,7 @@ internal fun HomeRecommendContent() {
                             vertical = 5.dp
                         ),
                         title = it.title,
-                        pic = it.cover,
+                        pic = it.cover ?: "",
                         upperName = it.args?.up_name,
                         playNum = it.cover_left_text_1,
                         damukuNum = it.cover_left_text_2,
@@ -242,7 +270,7 @@ internal fun HomeRecommendContent() {
                     MiniVideoItemBox(
                         modifier = Modifier.padding(5.dp),
                         title = it.title,
-                        pic = it.cover,
+                        pic = it.cover ?: "",
                         upperName = it.args?.up_name,
                         playNum = it.cover_left_text_1,
                         damukuNum = it.cover_left_text_2,
