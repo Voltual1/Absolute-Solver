@@ -1,3 +1,4 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/community/MainReplyViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.community
 
 import android.content.Context
@@ -7,11 +8,11 @@ import androidx.compose.material3.TextButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.main.community.reply.v1.CursorReply
-import bilibili.main.community.reply.v1.CursorReq
-import bilibili.main.community.reply.v1.MainListReq
-import bilibili.main.community.reply.v1.ReplyGRPC
 import bilibili.main.community.reply.v1.ReplyInfo
+import bilibili.main.community.reply.v1.Member
+import bilibili.main.community.reply.v1.Content
+import bilibili.main.community.reply.v1.ReplyControl
+import bilibili.main.community.reply.v1.Picture
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
@@ -24,7 +25,6 @@ import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.kongzue.dialogx.dialogs.PopTip
@@ -38,6 +38,9 @@ import kotlinx.coroutines.withContext
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.comments.CommentsExtractor
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem
 
 class MainReplyViewModel(
     override val di: DI,
@@ -68,7 +71,9 @@ class MainReplyViewModel(
     val list = FlowPaginationInfo<ReplyInfo>()
     private val _upMid = MutableStateFlow(-1L)
     val upMid: StateFlow<Long> get() = _upMid
-    private var _cursor: CursorReply? = null
+    
+    private var _nextPage: org.schabi.newpipe.extractor.Page? = null
+    private var _extractor: CommentsExtractor? = null
 
     private val _currentReply = MutableStateFlow<ReplyInfo?>(null)
     val currentReply: StateFlow<ReplyInfo?> get() = _currentReply
@@ -78,7 +83,6 @@ class MainReplyViewModel(
     }
 
     private fun addNewReply(reply: VideoCommentReplyInfo) {
-        // TODO: 自定义通用Reply实体类
         _sortOrder.value = 2
         refreshList()
     }
@@ -97,42 +101,41 @@ class MainReplyViewModel(
     private fun loadData() = viewModelScope.launch(Dispatchers.IO) {
         try {
             list.loading.value = true
-            val req = MainListReq(
-                oid = oid.toLong(),
-                type = type.toLong(),
-                rpid = 0,
-                extra = extra,
-                filterTagName = filterTagName,
-                cursor = CursorReq(
-                    mode = bilibili.main.community.reply.v1.Mode.fromValue(sortOrder.value),
-                    next = _cursor?.next ?: 0,
-                )
-            )
-            val res = BiliGRPCHttp.request {
-                ReplyGRPC.mainList(req)
-            }.awaitCall()
+            val isLoadMore = _nextPage != null || list.data.value.isNotEmpty()
+
+            val commentsPage = if (!isLoadMore) {
+                // 构建符合 Extractor 查询格式的 WEB 端评论 URL
+                val url = "https://api.bilibili.com/x/v2/reply/wbi/main?oid=$oid&type=$type&mode=${sortOrder.value}"
+                val linkHandler = ServiceList.BiliBili.commentsLHFactory.fromUrl(url)
+                val currentExtractor = ServiceList.BiliBili.getCommentsExtractor(linkHandler)
+                currentExtractor.fetchPage()
+                _extractor = currentExtractor
+
+                val initialPage = currentExtractor.initialPage
+                _nextPage = initialPage.nextPage
+                initialPage
+            } else {
+                val nextPageObj = _nextPage
+                if (nextPageObj != null && _extractor != null) {
+                    val nextResults = _extractor!!.getPage(nextPageObj)
+                    _nextPage = nextResults.nextPage
+                    nextResults
+                } else {
+                    null
+                }
+            }
+
+            val items = commentsPage?.items?.map { it.toReplyInfo() } ?: emptyList()
             val listData = list.data.value.toMutableList()
-            if (_cursor == null) {
-                res.upTop?.let {
-                    listData.add(it)
-                }
-                res.adminTop?.let {
-                    listData.add(it)
-                }
-                res.voteTop?.let {
-                    listData.add(it)
-                }
-            }
-            res.subjectControl?.let {
-                _upMid.value = it.upMid
-            }
-            val replies = res.replies.filter { i1 ->
+
+            // 过滤重复的评论并追加至列表
+            val replies = items.filter { i1 ->
                 listData.indexOfFirst { i2 -> i1.id == i2.id } == -1
             }
             listData.addAll(replies)
             list.data.value = listData
-            _cursor = res.cursor
-            if (res.cursor?.isEnd == true) {
+
+            if (_nextPage == null) {
                 list.finished.value = true
             }
         } catch (e: Exception) {
@@ -154,7 +157,8 @@ class MainReplyViewModel(
         refreshing: Boolean = true,
     ) {
         list.reset()
-        _cursor = null
+        _nextPage = null
+        _extractor = null
         _isRefreshing.value = refreshing
         loadData()
     }
@@ -196,7 +200,7 @@ class MainReplyViewModel(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            PopTip.show("喵喵被搞坏了:" + e.message ?: e.toString())
+            PopTip.show("喵喵被搞坏了:" + (e.message ?: e.toString()))
         }
     }
 
@@ -301,5 +305,52 @@ class MainReplyViewModel(
                 openReplyDialog()
             }
         }
+    }
+
+    // 辅助转换方法：CommentsInfoItem -> ReplyInfo
+    private fun CommentsInfoItem.toReplyInfo(): ReplyInfo {
+        val rpid = this.commentId.toLongOrNull() ?: 0L
+        val memberMid = this.uploaderUrl?.let { url ->
+            val clean = url.replace("https://", "").replace("http://", "")
+            clean.split("/").lastOrNull()?.toLongOrNull()
+        } ?: 0L
+
+        val member = Member(
+            mid = memberMid,
+            name = this.uploaderName ?: "",
+            face = this.uploaderAvatarUrl ?: ""
+        )
+
+        val picturesList = this.pictures.map { pic ->
+            Picture(
+                imgSrc = pic.url,
+                imgWidth = pic.width.toDouble(),
+                imgHeight = pic.height.toDouble()
+            )
+        }
+
+        val content = Content(
+            message = this.commentText ?: "",
+            pictures = picturesList
+        )
+
+        val replyControl = ReplyControl(
+            upLike = this.isHeartedByUploader,
+            isUpTop = this.isPinned,
+            timeDesc = this.textualUploadDate ?: ""
+        )
+
+        return ReplyInfo(
+            id = rpid,
+            oid = oid.toLongOrNull() ?: 0L,
+            type = type.toLong(),
+            mid = memberMid,
+            like = this.likeCount.toLong(),
+            ctime = this.uploadDate?.date?.toEpochSecond(java.time.ZoneOffset.UTC) ?: 0L,
+            count = this.replyCount.toLong(),
+            content = content,
+            member = member,
+            replyControl = replyControl
+        )
     }
 }
