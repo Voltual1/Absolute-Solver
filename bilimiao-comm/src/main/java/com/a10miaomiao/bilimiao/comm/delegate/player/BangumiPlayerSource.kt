@@ -259,11 +259,14 @@ class BangumiPlayerSource(
         }
         val cidLong = id.toLongOrNull() ?: return null
         
+        // 1. 使用视频真实网页播放地址进行初始化，避开 URL not accepted
+        val videoUrl = "https://www.bilibili.com/video/av$aid"
+        val linkHandler = ServiceList.BiliBili.bulletCommentsLHFactory.fromUrl(videoUrl)
+        val handlerId = linkHandler.id ?: ""
+
         val cache = WatchDataCache()
-        cache.setCid(id, cidLong)
+        cache.setCid(handlerId, cidLong)
         
-        val url = "https://api.bilibili.com/x/v1/dm/list.so?oid=$id"
-        val linkHandler = ServiceList.BiliBili.bulletCommentsLHFactory.fromUrl(url)
         val bulletExtractor = BilibiliBulletCommentsExtractor(ServiceList.BiliBili, linkHandler, cache)
         bulletExtractor.fetchPage()
 
