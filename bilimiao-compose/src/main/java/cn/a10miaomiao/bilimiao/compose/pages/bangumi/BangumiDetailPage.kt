@@ -173,7 +173,7 @@ private class BangumiDetailPageViewModel(
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                PopTip.show("无法连接到御坂网络")
+                PopTip.show("无法连接到御坂网络1")
             }
         } finally {
             loading.value = false
@@ -215,7 +215,7 @@ private class BangumiDetailPageViewModel(
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                PopTip.show("无法连接到御坂网络")
+                PopTip.show("无法连接到御坂网络2")
             }
         } finally {
             sectionLoading.value = false
