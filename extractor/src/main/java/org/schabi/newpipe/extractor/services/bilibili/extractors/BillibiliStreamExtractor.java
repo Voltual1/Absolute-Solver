@@ -17,6 +17,7 @@ import org.schabi.newpipe.extractor.services.bilibili.WatchDataCache;
 import org.schabi.newpipe.extractor.services.bilibili.linkHandler.BilibiliChannelLinkHandlerFactory;
 import org.schabi.newpipe.extractor.services.bilibili.utils;
 import org.schabi.newpipe.extractor.stream.*;
+import org.schabi.newpipe.extractor.utils.Utils;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
