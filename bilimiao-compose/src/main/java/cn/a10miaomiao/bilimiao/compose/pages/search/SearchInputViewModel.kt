@@ -1,3 +1,4 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/SearchInputViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search
 
 import android.content.Context
@@ -5,15 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.a10miaomiao.bilimiao.comm.db.SearchHistoryDB
 import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import org.json.JSONTokener
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
+import org.schabi.newpipe.extractor.ServiceList
 
 class SearchInputViewModel(
     override val di: DI,
@@ -73,16 +72,13 @@ class SearchInputViewModel(
             }
             suggestListFlow.value = getInitSuggestData(keyword)
             try {
-                val res = BiliApiService.searchApi.suggestList(keyword).awaitCall()
-                val jsonStr = res.body!!.string()
-                val jsonParser = JSONTokener(jsonStr)
-                val jsonArray =
-                    (jsonParser.nextValue() as JSONObject).getJSONObject("result")
-                        .getJSONArray("tag")
+                // 使用本地 Extractor 获取搜索建议
+                val extractor = ServiceList.BiliBili.suggestionExtractor
+                val suggestions = extractor.suggestionList(keyword)
+                
                 if (keyword == currentText) {
                     suggestListFlow.value = getInitSuggestData(keyword).apply {
-                        for (i in 0 until jsonArray.length()) {
-                            val value = jsonArray.getJSONObject(i).getString("value")
+                        for (value in suggestions) {
                             add(
                                 SuggestInfo(
                                     text = value,
@@ -132,4 +128,3 @@ class SearchInputViewModel(
         val value: String,
     )
 }
-
