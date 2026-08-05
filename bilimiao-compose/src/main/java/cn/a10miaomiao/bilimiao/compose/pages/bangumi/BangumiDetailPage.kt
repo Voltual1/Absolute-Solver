@@ -579,7 +579,7 @@ private fun BangumiDetailPageContent(
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
-                    if (detailInfo != null) {
+/*                    if (detailInfo != null) {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -619,8 +619,8 @@ private fun BangumiDetailPageContent(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                        }
-                    } else if (loading) {
+                        }*/
+//                    } else if (loading) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize(),
@@ -632,7 +632,7 @@ private fun BangumiDetailPageContent(
                             )
                         }
 
-                    }
+//                    }
                 }
             }
         ) { _, innerPadding ->
