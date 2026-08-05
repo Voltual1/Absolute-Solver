@@ -1,3 +1,4 @@
+// File: bilimiao-comm/src/main/java/com/a10miaomiao/bilimiao/comm/delegate/player/VideoPlayerSource.kt
 package com.a10miaomiao.bilimiao.comm.delegate.player
 
 import bilibili.app.playurl.v1.PlayURLGRPC
@@ -13,13 +14,12 @@ import com.a10miaomiao.bilimiao.comm.network.ApiHelper
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.utils.CompressionTools
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
-import master.flame.danmaku.danmaku.loader.android.DanmakuLoaderFactory
 import master.flame.danmaku.danmaku.parser.BaseDanmakuParser
 import master.flame.danmaku.danmaku.parser.BiliDanmukuParser
-import java.io.ByteArrayInputStream
-import java.io.InputStream
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.services.bilibili.WatchDataCache
+import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliBulletCommentsExtractor
 
 class VideoPlayerSource(
     val mainTitle: String, //视频名字，不是分p名
@@ -128,14 +128,6 @@ class VideoPlayerSource(
                 } ?: dashAudio.firstOrNull { it.baseUrl.isNotEmpty() }
                 playerSource.height = dash.height
                 playerSource.width = dash.width
-                //  无法获取Segment Base放弃手动生成MDP XML方案
-//                playerSource.url = DashSource().getMDPUrl(
-//                    videoId = videoInfo.quality,
-//                    videoFormat = videoInfo.format,
-//                    video = dash,
-//                    audio = audio,
-//                    durationMs = videoInfo.timelength,
-//                )
                 playerSource.url = if (audio == null) {
                     dash.baseUrl
                 } else {
@@ -162,28 +154,22 @@ class VideoPlayerSource(
     }
 
     override suspend fun getDanmakuParser(): BaseDanmakuParser? {
-        val inputStream = getBiliDanmukuStream()
-        return if (inputStream == null) {
-            null
-        } else {
-            val loader = DanmakuLoaderFactory.create(DanmakuLoaderFactory.TAG_BILI)
-            loader.load(inputStream)
-            val parser = BiliDanmukuParser()
-            val dataSource = loader.dataSource
-            parser.load(dataSource)
-            parser
-        }
-    }
+        val cidLong = id.toLongOrNull() ?: return null
+        
+        // 构建缓存，由于 BulletCommentsExtractor 需要 WatchDataCache 配合获取 cid
+        val cache = WatchDataCache()
+        cache.setCid(id, cidLong)
+        
+        val url = "https://api.bilibili.com/x/v1/dm/list.so?oid=$id"
+        val linkHandler = ServiceList.BiliBili.bulletCommentsLHFactory.fromUrl(url)
+        val bulletExtractor = BilibiliBulletCommentsExtractor(ServiceList.BiliBili, linkHandler, cache)
+        bulletExtractor.fetchPage()
 
-    private suspend fun getBiliDanmukuStream(): InputStream? {
-        val res = BiliApiService.playerAPI.getDanmakuList(id)
-            .awaitCall()
-        val body = res.body
-        return if (body == null) {
-            null
-        } else {
-            ByteArrayInputStream(CompressionTools.decompressXML(body.bytes()))
-        }
+        val commentsPage = bulletExtractor.initialPage ?: return null
+        val commentsList = commentsPage.items ?: return null
+
+        val parser = BiliDanmukuParser(commentsList)
+        return parser
     }
 
     override suspend fun getSubtitles(): List<SubtitleSourceInfo> {

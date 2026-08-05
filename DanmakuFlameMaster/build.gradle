@@ -37,6 +37,9 @@ dependencies {
     implementation "com.github.ctiao:ndkbitmap-armv5:$version"
     implementation "com.github.ctiao:ndkbitmap-x86:$version"
 
+    // 引入本地 extractor 模块
+    implementation project(':extractor')
+
     testImplementation "junit:junit:4.+"
     androidTestImplementation "androidx.test.ext:junit:1.1.3"
 }

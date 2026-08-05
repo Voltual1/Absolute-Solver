@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/components/SearchItemCard.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.components
 
 import androidx.compose.foundation.layout.padding
