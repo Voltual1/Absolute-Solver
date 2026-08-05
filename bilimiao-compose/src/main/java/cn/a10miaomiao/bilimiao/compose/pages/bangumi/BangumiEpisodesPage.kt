@@ -65,6 +65,7 @@ import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.EpisodeInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonSectionInfo
+import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
@@ -94,7 +95,8 @@ data class BangumiEpisodesPage(
         val viewModel: BangumiEpisodesPageViewModel = diViewModel(
             key = sid,
         ) {
-            BangumiEpisodesPageViewModel(it, sid, title)
+            viewModelScope ->
+            BangumiEpisodesPageViewModel(viewModelScope, sid, title)
         }
         BangumiEpisodesPageContent(viewModel)
     }
@@ -143,7 +145,7 @@ private class BangumiEpisodesPageViewModel(
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
             }
-            val res = MiaoHttp.json.decodeFromString<ResponseResult<SeasonSectionInfo>>(responseBody)
+            val res = MiaoJson.fromJson<ResponseResult<SeasonSectionInfo>>(responseBody)
 
             if (res.code == 0) {
                 val result = res.requireData()

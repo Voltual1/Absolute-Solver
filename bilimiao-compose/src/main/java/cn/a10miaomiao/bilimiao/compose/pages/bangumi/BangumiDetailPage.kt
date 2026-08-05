@@ -49,6 +49,7 @@ import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.*
 import com.a10miaomiao.bilimiao.comm.entity.comm.ToastInfo
+import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
@@ -76,7 +77,6 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
-import okio.Buffer
 
 @Serializable
 data class BangumiDetailPage(
@@ -154,7 +154,7 @@ private class BangumiDetailPageViewModel(
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
             }
-            val res = MiaoHttp.json.decodeFromString<ResponseData<SeasonV2Info>>(responseBody)
+            val res = MiaoJson.fromJson<ResponseData<SeasonV2Info>>(responseBody)
 
             if (res.code == 0) {
                 val result = res.requireData()
@@ -199,7 +199,7 @@ private class BangumiDetailPageViewModel(
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
             }
-            val res = MiaoHttp.json.decodeFromString<ResponseResult<SeasonSectionInfo>>(responseBody)
+            val res = MiaoJson.fromJson<ResponseResult<SeasonSectionInfo>>(responseBody)
 
             if (res.code == 0) {
                 val result = res.requireData()
@@ -242,15 +242,13 @@ private class BangumiDetailPageViewModel(
             val formBody = ApiHelper.createParams(
                 "season_id" to detail.season_id,
             )
-            val buffer = Buffer()
-            formBody.writeTo(buffer)
-            val postData = buffer.readByteArray()
+            val postData = ApiHelper.urlencode(formBody).toByteArray(java.nio.charset.StandardCharsets.UTF_8)
 
             val responseBody = withContext(Dispatchers.IO) {
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().post(url, headers, postData).responseBody()
             }
-            val res = MiaoHttp.json.decodeFromString<ResponseResult<ToastInfo>>(responseBody)
+            val res = MiaoJson.fromJson<ResponseResult<ToastInfo>>(responseBody)
 
             if (res.isSuccess) {
                 isFollow.value = mode == 1
