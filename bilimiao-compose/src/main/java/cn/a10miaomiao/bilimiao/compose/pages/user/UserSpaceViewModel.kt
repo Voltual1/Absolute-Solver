@@ -105,45 +105,62 @@ class UserSpaceViewModel(
             extractor.fetchPage()
 
             // 2. 将 Extractor 数据组装为 UI 所需的 SpaceInfo
-            val card = SpaceInfo.Card(
-                mid = vmid,
-                name = extractor.name,
+            val card = SpaceInfo.CardInfo(
                 approve = false,
-                sex = "",
+                article = 0,
+                attention = 0,
+                birthday = "",
+                description = extractor.description ?: "",
                 face = extractor.avatarUrl,
-                face_nft = 0,
-                face_nft_type = 0,
-                sign = extractor.description ?: "",
-                rank = 0,
-                level_info = SpaceInfo.LevelInfo(current_level = 0, current_min = 0, current_exp = 0, next_exp = 0),
-                pendant = SpaceInfo.Pendant(pid = 0, name = "", image = "", expire = 0, image_enhance = "", image_enhance_frame = ""),
-                nameplate = SpaceInfo.Nameplate(nid = 0, name = "", image = "", image_small = "", level = "", condition = ""),
-                official = SpaceInfo.Official(role = 0, title = "", desc = "", type = -1),
-                official_verify = SpaceInfo.OfficialVerify(type = -1, desc = ""),
-                vip = SpaceInfo.Vip(type = 0, status = 0, due_date = 0, vip_pay_type = 0, theme_type = 0, label = SpaceInfo.VipLabel(path = "", text = "", label_theme = "", text_color = "", bg_style = 0, bg_color = "", border_color = "", use_img_label = false, img_label_uri_hans = "", img_label_uri_hant = "", img_label_uri_hans_static = "", img_label_uri_hant_static = ""), avatar_subscript = 0, nickname_color = "", role = 0, avatar_subscript_url = "", tv_vip_status = 0, tv_vip_pay_type = 0, tv_due_date = 0, vipType = 0, vipStatus = 0),
                 fans = extractor.subscriberCount.toInt(),
                 friend = 0,
-                attention = 0,
-                sign_use = false,
-                level = 0,
-                is_senior_member = 0,
-                likes = SpaceInfo.Likes(like_num = 0, skr_tip = "点赞数"),
-                relation = SpaceInfo.Relation(status = 0, is_follow = if (extractor.subscriberCount > 0) 1 else 0)
+                level_info = SpaceInfo.LevelInfo(current_level = 0, current_min = 0, current_exp = 0, next_exp = "0"),
+                likes = SpaceInfo.LikesInfo(like_num = 0, skr_tip = "点赞数"),
+                mid = vmid,
+                name = extractor.name,
+                official_verify = SpaceInfo.OfficialVerifyInfo(desc = "", type = -1, role = 0, title = "", icon = ""),
+                place = "",
+                rank = "0",
+                regtime = 0,
+                relation = SpaceInfo.RelationInfo(status = 0, is_follow = if (extractor.subscriberCount > 0) 1 else 0),
+                sex = "",
+                sign = extractor.description ?: "",
+                spacesta = 0,
+                space_tag = emptyList()
+            )
+
+            val live = SpaceInfo.LiveInfo(
+                url = "",
+                title = "",
+                cover = "",
+                roomid = 0L
+            )
+
+            val images = SpaceInfo.ImagesInfo(
+                imgUrl = extractor.bannerUrl ?: ""
+            )
+
+            val tab = SpaceInfo.Tab(
+                archive = true,
+                favorite = false,
+                bangumi = false,
+                like = false
             )
 
             val spaceInfo = SpaceInfo(
                 card = card,
-                archive = SpaceInfo.Archive(item = emptyList(), count = 0),
-                season = SpaceInfo.Season(item = emptyList(), count = 0),
-                favourite = SpaceInfo.Favourite(item = emptyList(), count = 0),
-                favourite2 = SpaceInfo.Favourite2(item = emptyList(), count = 0),
-                nav = SpaceInfo.Nav(record = 0),
-                bg_img = extractor.bannerUrl ?: ""
+                live = live,
+                images = images,
+                favourite2 = SpaceInfo.Media(count = 0, item = emptyList()),
+                season = SpaceInfo.Media(count = 0, item = emptyList()),
+                archive = SpaceInfo.Media(count = 0, item = emptyList()),
+                coin_archive = SpaceInfo.Media(count = 0, item = emptyList()),
+                like_archive = SpaceInfo.Media(count = 0, item = emptyList()),
+                tab = tab
             )
 
             withContext(Dispatchers.Main) {
                 _detailData.value = spaceInfo
-                // 由于目前 Extractor 无法直接获取具体是否已关注，我们暂时回退至 WebView 获取到的 Cookie 判断
                 _isFollow.value = false
             }
         } catch (e: Exception) {
