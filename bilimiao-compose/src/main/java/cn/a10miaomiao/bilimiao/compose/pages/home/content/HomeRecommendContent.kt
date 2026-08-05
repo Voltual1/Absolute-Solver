@@ -48,6 +48,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.search.filter.FilterItem
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliFeedExtractor
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
@@ -92,8 +93,8 @@ private class HomeRecommendContentViewModel(
                 "https://bilibili.com",
                 "https://bilibili.com",
                 "Recommended Videos",
-                emptyList(),
-                ""
+                emptyList<FilterItem>(),
+                null
             )
             val extractor = BilibiliFeedExtractor(ServiceList.BiliBili, linkHandler, "Recommended Videos")
             extractor.fetchPage()
@@ -105,7 +106,7 @@ private class HomeRecommendContentViewModel(
             val newCardInfos = infoItems.mapNotNull { item ->
                 if (item !is StreamInfoItem) return@mapNotNull null
                 
-                // param 处理（处理形如 bilibili://video/BV... 或者 https://...）
+                // param 处理
                 val param = if (item.url.contains("bvid=")) {
                     item.url.substringAfter("bvid=").substringBefore("&")
                 } else if (item.url.contains("bilibili://video/")) {
@@ -125,24 +126,25 @@ private class HomeRecommendContentViewModel(
                     cover = item.thumbnailUrl,
                     title = item.name ?: "",
                     uri = item.url,
-                    idx = idx + 1, // 增加 idx 以确保唯一和触底加载机制
+                    idx = idx + 1,
                     args = RecommendCardArgsInfo(
                         up_id = upId,
                         up_name = item.uploaderName
                     ),
                     cover_left_text_1 = com.a10miaomiao.bilimiao.comm.utils.NumberUtil.converString(item.viewCount.toInt()),
-                    cover_left_text_2 = "", // B站Web接口无弹幕数据返回
+                    cover_left_text_2 = "",
                     cover_right_text = com.a10miaomiao.bilimiao.comm.utils.NumberUtil.converDuration(item.duration),
                     three_point_v2 = emptyList()
                 )
             }
 
             val filterList = newCardInfos.filter {
+                val args = it.args
+                val upId = args?.up_id
                 (it.goto?.isNotEmpty() ?: false)
                         && filterStore.filterWord(it.title)
-                        && it.args != null
-                        && it.args.up_id != null
-                        && filterStore.filterUpper(it.args.up_id!!)
+                        && upId != null
+                        && filterStore.filterUpper(upId)
             }
 
             val newList = if (idx == 0L) mutableListOf() else list.data.value.toMutableList()
