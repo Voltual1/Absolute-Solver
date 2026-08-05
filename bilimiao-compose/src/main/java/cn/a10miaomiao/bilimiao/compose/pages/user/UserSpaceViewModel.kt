@@ -70,8 +70,8 @@ class UserSpaceViewModel(
 
     val isSelf get() = userStore.isSelf(vmid)
 
+    // 已移除 Index 标签
     val tabs = listOf(
-        UserSpacePageTabs.Index(this),
         UserSpacePageTabs.Dynamic(vmid),
         UserSpacePageTabs.Archive(archiveViewModel),
     )
@@ -98,13 +98,12 @@ class UserSpaceViewModel(
             _loading.value = true
             _fail.value = null
 
-            // 1. 初始化 Extractor 载入个人空间数据
             val url = "https://space.bilibili.com/$vmid"
             val linkHandler = ServiceList.BiliBili.channelLHFactory.fromUrl(url)
             val extractor = BilibiliChannelExtractor(ServiceList.BiliBili, linkHandler)
             extractor.fetchPage()
 
-            // 2. 将 Extractor 数据组装为 UI 所需的 SpaceInfo
+            // 映射所有字段，确保获赞、关注、等级正确显示
             val card = SpaceInfo.CardInfo(
                 approve = false,
                 article = 0,
@@ -137,37 +136,24 @@ class UserSpaceViewModel(
                 sex = "",
                 sign = extractor.description ?: "",
                 spacesta = 0,
-                space_tag = emptyList()
-            )
-
-            val live = SpaceInfo.LiveInfo(
-                url = "",
-                title = "",
-                cover = "",
-                roomid = 0L
+                space_tag = emptyList(),
+                level = extractor.level // 这里的 level 字段也要赋值，用于 UserLevelIcon 显示
             )
 
             val images = SpaceInfo.ImagesInfo(
                 imgUrl = extractor.bannerUrl ?: ""
             )
 
-            val tab = SpaceInfo.Tab(
-                archive = true,
-                favorite = false,
-                bangumi = false,
-                like = false
-            )
-
             val spaceInfo = SpaceInfo(
                 card = card,
-                live = live,
+                live = SpaceInfo.LiveInfo(url = "", title = "", cover = "", roomid = 0L),
                 images = images,
                 favourite2 = SpaceInfo.Media(count = 0, item = emptyList()),
                 season = SpaceInfo.Media(count = 0, item = emptyList()),
                 archive = SpaceInfo.Media(count = 0, item = emptyList()),
                 coin_archive = SpaceInfo.Media(count = 0, item = emptyList()),
                 like_archive = SpaceInfo.Media(count = 0, item = emptyList()),
-                tab = tab
+                tab = SpaceInfo.Tab(archive = true, favorite = false, bangumi = false, like = false)
             )
 
             withContext(Dispatchers.Main) {
@@ -207,18 +193,13 @@ class UserSpaceViewModel(
 
     fun attention() = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val data = detailData.value ?: return@launch
             val mode = if (isFollow.value) { 2 } else { 1 }
             val res = BiliApiService.userRelationApi
                 .modify(vmid, mode)
                 .awaitCall().json<MessageInfo>()
             if (res.code == 0) {
                 _isFollow.value = mode == 1
-                PopTip.show(if (mode == 1) {
-                    "关注成功"
-                } else {
-                    "已取消关注"
-                })
+                PopTip.show(if (mode == 1) "关注成功" else "已取消关注")
             } else {
                 PopTip.show(res.message)
             }
@@ -229,35 +210,23 @@ class UserSpaceViewModel(
     }
 
     fun toFans() {
-        pageNavigation.navigate(WebPage(
-            url = "https://space.bilibili.com/h5/follow?type=fans&mid=$vmid"
-        ))
+        pageNavigation.navigate(WebPage(url = "https://space.bilibili.com/h5/follow?type=fans&mid=$vmid"))
     }
 
     fun toFollow() {
-        if (isSelf) {
-            pageNavigation.navigate(MyFollowPage())
-        } else {
-            pageNavigation.navigate(UserFollowPage(vmid))
-        }
+        if (isSelf) pageNavigation.navigate(MyFollowPage())
+        else pageNavigation.navigate(UserFollowPage(vmid))
     }
 
     fun showLikeInfo() {
         val detailInfo = detailData.value ?: return
-        messageDialog.alert(
-            title = detailInfo.card.name,
-            text = "${detailInfo.card.likes.skr_tip}：${detailInfo.card.likes.like_num}"
-        )
+        messageDialog.alert(title = detailInfo.card.name, text = "获赞数：${detailInfo.card.likes.like_num}")
     }
 
     fun toBangumiFollow() {
-        if (isSelf) {
-            pageNavigation.navigate(MyBangumiPage())
-        } else {
-            pageNavigation.navigate(UserBangumiPage(vmid))
-        }
+        if (isSelf) pageNavigation.navigate(MyBangumiPage())
+        else pageNavigation.navigate(UserBangumiPage(vmid))
     }
-
 
     fun toLikeArchive() {
         pageNavigation.navigate(UserLikeArchivePage(vmid))
@@ -268,74 +237,42 @@ class UserSpaceViewModel(
     }
 
     fun toBangumiDetail(item: SpaceInfo.SeasonItem) {
-        pageNavigation.navigate(BangumiDetailPage(
-            id = item.param
-        ))
+        pageNavigation.navigate(BangumiDetailPage(id = item.param))
     }
 
     fun toFavouriteList() {
-        pageNavigation.navigate(UserFavouritePage(
-            mid = vmid
-        ))
+        pageNavigation.navigate(UserFavouritePage(mid = vmid))
     }
 
     fun toFavouriteDetail(item: SpaceInfo.Favourite2Item) {
-        pageNavigation.navigate(UserFavouriteDetailPage(
-            id = item.media_id,
-            title = item.title
-        ))
+        pageNavigation.navigate(UserFavouriteDetailPage(id = item.media_id, title = item.title))
     }
 
     fun menuItemClick(view: View, item: MenuItemPropInfo) {
         when (item.key) {
-            // 取消屏蔽
             1 -> filterUpperDelete()
-            // 屏蔽
             2 -> filterUpperAdd()
-            // 用浏览器打开
-            3 -> {
-                val url = getUserSpaceUrl()
-                BiliUrlMatcher.toUrlLink(activity, url)
-            }
-            // 复制链接
+            3 -> BiliUrlMatcher.toUrlLink(activity, getUserSpaceUrl())
             4 -> {
-                val clipboard =
-                    activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val label = "url"
-                val text = getUserSpaceUrl()
-                val clip = ClipData.newPlainText(label, text)
-                clipboard.setPrimaryClip(clip)
-                PopTip.show("已复制：$text")
+                val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("url", getUserSpaceUrl()))
+                PopTip.show("已复制：${getUserSpaceUrl()}")
             }
-            // 分享
             5 -> {
                 val info = detailData.value
-                val url = getUserSpaceUrl()
-                val shareIntent = Intent().also {
-                    it.action = Intent.ACTION_SEND
-                    it.type = "text/plain"
-                    it.putExtra(Intent.EXTRA_SUBJECT, "这个UP主非常nice")
-                    it.putExtra(
-                        Intent.EXTRA_TEXT,
-                        info?.card?.name + " " + url
-                    )
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "${info?.card?.name} ${getUserSpaceUrl()}")
                 }
                 activity.startActivity(Intent.createChooser(shareIntent, "分享"))
             }
-            11, 12 -> {
-                archiveViewModel.changeRankOrder(item.action ?: "")
-            }
-            MenuKeys.follow -> {
-                attention()
-            }
+            11, 12 -> archiveViewModel.changeRankOrder(item.action ?: "")
+            MenuKeys.follow -> attention()
         }
     }
 
     fun searchSelfPage(keyword: String) {
-        pageNavigation.navigate(UserSpaceSearchPage(
-            id = vmid,
-            keyword = keyword,
-        ))
+        pageNavigation.navigate(UserSpaceSearchPage(id = vmid, keyword = keyword))
     }
-
 }

@@ -1,10 +1,10 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpacePageTabs.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 import androidx.compose.runtime.Composable
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
 import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserArchiveListContent
 import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserDynamicListContent
-import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserSpaceIndexContent
 
 sealed class UserSpacePageTabs(
     val id: String,
@@ -12,18 +12,6 @@ sealed class UserSpacePageTabs(
 ) {
     @Composable
     abstract fun PageContent()
-
-    data class Index(
-        val viewModel: UserSpaceViewModel,
-    ) : UserSpacePageTabs(
-        id = PageTabIds.UserIndex,
-        name = "主页"
-    ) {
-        @Composable
-        override fun PageContent() {
-            UserSpaceIndexContent(viewModel)
-        }
-    }
 
     data class Dynamic(
         val vmid: String,

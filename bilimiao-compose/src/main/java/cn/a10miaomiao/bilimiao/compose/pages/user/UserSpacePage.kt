@@ -1,20 +1,13 @@
+// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpacePage.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -30,20 +23,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -90,7 +83,6 @@ data class UserSpacePage(
         val viewModel = diViewModel() {
             UserSpaceViewModel(it, id, archiveViewModel)
         }
-//        AnimatedContent()
         UserSpacePageContent(viewModel, archiveViewModel)
     }
 }
@@ -106,18 +98,12 @@ private fun UserSpacePageContent(
     val windowInsets = windowState.getContentInsets(localContainerView())
 
     val detailData = viewModel.detailData.collectAsState().value
-//    val slideDistance = LocalDensity.current.run {
-//        100.dp.toPx()
-//    }
     AnimatedContent(
         modifier = Modifier.fillMaxSize(),
         targetState = detailData == null,
         label = "UserSpacePageContent",
         transitionSpec = {
-            // Follow M3 Clean fades
-            val fadeIn = fadeIn(
-                tween(),
-            )
+            val fadeIn = fadeIn(tween())
             val fadeOut = fadeOut()
             fadeIn.togetherWith(fadeOut)
         }
@@ -145,22 +131,11 @@ private fun UserSpacePageLoadingContent(
     fail: Any?,
     innerPadding: PaddingValues,
 ) {
-    PageConfig(
-        title = "个人中心"
-    )
+    PageConfig(title = "个人中心")
     if (loading) {
-        BiliLoadingBox(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        )
+        BiliLoadingBox(modifier = Modifier.fillMaxSize().padding(innerPadding))
     } else if (fail != null) {
-        BiliFailBox(
-            e = fail,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        )
+        BiliFailBox(e = fail, modifier = Modifier.fillMaxSize().padding(innerPadding))
     }
 }
 
@@ -183,32 +158,18 @@ private fun UserSpacePageDetailContent(
                 childMenu = myMenu {
                     if (!viewModel.isSelf) {
                         if (viewModel.isFiltered) {
-                            myItem {
-                                key = 1
-                                title = "取消屏蔽该UP主"
-                            }
+                            myItem { key = 1; title = "取消屏蔽该UP主" }
                         } else {
-                            myItem {
-                                key = 2
-                                title = "屏蔽该UP主"
-                            }
+                            myItem { key = 2; title = "屏蔽该UP主" }
                         }
                     }
-                    myItem {
-                        key = 3
-                        title = "用浏览器打开"
-                    }
-                    myItem {
-                        key = 4
-                        title = "复制链接"
-                    }
-                    myItem {
-                        key = 5
-                        title = "分享"
-                    }
+                    myItem { key = 3; title = "用浏览器打开" }
+                    myItem { key = 4; title = "复制链接" }
+                    myItem { key = 5; title = "分享" }
                 }
             }
-            if (viewModel.currentPage == 2) {
+            // 调整：当前 index 为 1 时是投稿页
+            if (viewModel.currentPage == 1) {
                 myItem {
                     key = MenuKeys.filter
                     title = when(rankOrder) {
@@ -219,21 +180,9 @@ private fun UserSpacePageDetailContent(
                     iconFileName = "ic_baseline_filter_list_grey_24"
                     childMenu = myMenu {
                         checkable = true
-                        checkedKey = when(rankOrder) {
-                            "pubdate" -> 11
-                            "click" -> 12
-                            else -> 11
-                        }
-                        myItem {
-                            key = 11
-                            action = "pubdate"
-                            title = "最新发布"
-                        }
-                        myItem {
-                            key = 12
-                            action = "click"
-                            title = "最多播放"
-                        }
+                        checkedKey = if (rankOrder == "pubdate") 11 else 12
+                        myItem { key = 11; action = "pubdate"; title = "最新发布" }
+                        myItem { key = 12; action = "click"; title = "最多播放" }
                     }
                 }
             }
@@ -256,10 +205,7 @@ private fun UserSpacePageDetailContent(
                 }
             }
         },
-        search = SearchConfigInfo(
-            name = "搜索投稿列表",
-            keyword = "",
-        )
+        search = SearchConfigInfo(name = "搜索投稿列表", keyword = "")
     )
     PageListener(
         pageConfigId,
@@ -289,14 +235,7 @@ private fun UserSpacePageDetailContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset {
-                    IntOffset(
-                        0,
-                        state
-                            .getOffsetYValue()
-                            .roundToInt()
-                    )
-                }
+                .offset { IntOffset(0, state.getOffsetYValue().roundToInt()) }
                 .background(MaterialTheme.colorScheme.background)
                 .nestedScroll(state.nestedScroll)
                 .scrollable(scrollableState, Orientation.Vertical),
@@ -309,9 +248,7 @@ private fun UserSpacePageDetailContent(
                     .onGloballyPositioned { coordinates ->
                         val headerHeight = coordinates.size.height
                         val headerWidth = coordinates.size.width
-                        if (maxHeaderSize.value.first != headerWidth ||
-                            maxHeaderSize.value.second != headerHeight
-                        ) {
+                        if (maxHeaderSize.value.first != headerWidth || maxHeaderSize.value.second != headerHeight) {
                             maxHeaderSize.value = headerWidth to headerHeight
                         }
                     },
@@ -324,62 +261,42 @@ private fun UserSpacePageDetailContent(
             pagerState = viewModel.pagerState,
             onDoubleClick = {
                 scope.launch {
-                    emitter.emit(
-                        EmitterAction.DoubleClickTab(
-                            tab = viewModel.tabs[it].id
-                        ))
+                    emitter.emit(EmitterAction.DoubleClickTab(tab = viewModel.tabs[it].id))
                 }
             }
         )
         Column(
-            modifier = Modifier
-                .offset {
-                    IntOffset(
-                        0,
-                        (state.maxPx + state.getOffsetYValue()).roundToInt()
-                    )
-                },
+            modifier = Modifier.offset { IntOffset(0, (state.maxPx + state.getOffsetYValue()).roundToInt()) },
         ) {
             TabRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(
-                        start = windowInsets.leftDp.dp,
-                        end = windowInsets.rightDp.dp,
-                    )
+                    .padding(start = windowInsets.leftDp.dp, end = windowInsets.rightDp.dp)
                     .nestedScroll(state.nestedScroll)
                     .scrollable(scrollableState, Orientation.Vertical),
                 selectedTabIndex = viewModel.pagerState.currentPage,
                 indicator = { positions ->
-                    TabRowDefaults.PrimaryIndicator(
-                        Modifier.pagerTabIndicatorOffset(viewModel.pagerState, positions),
-                    )
+                    TabRowDefaults.PrimaryIndicator(Modifier.pagerTabIndicatorOffset(viewModel.pagerState, positions))
                 },
             ) {
                 viewModel.tabs.forEachIndexed { index, tab ->
+                    val selected = viewModel.currentPage == index
                     Tab(
                         text = {
                             Text(
                                 text = tab.name,
-                                color = if (index == viewModel.currentPage) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onBackground
-                                }
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                             )
                         },
-                        selected = viewModel.currentPage == index,
+                        selected = selected,
                         onClick = { combinedTabClick(index) },
                     )
                 }
             }
             val saveableStateHolder = rememberSaveableStateHolder()
             HorizontalPager(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
-                    .padding(bottom = state.minScrollPosition),
+                modifier = Modifier.fillMaxSize().weight(1f).padding(bottom = state.minScrollPosition),
                 state = viewModel.pagerState,
             ) { index ->
                 saveableStateHolder.SaveableStateProvider(index) {
