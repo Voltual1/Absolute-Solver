@@ -43,7 +43,6 @@ import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyListPage
 import cn.a10miaomiao.bilimiao.compose.pages.download.DownloadBangumiCreatePage
 import com.a10miaomiao.bilimiao.comm.delegate.player.BangumiPlayerSource
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
-import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
 import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
@@ -130,7 +129,7 @@ private class BangumiDetailPageViewModel(
         }
 
     var loading = MutableStateFlow(false)
-    val detailInfo = MutableStateFlow<SeasonV2Info?>(null)
+    val detailInfo = MutableStateFlow<BangumiInfo?>(null)
     val isFollow = MutableStateFlow(false)
     var seasons = MutableStateFlow<List<SeasonInfo>>(emptyList())
 
@@ -144,33 +143,32 @@ private class BangumiDetailPageViewModel(
             loading.value = true
             detailInfo.value = null
 
-            val url = "https://api.bilibili.com/pgc/view/v2/app/season?" +
-                    listOfNotNull(
-                        if (seasonId.isNotBlank()) "season_id=$seasonId" else null,
-                        if (epId.isNotBlank()) "ep_id=$epId" else null
-                    ).joinToString("&")
+            val targetId = if (seasonId.isNotBlank()) "ss$seasonId" else "ep$epId"
+            val videoUrl = "https://www.bilibili.com/bangumi/play/$targetId"
+            val linkHandler = org.schabi.newpipe.extractor.ServiceList.BiliBili.streamLHFactory.fromUrl(videoUrl)
+            val cache = org.schabi.newpipe.extractor.services.bilibili.WatchDataCache()
 
-            val responseBody = withContext(Dispatchers.IO) {
-                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
-                org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
-            }
-            val res = MiaoJson.fromJson<ResponseData<SeasonV2Info>>(responseBody)
+            val extractor = org.schabi.newpipe.extractor.services.bilibili.extractors.BillibiliStreamExtractor(
+                org.schabi.newpipe.extractor.ServiceList.BiliBili,
+                linkHandler,
+                cache
+            )
+            extractor.fetchPage()
 
-            if (res.code == 0) {
-                val result = res.requireData()
+            val premiumData = extractor.premiumData
+            if (premiumData != null) {
+                val premiumDataJson = premiumData.toString()
+                val result = MiaoJson.fromJson<BangumiInfo>(premiumDataJson)
                 detailInfo.value = result
-                val seasonModule = result.modules.find {
-                    it.style == "season"
-                }
-                seasons.value = seasonModule?.data?.seasons ?: emptyList()
-                isFollow.value = detailInfo.value?.user_status?.follow == 1
+                seasons.value = result.seasons
+                isFollow.value = result.user_status.follow == 1
                 if (seasonId != result.season_id) {
                     seasonId = result.season_id
                     loadEpisodeList(result.season_id)
                 }
             } else {
                 withContext(Dispatchers.Main) {
-                    PopTip.show(res.message)
+                    PopTip.show("获取番剧数据失败")
                 }
             }
         } catch (e: Exception) {
@@ -332,8 +330,8 @@ private class BangumiDetailPageViewModel(
             )
         }
         playerSource.defaultPlayerSource.run {
-            val progress = detailInfo.value?.user_status?.progress
-            if (progress != null && item.id == progress.last_ep_id ) {
+            val progress = detailInfo.value?.user_status?.watch_progress
+            if (progress != null && item.id.toLongOrNull() == progress.last_ep_id) {
                 lastPlayCid = item.cid
                 lastPlayTime = progress.last_time * 1000L
             }
@@ -349,7 +347,6 @@ private class BangumiDetailPageViewModel(
     fun menuItemClick(view: View, menuItem: MenuItemPropInfo) {
         when (menuItem.key) {
             1 -> {
-                // 用浏览器打开
                 val info = detailInfo.value
                 if (info != null) {
                     val id = info.season_id
@@ -360,7 +357,6 @@ private class BangumiDetailPageViewModel(
                 }
             }
             2 -> {
-                // 分享番剧
                 val info = detailInfo.value
                 if (info != null) {
                     val activity = fragment.requireActivity()
@@ -377,7 +373,6 @@ private class BangumiDetailPageViewModel(
 
             }
             3 -> {
-                // 复制链接
                 val info = detailInfo.value
                 if (info != null) {
                     val activity = fragment.requireActivity()
@@ -392,7 +387,6 @@ private class BangumiDetailPageViewModel(
                 }
             }
             4 -> {
-                // 下载番剧
                 val info = detailInfo.value
                 if (info != null) {
                     bottomSheetState.open(DownloadBangumiCreatePage(info.season_id))
@@ -402,7 +396,6 @@ private class BangumiDetailPageViewModel(
             }
 
             MenuKeys.follow -> {
-                // 追番
                 followSeason()
             }
         }
@@ -486,7 +479,6 @@ private fun BangumiDetailPageContent(
     }
 
     LaunchedEffect(mediaId) {
-        // 先通过mediaId拿到seasonId
         if (mediaId.isNotBlank() && seasonId.value.isBlank()) {
             try {
                 val res = withContext(Dispatchers.IO) {
@@ -610,20 +602,20 @@ private fun BangumiDetailPageContent(
                             )
                             Text(
                                 modifier = Modifier.padding(bottom = 5.dp),
-                                text = detailInfo.new_ep.desc,
+                                text = detailInfo.newest_ep.desc,
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Row() {
                                 Text(
-                                    text = detailInfo.stat.followers,
+                                    text = detailInfo.stat.favorites + "追番",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = detailInfo.stat.play,
+                                    text = detailInfo.stat.views + "播放",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -724,7 +716,7 @@ private fun BangumiDetailPageContent(
                         }
                     }
                 }
-                val userProgress = detailInfo?.user_status?.progress
+                val userProgress = detailInfo?.user_status?.watch_progress
                 items(episodes, { it.id }) { item ->
                     BangumiEpisodeItem(
                         modifier = Modifier.padding(
@@ -732,8 +724,8 @@ private fun BangumiDetailPageContent(
                             vertical = 4.dp,
                         ),
                         item = item,
-                        desc = if (item.id == userProgress?.last_ep_id) {
-                            val time = NumberUtil.converDuration(userProgress.last_time)
+                        desc = if (item.id.toLongOrNull() == userProgress?.last_ep_id) {
+                            val time = NumberUtil.converDuration(userProgress.last_time.toInt())
                             "上次看到 $time"
                         } else null,
                         playerState = playerState,
@@ -751,13 +743,13 @@ private fun BangumiDetailPageContent(
             }
         }
 
-        detailInfo?.user_status?.progress?.let {
+        detailInfo?.user_status?.watch_progress?.let {
             if (playerState.sid == detailInfo.season_id) {
                 return@let
             }
             val lastEpIndex = it.last_ep_index.ifBlank {
                 episodes.firstOrNull { episode ->
-                    it.last_ep_id == episode.id
+                    it.last_ep_id.toString() == episode.id
                 }?.index ?: return@let
             }
             FloatingActionButton(
@@ -773,7 +765,7 @@ private fun BangumiDetailPageContent(
                     scope.launch {
                         chainScrollableLayoutState.scrollToMax()
                         val (section, index) = viewModel.findSectionEpisodeIndex(
-                            it.last_ep_id
+                            it.last_ep_id.toString()
                         )
                         if (section != null && index != -1) {
                             val offset = if (sectionList.size > 1) {
@@ -800,7 +792,7 @@ private fun BangumiDetailPageContent(
                             "第${lastEpIndex}话"
                         } else {
                             lastEpIndex
-                        }} ${NumberUtil.converDuration(it.last_time)}"
+                        }} ${NumberUtil.converDuration(it.last_time.toInt())}"
                     )
 
                 }

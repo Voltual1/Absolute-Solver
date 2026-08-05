@@ -17,7 +17,6 @@ import org.schabi.newpipe.extractor.services.bilibili.WatchDataCache;
 import org.schabi.newpipe.extractor.services.bilibili.linkHandler.BilibiliChannelLinkHandlerFactory;
 import org.schabi.newpipe.extractor.services.bilibili.utils;
 import org.schabi.newpipe.extractor.stream.*;
-import org.schabi.newpipe.extractor.utils.Utils;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -220,7 +219,7 @@ public class BillibiliStreamExtractor extends StreamExtractor {
 
         videoStreams.add(new VideoStream.Builder().setContent(liveUrl, true)
                 .setId("bilibili-" + watch.getLong("uid") + "-live")
-                .setIsVideoOnly(false).setResolution("720p") // not really 720p, we just fetch the best
+                .setIsVideoOnly(false).setResolution("720p")
                 .setDeliveryMethod(DeliveryMethod.PROGRESSIVE_HTTP).build());
         return videoStreams;
     }
@@ -301,7 +300,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
     @Override
     public void onFetchPage(@Nonnull Downloader downloader) throws IOException, ExtractionException {
         watchDataCache.init(getUrl());
-        // case: Live
         if (getStreamType() == StreamType.LIVE_STREAM) {
             String response = downloader.get("https://api.live.bilibili.com/room/v1/Room/room_init?id=" + getId()).responseBody();
             try {
@@ -350,8 +348,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             return;
         }
 
-        // case: non-live
-        // step 1: fetch metadata
         if (getUrl().contains("bangumi/play/")) {
             isPremiumContent = 1;
             int type = getId().startsWith("ss") ? 0 : 1;
@@ -415,7 +411,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             isPaid = watch.getObject("rights").getInt("pay");
         }
 
-        // step 1.5: other requests, should start early to improve speed
         tagCall = downloader.getAsync(FETCH_TAGS_URL + utils.getPureBV(getId()), getHeaders(getOriginalUrl()), response1 -> {
             try {
                 tagData = JsonParser.object().from(response1.responseBody()).getArray("data");
@@ -458,8 +453,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             }
         }
 
-
-        // step 2: fetch stream data
         String baseUrl = isPremiumContent != 1 ? FREE_VIDEO_BASE_URL : PAID_VIDEO_BASE_URL;
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
         params.put("avid", String.valueOf(bv2av(bvid)));
@@ -476,7 +469,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             headers.put("Cookie", Collections.singletonList(ServiceList.BiliBili.getTokens()));
         } else {
             if (isPremiumContent != 1) {
-                // https://codeberg.org/NullPointerException/PipePipe/issues/42
                 params.put("try_look", "1");
             }
         }
@@ -510,7 +502,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             dataObject = dataParentObject.getObject("dash");
             if (dataObject.size() == 0) {
                 throw new PaidContentException("Paid content");
-                //dataArray = dataParentObject.getArray("durl");
             } else {
                 buildStreams();
             }
@@ -778,10 +769,10 @@ public class BillibiliStreamExtractor extends StreamExtractor {
 
         try {
             String videoshotUrl = VIDEOSHOT_API_URL + bvid;
-            
+
             String response = getDownloader().get(videoshotUrl, getHeaders(getOriginalUrl())).responseBody();
             JsonObject responseJson = JsonParser.object().from(response);
-            
+
             if (responseJson.getInt("code") != 0) {
                 return Collections.emptyList();
             }
@@ -793,27 +784,24 @@ public class BillibiliStreamExtractor extends StreamExtractor {
 
             JsonArray imageUrls = data.getArray("image");
             JsonArray timeIndex = data.getArray("index");
-            
+
             if (imageUrls.isEmpty() || timeIndex.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            // Get frame properties
             int frameWidth = data.getInt("img_x_size");
             int frameHeight = data.getInt("img_y_size");
             int framesPerPageX = data.getInt("img_x_len", 10);
             int framesPerPageY = data.getInt("img_y_len", 10);
-            int totalFrames = timeIndex.size() - 1; // Last index is the end time
+            int totalFrames = timeIndex.size() - 1;
 
             if (frameWidth <= 0 || frameHeight <= 0 || framesPerPageX <= 0
                     || framesPerPageY <= 0 || totalFrames <= 0) {
                 return Collections.emptyList();
             }
 
-            // Calculate average duration per frame
             int durationPerFrame = 0;
             if (totalFrames > 1) {
-                // Convert seconds to milliseconds and calculate average interval
                 int totalDuration = timeIndex.getInt(totalFrames) - timeIndex.getInt(0);
                 durationPerFrame = (totalDuration * 1000) / totalFrames;
             }
@@ -822,7 +810,6 @@ public class BillibiliStreamExtractor extends StreamExtractor {
                 return Collections.emptyList();
             }
 
-            // Prepare URLs with https protocol
             List<String> urls = new ArrayList<>();
             for (int i = 0; i < imageUrls.size(); i++) {
                 String url = imageUrls.getString(i);
@@ -848,5 +835,9 @@ public class BillibiliStreamExtractor extends StreamExtractor {
         } catch (IOException | JsonParserException e) {
             throw new ExtractionException("Failed to get video frames", e);
         }
+    }
+
+    public JsonObject getPremiumData() {
+        return premiumData;
     }
 }

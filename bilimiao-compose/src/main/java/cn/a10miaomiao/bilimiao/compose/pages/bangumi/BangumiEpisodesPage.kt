@@ -95,8 +95,7 @@ data class BangumiEpisodesPage(
         val viewModel: BangumiEpisodesPageViewModel = diViewModel(
             key = sid,
         ) {
-            viewModelScope ->
-            BangumiEpisodesPageViewModel(viewModelScope, sid, title)
+            BangumiEpisodesPageViewModel(it, sid, title)
         }
         BangumiEpisodesPageContent(viewModel)
     }
