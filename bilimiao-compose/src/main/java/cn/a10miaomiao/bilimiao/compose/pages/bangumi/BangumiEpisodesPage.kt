@@ -66,6 +66,7 @@ import com.a10miaomiao.bilimiao.comm.entity.bangumi.EpisodeInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonSectionInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
+import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.utils.MiaoLogger
@@ -136,9 +137,14 @@ private class BangumiEpisodesPageViewModel(
             fail.value = null
             sectionList.value = emptyList()
             currentSection.value = SectionState()
-            val res = BiliApiService.bangumiAPI.seasonSection(sid)
-                .awaitCall()
-                .json<ResponseResult<SeasonSectionInfo>>()
+
+            val url = "https://api.bilibili.com/pgc/web/season/section?season_id=$sid"
+            val responseBody = withContext(Dispatchers.IO) {
+                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
+                org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
+            }
+            val res = MiaoHttp.json.decodeFromString<ResponseResult<SeasonSectionInfo>>(responseBody)
+
             if (res.code == 0) {
                 val result = res.requireData()
                 val list = mutableListOf<SeasonSectionInfo.SectionInfo>()
@@ -501,7 +507,5 @@ private fun BangumiEpisodesPageContent(
         }
 
     }
-
-
 
 }

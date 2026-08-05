@@ -52,6 +52,7 @@ import com.a10miaomiao.bilimiao.comm.entity.comm.ToastInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
+import com.a10miaomiao.bilimiao.comm.network.ApiHelper
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
@@ -75,6 +76,7 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
+import okio.Buffer
 
 @Serializable
 data class BangumiDetailPage(
@@ -136,17 +138,24 @@ private class BangumiDetailPageViewModel(
     var sectionList = MutableStateFlow<List<SeasonSectionInfo.SectionInfo>>(emptyList())
     val sectionId = MutableStateFlow("")
     val isRefreshing = MutableStateFlow(false)
-//    val isFollow get() = detailInfo.value?.user_status?.follow == 1
 
     fun loadData() = viewModelScope.launch(Dispatchers.IO) {
         try {
             loading.value = true
             detailInfo.value = null
 
-            val res = BiliApiService.bangumiAPI.seasonInfoV2(
-                seasonId, epId
-            ).awaitCall()
-                .json<ResponseData<SeasonV2Info>>()
+            val url = "https://api.bilibili.com/pgc/view/v2/app/season?" +
+                    listOfNotNull(
+                        if (seasonId.isNotBlank()) "season_id=$seasonId" else null,
+                        if (epId.isNotBlank()) "ep_id=$epId" else null
+                    ).joinToString("&")
+
+            val responseBody = withContext(Dispatchers.IO) {
+                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
+                org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
+            }
+            val res = MiaoHttp.json.decodeFromString<ResponseData<SeasonV2Info>>(responseBody)
+
             if (res.code == 0) {
                 val result = res.requireData()
                 detailInfo.value = result
@@ -185,9 +194,13 @@ private class BangumiDetailPageViewModel(
             sectionList.value = emptyList()
             sectionId.value = ""
 
-            val res = BiliApiService.bangumiAPI.seasonSection(id)
-                .awaitCall()
-                .json<ResponseResult<SeasonSectionInfo>>()
+            val url = "https://api.bilibili.com/pgc/web/season/section?season_id=$id"
+            val responseBody = withContext(Dispatchers.IO) {
+                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
+                org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
+            }
+            val res = MiaoHttp.json.decodeFromString<ResponseResult<SeasonSectionInfo>>(responseBody)
+
             if (res.code == 0) {
                 val result = res.requireData()
                 val list = mutableListOf<SeasonSectionInfo.SectionInfo>()
@@ -221,11 +234,24 @@ private class BangumiDetailPageViewModel(
             } else {
                 1
             }
-            val res = (if (mode == 2) {
-                BiliApiService.bangumiAPI.cancelFollow(detail.season_id)
+            val url = if (mode == 2) {
+                "https://api.bilibili.com/pgc/app/follow/del"
             } else {
-                BiliApiService.bangumiAPI.followSeason(detail.season_id)
-            }).awaitCall().json<ResponseResult<ToastInfo>>()
+                "https://api.bilibili.com/pgc/app/follow/add"
+            }
+            val formBody = ApiHelper.createParams(
+                "season_id" to detail.season_id,
+            )
+            val buffer = Buffer()
+            formBody.writeTo(buffer)
+            val postData = buffer.readByteArray()
+
+            val responseBody = withContext(Dispatchers.IO) {
+                val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
+                org.schabi.newpipe.extractor.NewPipe.getDownloader().post(url, headers, postData).responseBody()
+            }
+            val res = MiaoHttp.json.decodeFromString<ResponseResult<ToastInfo>>(responseBody)
+
             if (res.isSuccess) {
                 isFollow.value = mode == 1
                 withContext(Dispatchers.Main) {
