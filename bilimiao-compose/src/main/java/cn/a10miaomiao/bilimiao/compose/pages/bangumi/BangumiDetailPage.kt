@@ -112,73 +112,17 @@ private class BangumiDetailPageViewModel(
         set(value) {
             if (field != value) {
                 field = value
-                if (field.isNotBlank() && field != detailInfo.value?.season_id) {
-                    loadData()
+                if (field.isNotBlank()) {
                     loadEpisodeList(field)
                 }
             }
         }
     var epId = ""
-        set(value) {
-            if (field != value) {
-                field = value
-                if (field.isNotBlank() && seasonId.isBlank()) {
-                    loadData()
-                }
-            }
-        }
-
-    var loading = MutableStateFlow(false)
-    val detailInfo = MutableStateFlow<BangumiInfo?>(null)
-    val isFollow = MutableStateFlow(false)
-    var seasons = MutableStateFlow<List<SeasonInfo>>(emptyList())
 
     var sectionLoading = MutableStateFlow(false)
     var sectionList = MutableStateFlow<List<SeasonSectionInfo.SectionInfo>>(emptyList())
     val sectionId = MutableStateFlow("")
     val isRefreshing = MutableStateFlow(false)
-
-    fun loadData() = viewModelScope.launch(Dispatchers.IO) {
-        try {
-            loading.value = true
-            detailInfo.value = null
-
-            val targetId = if (seasonId.isNotBlank()) "ss$seasonId" else "ep$epId"
-            val videoUrl = "https://www.bilibili.com/bangumi/play/$targetId"
-            val linkHandler = org.schabi.newpipe.extractor.ServiceList.BiliBili.streamLHFactory.fromUrl(videoUrl)
-            val cache = org.schabi.newpipe.extractor.services.bilibili.WatchDataCache()
-
-            val extractor = org.schabi.newpipe.extractor.services.bilibili.extractors.BillibiliStreamExtractor(
-                org.schabi.newpipe.extractor.ServiceList.BiliBili,
-                linkHandler,
-                cache
-            )
-            extractor.fetchPage()
-
-            val premiumDataJson = extractor.premiumDataJson
-            if (!premiumDataJson.isNullOrBlank()) {
-                val result = MiaoJson.fromJson<BangumiInfo>(premiumDataJson)
-                detailInfo.value = result
-                seasons.value = result.seasons
-                isFollow.value = result.user_status.follow == 1
-                if (seasonId != result.season_id) {
-                    seasonId = result.season_id
-                    loadEpisodeList(result.season_id)
-                }
-            } else {
-                withContext(Dispatchers.Main) {
-                    PopTip.show("获取番剧数据失败")
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                PopTip.show("无法连接到御坂网络1")
-            }
-        } finally {
-            loading.value = false
-        }
-    }
 
     /**
      * 剧集信息
@@ -224,20 +168,11 @@ private class BangumiDetailPageViewModel(
     }
 
     fun followSeason() = viewModelScope.launch(Dispatchers.IO) {
-        val detail = detailInfo.value ?: return@launch
+        if (seasonId.isBlank()) return@launch
         try {
-            val mode = if (isFollow.value) {
-                2
-            } else {
-                1
-            }
-            val url = if (mode == 2) {
-                "https://api.bilibili.com/pgc/app/follow/del"
-            } else {
-                "https://api.bilibili.com/pgc/app/follow/add"
-            }
+            val url = "https://api.bilibili.com/pgc/app/follow/add"
             val formBody = ApiHelper.createParams(
-                "season_id" to detail.season_id,
+                "season_id" to seasonId,
             )
             val postData = ApiHelper.urlencode(formBody).toByteArray(java.nio.charset.StandardCharsets.UTF_8)
 
@@ -248,15 +183,8 @@ private class BangumiDetailPageViewModel(
             val res = MiaoJson.fromJson<ResponseResult<ToastInfo>>(responseBody)
 
             if (res.isSuccess) {
-                isFollow.value = mode == 1
                 withContext(Dispatchers.Main) {
-                    PopTip.show(
-                        if (mode == 1) {
-                            res.result?.toast ?: "追番成功"
-                        } else {
-                            res.result?.toast ?: "已取消追番"
-                        }
-                    )
+                    PopTip.show(res.result?.toast ?: "追番成功")
                 }
             } else {
                 withContext(Dispatchers.Main) {
@@ -272,9 +200,8 @@ private class BangumiDetailPageViewModel(
     }
 
     fun refresh() {
-        if (seasonId.isBlank()) {
+        if (seasonId.isNotBlank()) {
             isRefreshing.value = true
-            loadData()
             loadEpisodeList(seasonId)
         }
     }
@@ -302,16 +229,15 @@ private class BangumiDetailPageViewModel(
     }
 
     fun startPlayBangumi(episodes: List<EpisodeInfo>, item: EpisodeInfo) {
-        val seasonDetail = detailInfo.value ?: return
         val playerSource = BangumiPlayerSource(
-            sid = seasonDetail.season_id,
+            sid = seasonId,
             epid = item.id,
             aid = item.aid,
             id = item.cid,
             title = item.long_title.ifBlank { item.title },
             coverUrl = item.cover,
             ownerId = "",
-            ownerName = seasonDetail.season_title
+            ownerName = ""
         )
 
         playerSource.episodes = episodes.map {
@@ -329,11 +255,6 @@ private class BangumiDetailPageViewModel(
             )
         }
         playerSource.defaultPlayerSource.run {
-            val progress = detailInfo.value?.user_status?.watch_progress
-            if (progress != null && item.id.toLongOrNull() == progress.last_ep_id) {
-                lastPlayCid = item.cid
-                lastPlayTime = progress.last_time * 1000L
-            }
             val dimension = item.dimension
             if (dimension != null) {
                 width = dimension.width
@@ -346,54 +267,38 @@ private class BangumiDetailPageViewModel(
     fun menuItemClick(view: View, menuItem: MenuItemPropInfo) {
         when (menuItem.key) {
             1 -> {
-                val info = detailInfo.value
-                if (info != null) {
-                    val id = info.season_id
-                    var url = "https://www.bilibili.com/bangumi/play/ss$id"
+                if (seasonId.isNotBlank()) {
+                    val url = "https://www.bilibili.com/bangumi/play/ss$seasonId"
                     BiliUrlMatcher.toUrlLink(fragment.requireContext(), url)
-                } else {
-                    PopTip.show("请等待信息加载完成")
                 }
             }
             2 -> {
-                val info = detailInfo.value
-                if (info != null) {
+                if (seasonId.isNotBlank()) {
                     val activity = fragment.requireActivity()
-                    var shareIntent = Intent().apply {
+                    val shareIntent = Intent().apply {
                         action = Intent.ACTION_SEND
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, "bilibili番剧分享")
-                        putExtra(Intent.EXTRA_TEXT, "${info.season_title} https://www.bilibili.com/bangumi/play/ss${info.season_id}")
+                        putExtra(Intent.EXTRA_TEXT, "分享番剧 https://www.bilibili.com/bangumi/play/ss$seasonId")
                     }
                     activity.startActivity(Intent.createChooser(shareIntent, "分享"))
-                } else {
-                    PopTip.show("请等待信息加载完成")
                 }
-
             }
             3 -> {
-                val info = detailInfo.value
-                if (info != null) {
+                if (seasonId.isNotBlank()) {
                     val activity = fragment.requireActivity()
                     val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    var label = "url"
-                    var text = "https://www.bilibili.com/bangumi/play/ss${info.season_id}"
-                    val clip = ClipData.newPlainText(label, text)
+                    val text = "https://www.bilibili.com/bangumi/play/ss$seasonId"
+                    val clip = ClipData.newPlainText("url", text)
                     clipboard.setPrimaryClip(clip)
                     PopTip.show("已复制：$text")
-                } else {
-                    PopTip.show("请等待信息加载完成")
                 }
             }
             4 -> {
-                val info = detailInfo.value
-                if (info != null) {
-                    bottomSheetState.open(DownloadBangumiCreatePage(info.season_id))
-                } else {
-                    PopTip.show("请等待信息加载完成")
+                if (seasonId.isNotBlank()) {
+                    bottomSheetState.open(DownloadBangumiCreatePage(seasonId))
                 }
             }
-
             MenuKeys.follow -> {
                 followSeason()
             }
@@ -427,14 +332,8 @@ private fun BangumiDetailPageContent(
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
-    val detailInfo = viewModel.detailInfo.collectAsState().value
-    val isFollow = viewModel.isFollow.collectAsState().value
-    val seasons = viewModel.seasons.collectAsState().value
-    val loading = viewModel.loading.collectAsState().value
-
     val sectionList = viewModel.sectionList.collectAsState().value
     val sectionId = viewModel.sectionId.collectAsState().value
-    val sectionLoading = viewModel.sectionLoading.collectAsState().value
     val episodes = remember(sectionId, sectionList) {
         sectionList.find {
             it.id == sectionId
@@ -461,21 +360,6 @@ private fun BangumiDetailPageContent(
     LaunchedEffect(seasonEpId.value) {
         viewModel.epId = seasonEpId.value
     }
-    LaunchedEffect(detailInfo) {
-        detailInfo?.let {
-            if (it.season_id != seasonId.value) {
-                seasonId.value = it.season_id
-            }
-        }
-    }
-    LaunchedEffect(seasons, seasonId.value) {
-        val index = seasons.indexOfFirst {
-            it.season_id == seasonId.value
-        }
-        if (index > 0) {
-            seasonsListState.scrollToItem(index)
-        }
-    }
 
     LaunchedEffect(mediaId) {
         if (mediaId.isNotBlank() && seasonId.value.isBlank()) {
@@ -490,12 +374,9 @@ private fun BangumiDetailPageContent(
                 }
                 if (res.isSuccess) {
                     val resultData = res.requireData()
-                    if (resultData.containsKey("media")) {
-                        val media = resultData["media"]!!
-                        val jsonObject = media.jsonObject
-                        if (jsonObject.containsKey("season_id")) {
-                            seasonId.value = jsonObject["season_id"]!!.jsonPrimitive.content
-                        }
+                    val media = resultData["media"]?.jsonObject
+                    if (media?.containsKey("season_id") == true) {
+                        seasonId.value = media["season_id"]!!.jsonPrimitive.content
                     }
                 } else {
                     PopTip.show(res.message)
@@ -507,8 +388,8 @@ private fun BangumiDetailPageContent(
     }
 
     val pageConfigId = PageConfig(
-        title = detailInfo?.season_title ?: "番剧详情",
-        menu = remember(isFollow) {
+        title = "番剧详情",
+        menu = remember {
             myMenu {
                 myItem {
                     key = MenuKeys.more
@@ -522,11 +403,7 @@ private fun BangumiDetailPageContent(
                         }
                         myItem {
                             key = 2
-                            title = if (detailInfo != null) {
-                                "分享番剧(${detailInfo.stat.share})"
-                            } else {
-                                "分享番剧"
-                            }
+                            title = "分享番剧"
                         }
                         myItem {
                             key = 3
@@ -540,13 +417,8 @@ private fun BangumiDetailPageContent(
                 }
                 myItem {
                     key = MenuKeys.follow
-                    if (isFollow) {
-                        iconFileName = "ic_baseline_favorite_24"
-                        title = "已追番"
-                    } else {
-                        iconFileName = "ic_outline_favorite_border_24"
-                        title = "追番"
-                    }
+                    iconFileName = "ic_outline_favorite_border_24"
+                    title = "追番"
                 }
             }
         }
@@ -572,68 +444,9 @@ private fun BangumiDetailPageContent(
             innerPadding = windowInsets.toPaddingValues(),
             chainScrollableLayoutState = chainScrollableLayoutState,
             leftMaxWidth = 600.dp,
-            leftMaxHeight = 340.dp,
-            leftContent = { _, innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                ) {
-/*                    if (detailInfo != null) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            GlideImage(
-                                model = UrlUtil.autoHttps(detailInfo.cover) + "@560w_746h",
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(120.dp, 166.dp)
-                                    .clip(RoundedCornerShape(10.dp)),
-                            )
-                            Text(
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                text = detailInfo.season_title,
-                                style = MaterialTheme.typography.titleLarge,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                modifier = Modifier.padding(bottom = 5.dp),
-                                text = detailInfo.newest_ep.desc,
-                                style = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Row() {
-                                Text(
-                                    text = detailInfo.stat.favorites + "追番",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = detailInfo.stat.views + "播放",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }*/
-//                    } else if (loading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(40.dp),
-                                strokeWidth = 3.dp,
-                            )
-                        }
-
-//                    }
-                }
+            leftMaxHeight = 0.dp,
+            leftContent = { _, _ ->
+                // 简介和头部信息UI已完全砍掉，不再渲染任何简介以及其统计卡片
             }
         ) { _, innerPadding ->
             LazyColumn(
@@ -642,72 +455,21 @@ private fun BangumiDetailPageContent(
                     .fillMaxSize(),
                 contentPadding = innerPadding,
             ) {
-                item("evaluate") {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                        ) {
-                            if (seasons.isNotEmpty()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = "选择系列：",
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    LazyRow(
-                                        state = seasonsListState,
-                                        modifier = Modifier.weight(1f),
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                    ) {
-                                        items(seasons, { it.season_id }) {
-                                            FilterChip(
-                                                selected = it.season_id == seasonId.value,
-                                                onClick = {
-                                                    seasonId.value = it.season_id
-                                                },
-                                                label = {
-                                                    Text(text = it.season_title)
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(5.dp))
-                            }
-                            Text(
-                                text = detailInfo?.evaluate ?: "",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                }
-
                 if (sectionList.size > 1) {
                     item("sectionList") {
                         LazyRow(
                             modifier = Modifier.padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            items(sectionList, { it.id }) {
+                            items(sectionList, key = { it.id }) { item ->
                                 FilterChip(
-                                    selected = it.id == sectionId,
+                                    selected = item.id == sectionId,
                                     onClick = {
-                                        viewModel.changeSection(it)
+                                        viewModel.changeSection(item)
                                     },
                                     label = {
                                         Text(
-                                            text = it.title
+                                            text = item.title
                                         )
                                     }
                                 )
@@ -715,18 +477,14 @@ private fun BangumiDetailPageContent(
                         }
                     }
                 }
-                val userProgress = detailInfo?.user_status?.watch_progress
-                items(episodes, { it.id }) { item ->
+                items(episodes, key = { it.id }) { item ->
                     BangumiEpisodeItem(
                         modifier = Modifier.padding(
                             horizontal = 8.dp,
                             vertical = 4.dp,
                         ),
                         item = item,
-                        desc = if (userProgress != null && item.id.toLongOrNull() == userProgress.last_ep_id) {
-                            val time = NumberUtil.converDuration(userProgress.last_time.toInt())
-                            "上次看到 $time"
-                        } else null,
+                        desc = null,
                         playerState = playerState,
                         onClick = {
                             viewModel.startPlayBangumi(episodes, item)
@@ -741,65 +499,5 @@ private fun BangumiDetailPageContent(
                 }
             }
         }
-
-        val userProgress = detailInfo?.user_status?.watch_progress
-        if (userProgress != null) {
-            if (playerState.sid != detailInfo?.season_id) {
-                val lastEpIndex = userProgress.last_ep_index.ifBlank {
-                    episodes.firstOrNull { episode ->
-                        userProgress.last_ep_id.toString() == episode.id
-                    }?.index ?: ""
-                }
-                if (lastEpIndex.isNotBlank()) {
-                    FloatingActionButton(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(8.dp)
-                            .padding(
-                                bottom = windowStore.bottomAppBarHeightDp.dp
-                                        + windowInsets.bottomDp.dp
-                            ),
-                        onClick = {
-                            scope.launch {
-                                chainScrollableLayoutState.scrollToMax()
-                                val (section, index) = viewModel.findSectionEpisodeIndex(
-                                    userProgress.last_ep_id.toString()
-                                )
-                                if (section != null && index != -1) {
-                                    val offset = if (sectionList.size > 1) {
-                                        2
-                                    } else {
-                                        1
-                                    }
-                                    viewModel.changeSection(section)
-                                    episodesListState.scrollToItem(
-                                        index = index + offset,
-                                        scrollOffset = -windowInsets.top
-                                    )
-                                }
-                            }
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(5.dp)
-                        ) {
-                            Text(text = "上次看到")
-                            Text(
-                                text = "${if (NumberUtil.isNumber(lastEpIndex)) {
-                                    "第${lastEpIndex}话"
-                                } else {
-                                    lastEpIndex
-                                }} ${NumberUtil.converDuration(userProgress.last_time.toInt())}"
-                            )
-
-                        }
-                    }
-                }
-            }
-        }
-
     }
-
 }
