@@ -115,18 +115,9 @@ public class BilibiliService extends StreamingService {
         }
         return cookies.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("; ")); // Join with "; " for readability
+                .collect(Collectors.joining("; "));
     }
 
-    /**
-     * Generate a HMAC-SHA256 hash of the given message string using the given key
-     * string.
-     *
-     * @param key     The key string to use for the HMAC-SHA256 hash.
-     * @param message The message string to hash.
-     * @return The HMAC-SHA256 hash of the given message string using the given key
-     * string.
-     */
     private static String hmacSha256(String key, String message) {
         Mac mac;
         try {
@@ -144,22 +135,23 @@ public class BilibiliService extends StreamingService {
         return bytesToHex(hash);
     }
 
-    /**
-     * Get a Bilibili web ticket for the given CSRF token.
-     *
-     * @param csrf The CSRF token to use for the web ticket, can be {@code null} or
-     *             empty.
-     * @see <a href="https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/misc/sign/bili_ticket.md">BiliTicket</a>
-     */
     private static Map.Entry<String, Long> getBiliTicket(String csrf, LinkedHashMap<String, String> cookies) throws IOException, JsonParserException {
-        // params
+        // 如果 csrf 为空但系统已登录，直接从 tokens 解析获取 bili_jct 传递给 csrf，防止 -111 签名错误
+        String finalCsrf = csrf;
+        if ((finalCsrf == null || finalCsrf.isEmpty()) && ServiceList.BiliBili.hasTokens()) {
+            finalCsrf = parseCookieValue(ServiceList.BiliBili.getTokens(), "bili_jct");
+        }
+        if (finalCsrf == null) {
+            finalCsrf = "";
+        }
+
         long ts = Instant.now().getEpochSecond();
         String hexSign = hmacSha256("XgwSnGZ1p", "ts" + ts);
         String url = FETCH_TICKET_URL + '?' +
                 "key_id=ec02" + '&' +
                 "hexsign=" + hexSign + '&' +
                 "context[ts]=" + ts + '&' +
-                "csrf=" + (csrf == null ? "" : csrf);
+                "csrf=" + finalCsrf;
         LinkedHashMap<String, List<String>> headers = getUserAgentHeaders(WWW_REFERER);
         headers.put("Cookie", Collections.singletonList(mapToCookieHeader(cookies)));
         Response response;
@@ -182,22 +174,16 @@ public class BilibiliService extends StreamingService {
         return new AbstractMap.SimpleEntry<>(ticket, expires);
     }
 
-    /**
-     * @see <a href="https://github.com/SocialSisterYi/bilibili-API-collect/issues/933">_uuid</a>
-     */
     private static String getFpUuid() {
         final String[] DIGIT_MAP = {
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "10"
         };
 
-        // Get the last 5 digits of the current timestamp
         long t = System.currentTimeMillis() % 100_000;
 
-        // Generate 32 random bytes
         byte[] index = new byte[32];
         ThreadLocalRandom.current().nextBytes(index);
 
-        // Build the main part of the UUID string
         StringBuilder result = new StringBuilder(64);
         List<Integer> hyphenIndices = Arrays.asList(9, 13, 17, 21);
 
@@ -205,11 +191,9 @@ public class BilibiliService extends StreamingService {
             if (hyphenIndices.contains(ii)) {
                 result.append('-');
             }
-            // Use the lower 4 bits of the random byte as an index into DIGIT_MAP
             result.append(DIGIT_MAP[index[ii] & 0x0f]);
         }
 
-        // Append the formatted timestamp and the suffix
         result.append(String.format("%05d", t));
         result.append("infoc");
 
@@ -317,7 +301,6 @@ public class BilibiliService extends StreamingService {
     }
 
     static public boolean isBiliBiliDownloadUrl(String url){
-        // *.akamaized.net, *.bilivideo.com
         return url.contains("akamaized.net") || url.contains("bilivideo.com");
     }
 
@@ -357,11 +340,6 @@ public class BilibiliService extends StreamingService {
     }
 
     static public String getBitrate(int code) {
-        //30216 	64K
-        //30232 	132K
-        //30280 	192K
-        //30250 	杜比全景声
-        //30251 	Hi-Res无损
         switch (code) {
             case 30216:
                 return "64K";
@@ -511,5 +489,19 @@ public class BilibiliService extends StreamingService {
 
     public static void rotateVideoApiMode() {
         userVideoApiMode = (userVideoApiMode + 1) % SIZE_USER_VIDEO_API_MODE;
+    }
+
+    private static String parseCookieValue(String cookieHeader, String cookieName) {
+        if (cookieHeader == null || cookieHeader.isEmpty()) {
+            return "";
+        }
+        String[] cookies = cookieHeader.split(";");
+        for (String cookie : cookies) {
+            String[] parts = cookie.split("=", 2);
+            if (parts.length == 2 && parts[0].trim().equalsIgnoreCase(cookieName)) {
+                return parts[1].trim();
+            }
+        }
+        return "";
     }
 }
