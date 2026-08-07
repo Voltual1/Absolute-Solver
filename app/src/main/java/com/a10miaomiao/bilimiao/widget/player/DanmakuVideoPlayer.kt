@@ -477,12 +477,14 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     private var lastSpeed = 0f  // init an invalid value
 
     private val longClickControlTask = Runnable {
-        if (System.currentTimeMillis() - touchSurfaceDownTime >= 500
-            && mCurrentState == CURRENT_STATE_PLAYING
-            && !mChangePosition && !mChangeVolume && !mBrightness) {
-            startLongClickSpeedPlay()
-        }
+    if (System.currentTimeMillis() - touchSurfaceDownTime >= 500
+        && mCurrentState == CURRENT_STATE_PLAYING
+        && !mChangePosition && !mChangeVolume && !mBrightness
+        && mScaleFactor == 1.0f // 仅在未放大状态下允许长按加速
+    ) {
+        startLongClickSpeedPlay()
     }
+}
 
     /**
      * 开始长按倍数播放
@@ -596,19 +598,21 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun touchSurfaceDown(x: Float, y: Float) {
-        super.touchSurfaceDown(x, y)
-        val curWidth = measuredWidth
-        val curHeight = measuredHeight
-        val edgeSize = context.dip(80).let {
-            min(min(curWidth, curHeight), it) / 2
-        }
-        if (x.toInt() in edgeSize..(curWidth - edgeSize)
-            && y.toInt() in edgeSize..(curHeight - edgeSize)) {
-            // 屏幕边缘不触发长按倍数
+    super.touchSurfaceDown(x, y)
+    val curWidth = measuredWidth
+    val curHeight = measuredHeight
+    val edgeSize = context.dip(80).let {
+        min(min(curWidth, curHeight), it) / 2
+    }
+    if (x.toInt() in edgeSize..(curWidth - edgeSize)
+        && y.toInt() in edgeSize..(curHeight - edgeSize)) {
+        // 屏幕边缘不触发长按倍数，且只有在未放大时才启动长按计时
+        if (mScaleFactor == 1.0f) {
             touchSurfaceDownTime = System.currentTimeMillis()
             postDelayed(longClickControlTask, 500)
         }
     }
+}
 
     override fun touchSurfaceMove(deltaX: Float, deltaY: Float, y: Float) {
         if (isSpeedPlaying) {
