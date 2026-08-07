@@ -37,6 +37,8 @@ import androidx.media3.exoplayer.util.EventLogger;
 
 import com.a10miaomiao.bilimiao.service.PlaybackService;
 
+import io.github.anilbeesetti.nextlib.media3ext.NextRenderersFactory;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.util.HashMap;
@@ -383,7 +385,7 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
                                 : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
                                 : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF;
                         if (mRendererFactory == null) {
-                            mRendererFactory = new DefaultRenderersFactory(mAppContext);
+                            mRendererFactory = new NextRenderersFactory(mAppContext);
                             mRendererFactory.setExtensionRendererMode(extensionRendererMode);
                         }
                         if (mLoadControl == null) {
@@ -548,9 +550,6 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
 
     @Override
     public void onPlayWhenReadyChanged(boolean playWhenReady, int playbackState) {
-        //重新播放状态顺序为：STATE_IDLE -》STATE_BUFFERING -》STATE_READY
-        //缓冲时顺序为：STATE_BUFFERING -》STATE_READY
-        //Log.e(TAG, "onPlayerStateChanged: playWhenReady = " + playWhenReady + ", playbackState = " + playbackState);
         if (isLastReportedPlayWhenReady != playWhenReady || lastReportedPlaybackState != playbackState) {
             int buffer = 0;
             if (mInternalPlayer != null) {
@@ -620,9 +619,6 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
     public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
 
     }
-
-    /////////////////////////////////////AudioRendererEventListener/////////////////////////////////////////////
-
 
     @Override
     public void onPlayWhenReadyChanged(EventTime eventTime, boolean playWhenReady, int playbackState) {

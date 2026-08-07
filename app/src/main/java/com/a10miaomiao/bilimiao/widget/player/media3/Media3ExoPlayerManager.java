@@ -19,6 +19,8 @@ import com.shuyu.gsyvideoplayer.model.GSYModel;
 import com.shuyu.gsyvideoplayer.model.VideoOptionModel;
 import com.shuyu.gsyvideoplayer.player.BasePlayerManager;
 
+import io.github.anilbeesetti.nextlib.media3ext.NextRenderersFactory;
+
 import java.util.List;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
@@ -44,7 +46,7 @@ public class Media3ExoPlayerManager extends BasePlayerManager {
     }
 
     protected ExoMediaPlayer buildMediaPlayer(Context context) {
-        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context)
+        DefaultRenderersFactory renderersFactory = new NextRenderersFactory(context)
                 .setEnableDecoderFallback(true);
         ExoMediaPlayer exoMediaPlayer = new ExoMediaPlayer(context);
         exoMediaPlayer.setRendererFactory(renderersFactory);

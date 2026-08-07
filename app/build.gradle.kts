@@ -155,6 +155,9 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.gsy.video.player)
+    
+    implementation("io.github.anilbeesetti:nextlib-media3ext:1.10.1-0.13.0") // To add media3 software decoders and extensions
+    implementation("io.github.anilbeesetti:nextlib-mediainfo:1.10.1-0.13.0") // To get media info through ffmpeg
 
     implementation(libs.okhttp3)
     implementation(libs.pbandk.runtime)
