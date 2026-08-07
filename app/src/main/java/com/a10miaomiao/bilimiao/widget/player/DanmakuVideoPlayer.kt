@@ -27,6 +27,7 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
@@ -58,6 +59,19 @@ import kotlin.math.min
 
 
 class DanmakuVideoPlayer : StandardGSYVideoPlayer {
+
+    // 缩放手势支持
+    private var mScaleDetector: ScaleGestureDetector? = null
+    private var mScaleFactor = 1.0f
+    private val mMaxScale = 4.0f
+    private val mMinScale = 1.0f
+
+    // 缩放后平移控制
+    private var mPosX = 0f
+    private var mPosY = 0f
+    private var mLastTouchX = 0f
+    private var mLastTouchY = 0f
+    private var mActivePointerId = -1
 
     enum class PlayerMode {
         SMALL_TOP,
@@ -330,6 +344,17 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mUnlockLeftIV.setOnClickListener(lockClickListener)
         mUnlockRightIV.setOnClickListener(lockClickListener)
 
+        // 缩放手势处理器初始化
+        mScaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                mScaleFactor *= detector.scaleFactor
+                mScaleFactor = mScaleFactor.coerceIn(mMinScale, mMaxScale)
+                constrainTranslation()
+                applyScaleAndTranslation()
+                return true
+            }
+        })
+
         //android 版本 8.0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val attribute = AudioAttributes.Builder()
@@ -370,6 +395,42 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
                 updateDanmakuMargin()
             }
         }
+    }
+
+    /**
+     * 限制平移范围，防止画面拖出可见区域外
+     */
+    private fun constrainTranslation() {
+        val viewWidth = mTextureViewContainer?.width ?: 0
+        val viewHeight = mTextureViewContainer?.height ?: 0
+
+        val maxTx = ((viewWidth * (mScaleFactor - 1f)) / 2f).coerceAtLeast(0f)
+        val maxTy = ((viewHeight * (mScaleFactor - 1f)) / 2f).coerceAtLeast(0f)
+
+        mPosX = mPosX.coerceIn(-maxTx, maxTx)
+        mPosY = mPosY.coerceIn(-maxTy, maxTy)
+    }
+
+    /**
+     * 应用缩放和平移参数至 TextureViewContainer
+     */
+    private fun applyScaleAndTranslation() {
+        mTextureViewContainer?.let { container ->
+            container.scaleX = mScaleFactor
+            container.scaleY = mScaleFactor
+            container.translationX = mPosX
+            container.translationY = mPosY
+        }
+    }
+
+    /**
+     * 重置缩放状态
+     */
+    fun resetScale() {
+        mScaleFactor = 1.0f
+        mPosX = 0f
+        mPosY = 0f
+        applyScaleAndTranslation()
     }
 
     /**
@@ -449,7 +510,77 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if (event != null) {
-            when(event.action){
+            // 将触摸事件分发给缩放检测器
+            mScaleDetector?.onTouchEvent(event)
+
+            val action = event.actionMasked
+
+            // 当手指数量大于等于2时，屏蔽进度/声音/亮度的手势拦截
+            if (event.pointerCount >= 2) {
+                mChangePosition = false
+                mChangeVolume = false
+                mBrightness = false
+                removeCallbacks(longClickControlTask)
+                touchSurfaceDownTime = Long.MAX_VALUE
+                if (isSpeedPlaying) {
+                    stopLongClickSpeedPlay()
+                }
+                super.onTouch(v, event)
+                return true
+            }
+
+            // 视频处于缩放放大状态时，支持拖拽平移画面
+            if (mScaleFactor > 1.0f) {
+                when (action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        val pointerIndex = event.actionIndex
+                        mLastTouchX = event.getX(pointerIndex)
+                        mLastTouchY = event.getY(pointerIndex)
+                        mActivePointerId = event.getPointerId(0)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val pointerIndex = event.findPointerIndex(mActivePointerId)
+                        if (pointerIndex != -1) {
+                            val x = event.getX(pointerIndex)
+                            val y = event.getY(pointerIndex)
+                            val dx = x - mLastTouchX
+                            val dy = y - mLastTouchY
+
+                            mPosX += dx
+                            mPosY += dy
+
+                            constrainTranslation()
+                            applyScaleAndTranslation()
+
+                            mLastTouchX = x
+                            mLastTouchY = y
+                        }
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        mActivePointerId = -1
+                    }
+                    MotionEvent.ACTION_POINTER_UP -> {
+                        val pointerIndex = event.actionIndex
+                        val pointerId = event.getPointerId(pointerIndex)
+                        if (pointerId == mActivePointerId) {
+                            val newPointerIndex = if (pointerIndex == 0) 1 else 0
+                            mLastTouchX = event.getX(newPointerIndex)
+                            mLastTouchY = event.getY(newPointerIndex)
+                            mActivePointerId = event.getPointerId(newPointerIndex)
+                        }
+                    }
+                }
+
+                // 阻止平移时的其他播放手势响应
+                if (action == MotionEvent.ACTION_MOVE) {
+                    mChangePosition = false
+                    mChangeVolume = false
+                    mBrightness = false
+                    return true
+                }
+            }
+
+            when(action){
                 MotionEvent.ACTION_CANCEL,
                 MotionEvent.ACTION_UP-> {
                     //触控被拦截不触发长按倍速
@@ -699,6 +830,9 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun startPrepare() {
+        // 加载新视频时，强制重置视频画面的缩放状态
+        resetScale()
+        
         // super.startPrepare()
         // 重写方法，加入音频焦点开关
         this.gsyVideoManager.listener()?.onCompletion()
@@ -1046,6 +1180,10 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             mBrightnessDialog.window!!.attributes = localLayoutParams
         }
         super.showBrightnessDialog(percent)
+    }
+
+    override fun setPlatform(platform: String) {
+        // 不支持，保留方法签名
     }
 
     override fun setSpeed(speed: Float, soundTouch: Boolean) {
