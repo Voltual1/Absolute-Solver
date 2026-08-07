@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
     id 'com.squareup.wire' version '6.4.1'
-    id 'java-library'
 }
 wire {
     java {
