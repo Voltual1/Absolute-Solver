@@ -7,6 +7,23 @@
     io.github.anilbeesetti.nextlib.media3ext
 " />
 
+    <!-- 已注释掉的 media3 库覆盖声明 -->
+    <!--
+    androidx.media3.common,
+    androidx.media3.exoplayer,
+    androidx.media3.exoplayer.dash,
+    androidx.media3.exoplayer.hls,
+    androidx.media3.exoplayer.rtsp,
+    androidx.media3.exoplayer.smoothstreaming,
+    androidx.media3.ui,
+    androidx.media3.session,
+    androidx.media3.datasource,
+    androidx.media3.extractor,
+    androidx.media3.database,
+    androidx.media3.decoder,
+    androidx.media3.container
+    -->
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -86,4 +103,12 @@
             android:name=".service.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback"
-            android:permission="android.permission.BIND_MEDIA_BROWSER_SERVICE
+            android:permission="android.permission.BIND_MEDIA_BROWSER_SERVICE">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>
