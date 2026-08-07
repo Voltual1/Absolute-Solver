@@ -19,7 +19,7 @@ import com.shuyu.gsyvideoplayer.model.GSYModel;
 import com.shuyu.gsyvideoplayer.model.VideoOptionModel;
 import com.shuyu.gsyvideoplayer.player.BasePlayerManager;
 
-import io.github.anilbeesetti.nextlib.media3ext.NextRenderersFactory;
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 
 import java.util.List;
 
@@ -140,6 +140,7 @@ public class Media3ExoPlayerManager extends BasePlayerManager {
     public void release() {
         if (mediaPlayer != null) {
             mediaPlayer.setSurface(null);
+            mediaPlayer.release();
             mediaPlayer.release();
             mediaPlayer = null;
         }
