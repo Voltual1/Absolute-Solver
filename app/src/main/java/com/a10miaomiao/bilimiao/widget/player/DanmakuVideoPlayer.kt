@@ -1182,10 +1182,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         super.showBrightnessDialog(percent)
     }
 
-    override fun setPlatform(platform: String) {
-        // 不支持，保留方法签名
-    }
-
     override fun setSpeed(speed: Float, soundTouch: Boolean) {
         super.setSpeed(speed, soundTouch)
         mPlaySpeedValue.text = "x$speed"
