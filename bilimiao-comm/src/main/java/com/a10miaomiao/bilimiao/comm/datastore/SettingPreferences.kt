@@ -58,6 +58,14 @@ object SettingPreferences {
         return block(preferences)
     }
 
+    @JvmStatic
+    fun getPlayerDecoder(context: Context): Int {
+        return kotlinx.coroutines.runBlocking {
+            val preferences = context.dataStore.data.first()
+            preferences[PlayerDecoder] ?: SettingConstants.PLAYER_DECODER_PREFER_SOFTWARE
+        }
+    }
+
     /**
      * General
      */

@@ -46,7 +46,9 @@ public class Media3ExoPlayerManager extends BasePlayerManager {
     }
 
     protected ExoMediaPlayer buildMediaPlayer(Context context) {
+        int decoderMode = com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences.getPlayerDecoder(context);
         DefaultRenderersFactory renderersFactory = new NextRenderersFactory(context)
+                .setExtensionRendererMode(decoderMode)
                 .setEnableDecoderFallback(true);
         ExoMediaPlayer exoMediaPlayer = new ExoMediaPlayer(context);
         exoMediaPlayer.setRendererFactory(renderersFactory);
@@ -140,7 +142,6 @@ public class Media3ExoPlayerManager extends BasePlayerManager {
     public void release() {
         if (mediaPlayer != null) {
             mediaPlayer.setSurface(null);
-            mediaPlayer.release();
             mediaPlayer.release();
             mediaPlayer = null;
         }

@@ -14,6 +14,11 @@ object SettingConstants {
     const val PLAYER_DECODER_DEFAULT = "default"
     const val PLAYER_DECODER_AV1 = "AV1"
 
+    // 解码器模式选项值
+    const val PLAYER_DECODER_PREFER_SOFTWARE = 2
+    const val PLAYER_DECODER_PREFER_HARDWARE = 1
+    const val PLAYER_DECODER_ONLY_HARDWARE = 0
+
     const val PLAYER_FNVAL_FLV = 2
     const val PLAYER_FNVAL_MP4 = 2
     const val PLAYER_FNVAL_DASH = 4048

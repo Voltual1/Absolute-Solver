@@ -68,6 +68,14 @@ private class VideoSettingPageViewModel(
     fun fnvalSelectionName(value: Int) = fnvalSelection[value] ?: AnnotatedString(value.toString())
     val fnvalSelectionList = fnvalSelection.keys.toList()
 
+    private val decoderSelection = mapOf(
+        SettingConstants.PLAYER_DECODER_PREFER_SOFTWARE to AnnotatedString("软解优先 (FFmpeg 兼容性好)"),
+        SettingConstants.PLAYER_DECODER_PREFER_HARDWARE to AnnotatedString("硬解优先 (系统解码 省电)"),
+        SettingConstants.PLAYER_DECODER_ONLY_HARDWARE to AnnotatedString("仅硬解"),
+    )
+
+    fun decoderSelectionName(value: Int) = decoderSelection[value] ?: AnnotatedString(value.toString())
+    val decoderSelectionList = decoderSelection.keys.toList()
 
     private val fullModeSelection = mapOf(
         SettingConstants.PLAYER_FULL_MODE_AUTO to AnnotatedString("跟随视频"),
@@ -201,6 +209,18 @@ private fun VideoSettingPageContent(
                 },
                 defaultValue = true,
             )
+            listPreference(
+                key = SettingPreferences.PlayerDecoder.name,
+                title = {
+                    Text("解码模式")
+                },
+                summary = {
+                    Text("若播放出现绿屏、黑屏，请选择软解优先")
+                },
+                defaultValue = SettingConstants.PLAYER_DECODER_PREFER_SOFTWARE,
+                values = viewModel.decoderSelectionList,
+                valueToText = viewModel::decoderSelectionName
+            )
 
             preferenceCategory(
                 key = "source",
@@ -313,12 +333,12 @@ private fun VideoSettingPageContent(
                 },
                 defaultValue = SettingConstants.PLAYER_SPEED_SETS,
                 valueText = {
-    Text(
-        text = "$it 倍速",  // 使用字符串模板
-        modifier = Modifier.widthIn(min = 48.dp),
-        textAlign = TextAlign.Center,
-    )
-},
+                    Text(
+                        text = "$it 倍速",  // 使用字符串模板
+                        modifier = Modifier.widthIn(min = 48.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                },
                 valueCanEdit = {
                     it !in SettingConstants.PLAYER_SPEED_SETS
                 },
@@ -412,12 +432,12 @@ private fun VideoSettingPageContent(
             )
 
             item("bottom") {
-    Spacer(
-        modifier = Modifier.height(
-            (windowInsets.bottomDp + windowStore.bottomAppBarHeightDp).dp
-        )
-    )
-}
+                Spacer(
+                    modifier = Modifier.height(
+                        (windowInsets.bottomDp + windowStore.bottomAppBarHeightDp).dp
+                    )
+                )
+            }
         }
     }
 }

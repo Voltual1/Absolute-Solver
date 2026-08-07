@@ -378,15 +378,10 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
                             mTrackSelector = new DefaultTrackSelector(mAppContext);
                         }
                         mEventLogger = new EventLogger();
-                        boolean preferExtensionDecoders = true;
-                        boolean useExtensionRenderers = true;//是否开启扩展
-                        @DefaultRenderersFactory.ExtensionRendererMode int extensionRendererMode = useExtensionRenderers
-                                ? (preferExtensionDecoders ? DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
-                                : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
-                                : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF;
                         if (mRendererFactory == null) {
+                            int decoderMode = com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences.getPlayerDecoder(mAppContext);
                             mRendererFactory = new NextRenderersFactory(mAppContext);
-                            mRendererFactory.setExtensionRendererMode(extensionRendererMode);
+                            mRendererFactory.setExtensionRendererMode(decoderMode);
                         }
                         if (mLoadControl == null) {
                             mLoadControl = new DefaultLoadControl();
@@ -550,9 +545,6 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
 
     @Override
     public void onPlayWhenReadyChanged(boolean playWhenReady, int playbackState) {
-        //重新播放状态顺序为：STATE_IDLE -》STATE_BUFFERING -》STATE_READY
-        //缓冲时顺序为：STATE_BUFFERING -》STATE_READY
-        //Log.e(TAG, "onPlayerStateChanged: playWhenReady = " + playWhenReady + ", playbackState = " + playbackState);
         if (isLastReportedPlayWhenReady != playWhenReady || lastReportedPlaybackState != playbackState) {
             int buffer = 0;
             if (mInternalPlayer != null) {
@@ -622,9 +614,6 @@ public class ExoMediaPlayer extends AbstractMediaPlayer implements Player.Listen
     public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
 
     }
-
-    /////////////////////////////////////AudioRendererEventListener/////////////////////////////////////////////
-
 
     @Override
     public void onPlayWhenReadyChanged(EventTime eventTime, boolean playWhenReady, int playbackState) {
