@@ -36,12 +36,12 @@ allprojects {
         }
         
         // 统一强制将所有 androidx.media3 相关依赖锁定为 1.9.0
-        resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == "androidx.media3") {
-                details.useVersion("1.9.0")
-                details.because("Lock all Media3 dependencies to version 1.9.0 project-wide")
-            }
-        }
+resolutionStrategy.eachDependency {
+    if (requested.group == "androidx.media3") {
+        useVersion("1.9.0")
+        because("Lock all Media3 dependencies to version 1.9.0 project-wide")
+    }
+}
     }
 }
 
