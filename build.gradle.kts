@@ -35,11 +35,11 @@ allprojects {
             substitute(module("me.panpf:sketch-gif:2.7.1")).using(module("io.github.panpf.sketch:sketch-gif:2.7.1"))
         }
         
-        // 统一强制将所有 androidx.media3 相关依赖锁定为 1.9.0
+        // 统一强制将所有 androidx.media3 相关依赖锁定为 1.8.0
 resolutionStrategy.eachDependency {
     if (requested.group == "androidx.media3") {
-        useVersion("1.9.0")
-        because("Lock all Media3 dependencies to version 1.9.0 project-wide")
+        useVersion("1.8.0")
+        because("Lock all Media3 dependencies to version 1.8.0 project-wide")
     }
 }
     }
