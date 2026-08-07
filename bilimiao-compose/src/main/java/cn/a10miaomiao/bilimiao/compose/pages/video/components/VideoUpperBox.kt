@@ -84,29 +84,15 @@ fun VideoUpperBox(
                 contentDescription = null,
             )
             Column(
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(start = 8.dp),
             ) {
                 Text(
                     text = author.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
-                if (ownerExt != null) {
-//                    Row {
-                    Text(
-                        "${NumberUtil.converString(ownerExt.fans)}粉丝",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-//                        Spacer(Modifier.width(10.dp))
-//                        Text(
-//                            "${NumberUtil.converString(ownerExt.arcCount)}投稿",
-//                            style = MaterialTheme.typography.labelMedium,
-//                        )
-//                    }
-                }
+                // 彻底移除粉丝数量显示，保持视觉简洁与统一
             }
         }
     }
 }
-
