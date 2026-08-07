@@ -412,10 +412,6 @@ public final class YoutubeDashManifestCreatorsUtils {
             setAttribute(audioChannelConfigurationElement, doc, "schemeIdUri",
                     "urn:mpeg:dash:23003:3:audio_channel_configuration:2011");
 
-//            if (itagItem.getAudioChannels() <= 0) {
-//                throw new CreationException("the number of audioChannels in the ItagItem is <= 0: "
-//                        + itagItem.getAudioChannels());
-//            }
             setAttribute(audioChannelConfigurationElement, doc, "value",
                     String.valueOf(itagItem.getAudioChannels()));
 
@@ -613,8 +609,8 @@ public final class YoutubeDashManifestCreatorsUtils {
     private static Document newDocument() throws ParserConfigurationException {
         final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         try {
-            documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            documentBuilderFactory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD", "");
+            documentBuilderFactory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalSchema", "");
         } catch (final Exception ignored) {
             // Ignore exceptions as setting these attributes to secure XML generation is not
             // supported by all platforms (like the Android implementation)
@@ -639,8 +635,8 @@ public final class YoutubeDashManifestCreatorsUtils {
 
         final TransformerFactory transformerFactory = TransformerFactory.newInstance();
         try {
-            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            transformerFactory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD", "");
+            transformerFactory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalSchema", "");
         } catch (final Exception ignored) {
             // Ignore exceptions as setting these attributes to secure XML generation is not
             // supported by all platforms (like the Android implementation)
