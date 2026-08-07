@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.a10miaomiao.bilimiao"
+        applicationId = me.voltual.as"
         minSdk = 21
         targetSdk = 36
         versionCode = 117
@@ -22,13 +22,20 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        ndk {
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("armeabi-v7a")
-            abiFilters.add("armeabi")
-            abiFilters.add("x86")
-            abiFilters.add("x86_64")
-        }
+        // 只保留 v7a + v8a，并开启 ABI 分包
+ndk {
+    abiFilters.add("armeabi-v7a")
+    abiFilters.add("arm64-v8a")
+}
+
+splits {
+    abi {
+        isEnable = true
+        reset()                          // 清空默认
+        include("armeabi-v7a", "arm64-v8a")
+        isUniversalApk = false           // 不生成包含所有 ABI 的万能包
+    }
+}
     }
 
     val signingFile = file("signing.properties")
