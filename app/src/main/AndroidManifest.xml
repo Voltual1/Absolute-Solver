@@ -25,7 +25,8 @@
         android:roundIcon="@mipmap/ic_bilimiao_33_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Bilimiao"
-        android:largeHeap="true">
+        android:largeHeap="true"
+        tools:overrideLibrary="io.github.anilbeesetti.nextlib.media3ext">
         <!-- 渠道 -->
         <meta-data
             android:name="app_channel"
