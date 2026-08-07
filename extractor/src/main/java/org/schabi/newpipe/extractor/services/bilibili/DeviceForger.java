@@ -1,11 +1,39 @@
 package org.schabi.newpipe.extractor.services.bilibili;
 
+import android.os.Build;
 import java.util.Locale;
 import java.util.SplittableRandom;
 
 import javax.annotation.Nonnull;
 
 public class DeviceForger {
+
+    interface RandomSource {
+        int nextInt(int bound);
+    }
+
+    static class LegacyRandomSource implements RandomSource {
+        private final java.util.Random random = new java.util.Random();
+        @Override
+        public int nextInt(int bound) {
+            return random.nextInt(bound);
+        }
+    }
+
+    static class ModernRandomSource implements RandomSource {
+        private final SplittableRandom random = new SplittableRandom();
+        @Override
+        public int nextInt(int bound) {
+            return random.nextInt(bound);
+        }
+    }
+
+    // 隔离类加载，防止在低版本系统上类加载验证阶段直接抛出 NoClassDefFoundError
+    static class ModernRandomHelper {
+        static RandomSource createModernRandom() {
+            return new ModernRandomSource();
+        }
+    }
 
     static public class Device {
         private String userAgent;
@@ -118,7 +146,7 @@ public class DeviceForger {
         return String.format(Locale.ROOT, ChromiumAngleRendererInfoTemplate, vendor, gpuWithApi, vendor);
     }
 
-    static GraphicCard randomCard(SplittableRandom random) {
+    static GraphicCard randomCard(RandomSource random) {
         GraphicCard[] cards = {
                 new GraphicCard("AMD", "AMD Radeon 780M Graphics (0x000015BF)"),
                 new GraphicCard("AMD", "AMD Radeon RX 5700 (0x0000731F)"),
@@ -216,7 +244,7 @@ public class DeviceForger {
         return cards[random.nextInt(cards.length)];
     }
 
-    static Device forgeDevice(SplittableRandom random) {
+    static Device forgeDevice(RandomSource random) {
         // currently we only forge device with
         // * Modern Chrome Browser (so User Agent are frozen)
         // * Windows 10/11 X64 Operate System
@@ -243,7 +271,13 @@ public class DeviceForger {
     }
 
     static public void regenerateRandomDevice() {
-        currentDevice = forgeDevice(new SplittableRandom());
+        RandomSource random;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            random = ModernRandomHelper.createModernRandom();
+        } else {
+            random = new LegacyRandomSource();
+        }
+        currentDevice = forgeDevice(random);
     }
 
 }
