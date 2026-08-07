@@ -15,6 +15,7 @@
     androidx.media3.extractor,
     androidx.media3.database,
     androidx.media3.decoder,
+    androidx.media3.container,    
     io.github.anilbeesetti.nextlib.media3ext
 " />
 
