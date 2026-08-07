@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    
+    <uses-sdk tools:overrideLibrary="io.github.anilbeesetti.nextlib.media3ext" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -25,8 +27,7 @@
         android:roundIcon="@mipmap/ic_bilimiao_33_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Bilimiao"
-        android:largeHeap="true"
-        tools:overrideLibrary="io.github.anilbeesetti.nextlib.media3ext">
+        android:largeHeap="true">
         <!-- 渠道 -->
         <meta-data
             android:name="app_channel"
