@@ -59,7 +59,8 @@ splits {
             manifestPlaceholders["channel"] = "Development"
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -178,7 +179,7 @@ dependencies {
     "fullImplementation"(libs.baidu.mobstat.sdk)
     "fullImplementation"(libs.geetest.sensebot)
     // av1解码器：https://github.com/androidx/media/tree/release/libraries/decoder_av1
-    "fullImplementation"(files("libs/lib-decoder-av1-release.aar"))
+//    "fullImplementation"(files("libs/lib-decoder-av1-release.aar"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
