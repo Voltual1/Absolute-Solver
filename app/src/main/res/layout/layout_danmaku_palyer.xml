@@ -463,19 +463,44 @@
             android:textColor="@color/white"/>
     </LinearLayout>
 
-    <!-- 重置缩放按钮 -->
-    <ImageView
-        android:id="@+id/reset_scale"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="20dp"
-        android:background="@drawable/button_circle_shape"
-        android:padding="8dp"
-        android:src="@drawable/ic_exchange_24dp"
-        android:visibility="gone"
-        android:alpha="0.8"
-        android:contentDescription="还原大小" />
+    <!-- 缩放持久化提示条 (SnackBar样式) -->
+    <LinearLayout
+        android:id="@+id/zoom_tip_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="80dp"
+        android:background="@drawable/shape_player_speed_tips_bg"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="画面已放大"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/zoom_reset_text_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="还原"
+            android:textColor="#ff6666"
+            android:textSize="14sp"
+            android:layout_marginLeft="12dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
 
 </RelativeLayout>

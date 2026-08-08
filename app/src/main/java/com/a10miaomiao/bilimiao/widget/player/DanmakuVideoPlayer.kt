@@ -73,8 +73,9 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     private var mLastTouchY = 0f
     private var mActivePointerId = -1
 
-    // 重置缩放按钮
-    private val mResetScaleBtn: ImageView by lazy { findViewById(R.id.reset_scale) }
+    // 缩放提示条 (SnackBar样式)
+    private val mZoomTipLayout: LinearLayout by lazy { findViewById(R.id.zoom_tip_layout) }
+    private val mZoomResetTextBtn: TextView by lazy { findViewById(R.id.zoom_reset_text_btn) }
 
     enum class PlayerMode {
         SMALL_TOP,
@@ -358,8 +359,8 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             }
         })
 
-        // 重置缩放按钮点击
-        mResetScaleBtn.setOnClickListener {
+        // 重置缩放按钮点击 (SnackBar 模式下点击文本按钮还原)
+        mZoomResetTextBtn.setOnClickListener {
             resetScale()
         }
 
@@ -433,13 +434,14 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     /**
-     * 更新重置缩放按钮的显示状态
+     * 更新重置缩放提示条 (SnackBar) 的显示状态
+     * 独立于工具栏显示，只要放大了且非特定模式就一直存在
      */
     private fun updateResetScaleBtn() {
-        if (mScaleFactor > 1.0f && mBottomContainer.visibility == VISIBLE && !isHoldUp && !isPicInPicMode) {
-            mResetScaleBtn.visibility = VISIBLE
+        if (mScaleFactor > 1.0f && !isHoldUp && !isPicInPicMode) {
+            mZoomTipLayout.visibility = VISIBLE
         } else {
-            mResetScaleBtn.visibility = GONE
+            mZoomTipLayout.visibility = GONE
         }
     }
 
@@ -751,12 +753,10 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     override fun onClickUiToggle(e: MotionEvent?) {
         super.onClickUiToggle(e)
         videoPlayerCallBack?.onClickUiToggle(e)
-        updateResetScaleBtn() // 在 UI 切换时同步更新重置按钮
     }
 
     override fun hideAllWidget() {
         super.hideAllWidget()
-        mResetScaleBtn.visibility = GONE
         if (isPicInPicMode) {
             if (showBottomProgressBarInPipMode) {
                 setViewShowState(mBottomProgressBar, VISIBLE)
@@ -776,7 +776,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     private fun showAllWidget() {
-        updateResetScaleBtn()
         if (mIfCurrentIsFullscreen && mLockCurScreen && mNeedLockFull) {
             setViewShowState(mLockScreen, VISIBLE)
         } else {
@@ -826,9 +825,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
                 mBottomSubtitleTV.translationY =
                     if (visibility == VISIBLE) 0f else dip(40).toFloat()
                 
-                // 同步更新还原按钮
-                updateResetScaleBtn()
-
                 when (mode) {
                     PlayerMode.SMALL_FLOAT -> {
                         mDragBarLayout.visibility = visibility
