@@ -45,7 +45,7 @@ jobs:
         env:
           ENCODED_STRING: ${{ secrets.SIGNING_KEY }}
         run: |
-          echo $ENCODED_STRING | base64 -d > release.keystore
+          echo $ENCODED_STRING | base64 -d > app/release.keystore
 
       - name: Build Release APK
         if: github.event_name != 'pull_request'

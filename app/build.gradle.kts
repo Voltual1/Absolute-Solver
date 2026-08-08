@@ -32,18 +32,13 @@ splits {
 }
     }
 
-    val signingFile = file("signing.properties")
-    if (signingFile.exists()) {
-        val props = Properties()
-        props.load(FileInputStream(signingFile))
-        signingConfigs {
-    create("miao") {
-        storeFile = file(System.getenv("KEYSTORE_PATH") ?: "debug.keystore")
-        storePassword = System.getenv("KEYSTORE_PASSWORD")
-        keyAlias = System.getenv("KEY_ALIAS")
-        keyPassword = System.getenv("KEY_PASSWORD")
-    }
-}
+    signingConfigs {
+        create("miao") {
+            storeFile = file(System.getenv("KEYSTORE_PATH") ?: keystoreProperties.getProperty("storeFile") ?: "debug.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
+            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
+            keyPassword = System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
+        }
     }
     
     packaging {
