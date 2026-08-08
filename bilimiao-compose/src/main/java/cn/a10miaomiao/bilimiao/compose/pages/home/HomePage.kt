@@ -81,6 +81,8 @@ import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.comm.store.AppStore.HomeSettingState
 import com.a10miaomiao.bilimiao.comm.store.TimeSettingStore
 import com.a10miaomiao.bilimiao.comm.store.UserStore
+import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
+import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -177,6 +179,11 @@ private class HomePageViewModel(
     val pageState = HomePageState(pageNavigation)
     val context: Context by instance()
 
+    val versionName: String = with(context) {
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        packageInfo.versionName ?: packageInfo.versionCode.toString()
+    }
+
     init {
         loadAdData()
         viewModelScope.launch {
@@ -208,59 +215,24 @@ private class HomePageViewModel(
         return tabs
     }
 
-    private suspend fun getMiaoInitData(version: String): MiaoAdInfo {
-        val sp = context.getSharedPreferences(BilimiaoCommApp.APP_NAME, Context.MODE_PRIVATE)
-        val calendar = GregorianCalendar()
-        val curDate = version + calendar.get(Calendar.YEAR) +
-                calendar.get(Calendar.MONTH) +
-                calendar.get(Calendar.DATE)
-        val lastDate = sp.getString("miao_init_request_date", "")
-        if (curDate == lastDate) {
-            // 同一天不重复请求init接口，节省服务器资源
-            val inputStream = context.openFileInput("miaoInit.json")
-            val jsonStr = inputStream.reader().readText()
-            return Json.decodeFromString<MiaoAdInfo>(jsonStr)
-        }
-        val url = "https://bilimiao.10miaomiao.cn/miao/init?v=$version"
-        val res = MiaoHttp.request(url).awaitCall().json<MiaoAdInfo>()
-        val cacheJsonStr = Json.encodeToString(res)
-        sp.edit().putString("miao_init_request_date", curDate).apply()
-        val outputStream = context.openFileOutput("miaoInit.json", Context.MODE_PRIVATE);
-        outputStream.write(cacheJsonStr.toByteArray());
-        outputStream.close()
-        return res
-    }
-
     /**
-     * 加载广告信息
+     * 获取更新和运行初始化
      */
     private fun loadAdData() = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val manager = context.packageManager
-            val info = manager.getPackageInfo(context.packageName, 0)
-            val longVersionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                info.longVersionCode
-            } else {
-                info.versionCode.toLong()
+            val (autoCheckUpdate, ignoreUpdateVersion) = SettingPreferences.mapData(context) {
+                Pair(
+                    it[IsAutoCheckVersion] ?: true,
+                    it[IgnoreUpdateVersion] ?: ""
+                )
             }
-            val res = getMiaoInitData(longVersionCode.toString())
-            if (res.code == 0) {
-                val adData = res.data.ad
-                withContext(Dispatchers.Main) {
-                    pageState.setAdInfo(adData)
-                    saveSettingList(res.data.settingList)
-                    val (autoCheckUpdate, ignoreUpdateVersionCode) = SettingPreferences.mapData(context) {
-                        Pair(
-                            it[IsAutoCheckVersion] ?: true,
-                            it[IgnoreUpdateVersionCode] ?: 0L
-                        )
-                    }
-                    val version = res.data.version
-                    if (autoCheckUpdate
-                        && version.versionCode > longVersionCode
-                        && version.versionCode != ignoreUpdateVersionCode
-                    ) {
-                        showUpdateDialog(version, longVersionCode)
+            if (autoCheckUpdate) {
+                val result = UpdateChecker.checkForUpdates(versionName)
+                if (result is UpdateCheckResult.Success) {
+                    if (result.version != ignoreUpdateVersion) {
+                        withContext(Dispatchers.Main) {
+                            showUpdateDialog(result.version, result.content, result.url)
+                        }
                     }
                 }
             }
@@ -269,63 +241,31 @@ private class HomePageViewModel(
         }
     }
 
-    private fun showUpdateDialog(version: MiaoAdInfo.VersionBean, curVersionCode: Long) {
+    private fun showUpdateDialog(versionName: String, content: String, url: String) {
         val dialog = MaterialAlertDialogBuilder(context).apply {
-            setTitle("有新版本：" + version.versionName)
-            setMessage(version.content)
+            setTitle("有新版本：$versionName")
+            setMessage(content)
             setPositiveButton("去更新", null)
-            if (curVersionCode >= version.miniVersionCode) {
-                setNegativeButton("取消", null)
-                setNeutralButton("不再提醒此版本") { dialog, which ->
-                    setIgnoreUpdateVersion(version.versionCode)
-                }
-            } else {
-                // 小于最低版本，必须更新，对话框不能关闭
-                setCancelable(false)
+            setNegativeButton("取消", null)
+            setNeutralButton("不再提醒此版本") { _, _ ->
+                setIgnoreUpdateVersion(versionName)
             }
         }.create()
         dialog.show()
-        // 手动设置按钮点击事件，可阻止对话框自动关闭
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            var intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse(version.url)
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.data = Uri.parse(url)
             context.startActivity(intent)
-            if (curVersionCode >= version.miniVersionCode) {
-                dialog.dismiss()
-            }
+            dialog.dismiss()
         }
     }
 
-    fun setIgnoreUpdateVersion(versionCode: Long) {
+    fun setIgnoreUpdateVersion(versionName: String) {
         viewModelScope.launch {
             SettingPreferences.edit(context) {
-                it[IgnoreUpdateVersionCode] = versionCode
+                it[SettingPreferences.IgnoreUpdateVersion] = versionName
             }
         }
-    }
-
-    fun saveSettingList(settingList: List<MiaoSettingInfo>) {
-        try {
-            val jsonStr = Json.encodeToString(settingList)
-            val outputStream = context.openFileOutput("settingList.json", Context.MODE_PRIVATE);
-            outputStream.write(jsonStr.toByteArray());
-            outputStream.close();
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
-
-    /**
-     * 随机标题
-     */
-    fun randomTitle() {
-//        val titles = arrayOf("时光姬", "时光基", "时光姬", "时光姬")
-//        val subtitles = arrayOf("ε=ε=ε=┏(゜ロ゜;)┛", "(　o=^•ェ•)o　┏━┓", "(/▽＼)", "ヽ(✿ﾟ▽ﾟ)ノ")
-//        val random = Random()
-//        ui.setState {
-//            title =
-//                titles[random.nextInt(titles.size)] + "  " + subtitles[random.nextInt(titles.size)]
-//        }
     }
 
     fun menuItemClick(view: View, item: MenuItemPropInfo) {

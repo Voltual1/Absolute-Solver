@@ -44,10 +44,10 @@ import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.layout.DoubleColumnAutofitLayout
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.rememberChainScrollableLayoutState
 import cn.a10miaomiao.bilimiao.compose.pages.TestPage
-import com.a10miaomiao.bilimiao.comm.entity.miao.MiaoAdInfo
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
+import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
+import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -57,6 +57,7 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
@@ -143,30 +144,28 @@ private class AboutPageViewModel(
      fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
         try {
             versionState.value = AppVersionState.Checking
-            val url = "https://bilimiao.10miaomiao.cn/miao/init?v=$versionCode"
-            val res = MiaoHttp.request(url).call().json<MiaoAdInfo>()
-            if (res.code == 0) {
-                val versionInfo = res.data.version
-                versionState.value = if (versionInfo.versionCode > versionCode) {
-                    AppVersionState.HasUpdate(
-                        version = versionInfo.versionName,
-                        url = versionInfo.url,
-                    )
-                } else {
-                    AppVersionState.NotUpdate
+            val result = UpdateChecker.checkForUpdates(versionName)
+            withContext(Dispatchers.Main) {
+                when (result) {
+                    is UpdateCheckResult.Success -> {
+                        versionState.value = AppVersionState.HasUpdate(
+                            version = result.version,
+                            url = result.url
+                        )
+                    }
+                    is UpdateCheckResult.NoUpdate -> {
+                        versionState.value = AppVersionState.NotUpdate
+                    }
+                    is UpdateCheckResult.Error -> {
+                        versionState.value = AppVersionState.Fail(result.message)
+                    }
                 }
-            } else {
-                PopTip.show(res.msg)
-                versionState.value = AppVersionState.Fail(
-                    message = res.msg
-                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            PopTip.show("网络异常，检测失败")
-            versionState.value = AppVersionState.Fail(
-                message = e.message ?: e.toString()
-            )
+            withContext(Dispatchers.Main) {
+                versionState.value = AppVersionState.Fail(e.message ?: e.toString())
+            }
         }
     }
 
@@ -279,7 +278,7 @@ private fun AboutPageContent(
                 )
 
                 Text(
-                    text = "哔哩喵~ (下游修改版)",
+                    text = "bilimiao (下游修改版)",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -362,7 +361,7 @@ private fun AboutPageContent(
                         Text("赞助原作者")
                     },
                     summary = {
-                        Text("疯狂星期四, V我50 (支持原作者 10喵喵)")
+                        Text("支持原作者 10喵喵")
                     },
                     onClick = {
                         viewModel.openUrl("https://10miaomiao.cn/donate/comment")

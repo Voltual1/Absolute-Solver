@@ -77,6 +77,8 @@ object SettingPreferences {
     val IsAutoCheckVersion = booleanPreferencesKey("is_auto_check_version")
     // 忽略更新的版本
     val IgnoreUpdateVersionCode = longPreferencesKey("ignore_update_version_code")
+    // 忽略更新的Gitee版本名称
+    val IgnoreUpdateVersion = stringPreferencesKey("ignore_update_version")
 
     /**
      * Home
@@ -122,21 +124,8 @@ object SettingPreferences {
     // 代理
     val PlayerProxy = stringPreferencesKey("player_proxy")
     // 播放器打开模式
-    // 0000 0000：什么都不做
-    // 0000 0001：无播放时，自动播放
-    // 0000 0010：自动替换播放中的视频
-    // 0000 0100：自动替换暂停暂停的视频
-    // 0000 1000：自动替换播放完成的视频
-    // 0001 0000：自动关闭
-    // 0010 0000：竖屏状态自动全屏
-    // 0100 0000：横屏状态自动全屏
     val PlayerOpenMode = intPreferencesKey("player_open_mode")
     // 播放顺序
-    // 0000：播放完结束
-    // 0001：播放完循环
-    // 0010：自动下一P
-    // 0100：自动下一个视频
-    // 1000：自动下一集（番剧）
     val PlayerOrder = intPreferencesKey("player_order")
     // 随机播放
     val PlayerOrderRandom = booleanPreferencesKey("player_order_random")
