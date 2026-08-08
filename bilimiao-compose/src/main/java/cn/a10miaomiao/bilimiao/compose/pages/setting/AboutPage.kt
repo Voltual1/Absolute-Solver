@@ -272,13 +272,13 @@ private fun AboutPageContent(
                         }
                 )
                 Text(
-                    text = "bilimiao",
+                    text = "Absolute-Solver",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 Text(
-                    text = "bilimiao (下游修改版)",
+                    text = "bilimiao2.4.8.1的下游修改版",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
