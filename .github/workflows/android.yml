@@ -69,10 +69,10 @@ jobs:
           draft: true
           files: |
             app/build/outputs/apk/release/*.apk
-#            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/foss/release/*.apk
-#            app/build/outputs/apk/foss/debug/*.apk            
-#            app/build/outputs/apk/full/debug/*.apk            
+            app/build/outputs/apk/foss/debug/*.apk            
+            app/build/outputs/apk/full/debug/*.apk            
             app/build/outputs/apk/full/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,4 +85,4 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ${{ github.workspace }}/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}          
