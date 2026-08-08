@@ -8,6 +8,13 @@ plugins {
 }
 
 android {
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(keystorePropertiesFile.inputStream())
+    }
+    
     namespace = "com.a10miaomiao.bilimiao"
     compileSdk = 36
 
