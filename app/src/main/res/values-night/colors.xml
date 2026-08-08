@@ -16,5 +16,9 @@
     <color name="orange_surface">#51453A</color>
 
     <color name="red_surface">#534341</color>
+    
+    <color name="solver_icon">#FACC15</color>
+    
+    <color name="solver_background">#0A0A0F</color>
 
 </resources>
