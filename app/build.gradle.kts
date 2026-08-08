@@ -55,7 +55,7 @@ splits {
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
-            resValue("string", "app_name", "bilimiao dev")
+            resValue("string", "app_name", "Absolute-Solver-Dev")
             manifestPlaceholders["channel"] = "Development"
         }
         release {
