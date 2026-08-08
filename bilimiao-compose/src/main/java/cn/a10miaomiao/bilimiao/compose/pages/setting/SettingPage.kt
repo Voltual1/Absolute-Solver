@@ -35,13 +35,9 @@ import cn.a10miaomiao.bilimiao.compose.common.preference.rememberPreferenceFlow
 import cn.a10miaomiao.bilimiao.compose.components.preference.glidePreference
 import cn.a10miaomiao.bilimiao.compose.pages.filter.FilterSettingPage
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
-import com.a10miaomiao.bilimiao.comm.entity.miao.MiaoSettingInfo
-import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
 import com.a10miaomiao.bilimiao.store.WindowStore
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
@@ -51,10 +47,6 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
-import java.io.BufferedReader
-import java.io.File
-import java.io.IOException
-import java.io.InputStreamReader
 
 @Serializable
 class SettingPage : ComposePage() {
@@ -73,56 +65,11 @@ private class SettingPageViewModel(
     private val fragment by instance<Fragment>()
     private val pageNavigation by instance<PageNavigation>()
 
-    val moreSettingList = MutableStateFlow(listOf<MiaoSettingInfo>())
-
-    init {
-        loadMoreSettingList()
-    }
-
-    private fun loadMoreSettingList() {
-        try {
-            val context = fragment.requireContext()
-            val file = File(context.filesDir, "settingList.json")
-            if (!file.exists()) {
-                return
-            }
-            val inputStream = context.openFileInput("settingList.json")
-            val br = BufferedReader(InputStreamReader(inputStream))
-            val stringBuilder = StringBuilder()
-            var str: String? = br.readLine()
-            while (str != null) {
-                stringBuilder.append(str)
-                str = br.readLine()
-            }
-            val jsonStr = stringBuilder.toString()
-            moreSettingList.value = MiaoJson.fromJson<List<MiaoSettingInfo>>(jsonStr)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
-
-    fun preferenceClick(item: MiaoSettingInfo) {
-        val url = item.url
-        val urlRegex = """^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$""".toRegex()
-        if (urlRegex.matches(url)) {
-            BiliUrlMatcher.toUrlLink(
-                fragment.requireActivity(),
-                url,
-            )
-            return
-        } else {
-            val intent = Intent(Intent.ACTION_VIEW)
-            val activity = fragment.requireActivity()
-            try {
-                intent.data = Uri.parse(item.url)
-                activity.startActivity(intent)
-            } catch (e: Exception) {
-                if (item.backupUrl != null) {
-                    intent.data = Uri.parse(item.backupUrl)
-                    activity.startActivity(intent)
-                }
-            }
-        }
+    fun openUrl(url: String) {
+        BiliUrlMatcher.toUrlLink(
+            fragment.requireActivity(),
+            url,
+        )
     }
 
     fun toThemePage() {
@@ -175,7 +122,6 @@ private fun SettingPageContent(
     val userState = userStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
     val context = LocalContext.current
-    val moreSettingList by viewModel.moreSettingList.collectAsState()
 
     val dataStore = remember {
         SettingPreferences.run { context.dataStore }
@@ -333,24 +279,42 @@ private fun SettingPageContent(
                 },
                 onClick = viewModel::toAboutPage
             )
-            moreSettingList.forEach {
-                if (it.type == "pref") {
-                    val finalTitle = if (it.name == "donate") "赞助原作者" else it.title
-                    val finalSummary = if (it.name == "donate") "支持原作者 10喵喵" else it.summary
-                    preference(
-                        key = it.name,
-                        title = {
-                            Text(text = finalTitle)
-                        },
-                        summary = {
-                            Text(text = finalSummary)
-                        },
-                        onClick = {
-                            viewModel.preferenceClick(it)
-                        },
-                    )
+            preference(
+                key = "donate_author",
+                title = {
+                    Text("赞助原作者")
+                },
+                summary = {
+                    Text("支持原作者 10喵喵")
+                },
+                onClick = {
+                    viewModel.openUrl("https://10miaomiao.cn/donate/comment")
                 }
-            }
+            )
+            preference(
+                key = "qq_channel",
+                title = {
+                    Text("原作者QQ频道")
+                },
+                summary = {
+                    Text("Bug反馈与功能建议 (原作者交流群)")
+                },
+                onClick = {
+                    viewModel.openUrl("https://pd.qq.com/s/hn9hmg")
+                }
+            )
+            preference(
+                key = "help_doc",
+                title = {
+                    Text("使用帮助")
+                },
+                summary = {
+                    Text("原作者整理的帮助与常见问题文档")
+                },
+                onClick = {
+                    viewModel.openUrl("https://flowus.cn/share/114e7fda-cb5d-4bbf-b5eb-c6e6ec0b947a")
+                }
+            )
             if (userState.isLogin()) {
                 preference(
                     key = "logout",
