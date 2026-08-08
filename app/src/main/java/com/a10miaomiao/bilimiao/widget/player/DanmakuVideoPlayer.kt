@@ -477,14 +477,14 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     private var lastSpeed = 0f  // init an invalid value
 
     private val longClickControlTask = Runnable {
-    if (System.currentTimeMillis() - touchSurfaceDownTime >= 500
-        && mCurrentState == CURRENT_STATE_PLAYING
-        && !mChangePosition && !mChangeVolume && !mBrightness
-        && mScaleFactor == 1.0f // 仅在未放大状态下允许长按加速
-    ) {
-        startLongClickSpeedPlay()
+        if (System.currentTimeMillis() - touchSurfaceDownTime >= 500
+            && mCurrentState == CURRENT_STATE_PLAYING
+            && !mChangePosition && !mChangeVolume && !mBrightness
+            && mScaleFactor == 1.0f // 仅在未放大状态下允许长按加速
+        ) {
+            startLongClickSpeedPlay()
+        }
     }
-}
 
     /**
      * 开始长按倍数播放
@@ -511,117 +511,128 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        if (event != null) {
-            // 将触摸事件分发给缩放检测器
-            mScaleDetector?.onTouchEvent(event)
+        if (event == null) return super.onTouch(v, event)
 
-            val action = event.actionMasked
+        // 1. 将事件交由缩放手势检测器处理
+        mScaleDetector?.onTouchEvent(event)
 
-            // 当手指数量大于等于2时，屏蔽进度/声音/亮度的手势拦截
-            if (event.pointerCount >= 2) {
-                mChangePosition = false
-                mChangeVolume = false
-                mBrightness = false
+        val action = event.actionMasked
+
+        // 2. 双指以上触摸，或缩放进行中：完全拦截，绝不让底层手势（快进/音量/亮度）介入
+        if (event.pointerCount >= 2 || (mScaleDetector?.isInProgress == true)) {
+            mChangePosition = false
+            mChangeVolume = false
+            mBrightness = false
+            removeCallbacks(longClickControlTask)
+            touchSurfaceDownTime = Long.MAX_VALUE
+            if (isSpeedPlaying) {
+                stopLongClickSpeedPlay()
+            }
+            dismissProgressDialog()
+            dismissVolumeDialog()
+            dismissBrightnessDialog()
+            return true
+        }
+
+        // 3. 画面放大状态 (mScaleFactor > 1.0f)：单指仅用于画面平移 (Pan)，彻底拦截快进/快退/音量/亮度
+        if (mScaleFactor > 1.0f) {
+            mChangePosition = false
+            mChangeVolume = false
+            mBrightness = false
+            removeCallbacks(longClickControlTask)
+            touchSurfaceDownTime = Long.MAX_VALUE
+
+            when (action) {
+                MotionEvent.ACTION_DOWN -> {
+                    mLastTouchX = event.x
+                    mLastTouchY = event.y
+                    mActivePointerId = event.getPointerId(0)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val pointerIndex = event.findPointerIndex(mActivePointerId)
+                    if (pointerIndex != -1) {
+                        val x = event.getX(pointerIndex)
+                        val y = event.getY(pointerIndex)
+                        val dx = x - mLastTouchX
+                        val dy = y - mLastTouchY
+
+                        mPosX += dx
+                        mPosY += dy
+
+                        constrainTranslation()
+                        applyScaleAndTranslation()
+
+                        mLastTouchX = x
+                        mLastTouchY = y
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    mActivePointerId = -1
+                }
+                MotionEvent.ACTION_POINTER_UP -> {
+                    val pointerIndex = event.actionIndex
+                    val pointerId = event.getPointerId(pointerIndex)
+                    if (pointerId == mActivePointerId) {
+                        val newPointerIndex = if (pointerIndex == 0) 1 else 0
+                        mLastTouchX = event.getX(newPointerIndex)
+                        mLastTouchY = event.getY(newPointerIndex)
+                        mActivePointerId = event.getPointerId(newPointerIndex)
+                    }
+                }
+            }
+            return true
+        }
+
+        // 4. 原比例状态：处理长按加速取消
+        when (action) {
+            MotionEvent.ACTION_CANCEL,
+            MotionEvent.ACTION_UP -> {
                 removeCallbacks(longClickControlTask)
                 touchSurfaceDownTime = Long.MAX_VALUE
                 if (isSpeedPlaying) {
                     stopLongClickSpeedPlay()
                 }
-                super.onTouch(v, event)
-                return true
-            }
-
-            // 视频处于缩放放大状态时，支持拖拽平移画面
-            if (mScaleFactor > 1.0f) {
-                when (action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        val pointerIndex = event.actionIndex
-                        mLastTouchX = event.getX(pointerIndex)
-                        mLastTouchY = event.getY(pointerIndex)
-                        mActivePointerId = event.getPointerId(0)
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        val pointerIndex = event.findPointerIndex(mActivePointerId)
-                        if (pointerIndex != -1) {
-                            val x = event.getX(pointerIndex)
-                            val y = event.getY(pointerIndex)
-                            val dx = x - mLastTouchX
-                            val dy = y - mLastTouchY
-
-                            mPosX += dx
-                            mPosY += dy
-
-                            constrainTranslation()
-                            applyScaleAndTranslation()
-
-                            mLastTouchX = x
-                            mLastTouchY = y
-                        }
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        mActivePointerId = -1
-                    }
-                    MotionEvent.ACTION_POINTER_UP -> {
-                        val pointerIndex = event.actionIndex
-                        val pointerId = event.getPointerId(pointerIndex)
-                        if (pointerId == mActivePointerId) {
-                            val newPointerIndex = if (pointerIndex == 0) 1 else 0
-                            mLastTouchX = event.getX(newPointerIndex)
-                            mLastTouchY = event.getY(newPointerIndex)
-                            mActivePointerId = event.getPointerId(newPointerIndex)
-                        }
-                    }
-                }
-
-                // 阻止平移时的其他播放手势响应
-                if (action == MotionEvent.ACTION_MOVE) {
-                    mChangePosition = false
-                    mChangeVolume = false
-                    mBrightness = false
-                    return true
-                }
-            }
-
-            when(action){
-                MotionEvent.ACTION_CANCEL,
-                MotionEvent.ACTION_UP-> {
-                    //触控被拦截不触发长按倍速
-                    removeCallbacks(longClickControlTask)
-                    touchSurfaceDownTime = Long.MAX_VALUE
-                    if (isSpeedPlaying) {
-                        stopLongClickSpeedPlay()
-                    }
-                }
             }
         }
+
         return super.onTouch(v, event)
     }
 
     override fun touchSurfaceDown(x: Float, y: Float) {
-    super.touchSurfaceDown(x, y)
-    val curWidth = measuredWidth
-    val curHeight = measuredHeight
-    val edgeSize = context.dip(80).let {
-        min(min(curWidth, curHeight), it) / 2
-    }
-    if (x.toInt() in edgeSize..(curWidth - edgeSize)
-        && y.toInt() in edgeSize..(curHeight - edgeSize)) {
-        // 屏幕边缘不触发长按倍数，且只有在未放大时才启动长按计时
-        if (mScaleFactor == 1.0f) {
-            touchSurfaceDownTime = System.currentTimeMillis()
-            postDelayed(longClickControlTask, 500)
-        }
-    }
-}
-
-    override fun touchSurfaceMove(deltaX: Float, deltaY: Float, y: Float) {
-        if (isSpeedPlaying) {
-            mChangePosition=false
+        // 若处于放大状态或缩放手势中，直接忽略底层手势判定
+        if (mScaleFactor > 1.0f || (mScaleDetector?.isInProgress == true)) {
+            mChangePosition = false
+            mChangeVolume = false
+            mBrightness = false
             return
         }
-        if (mDownY<context.dip(25)){
-            //顶部防误触
-            mChangePosition=false
+
+        super.touchSurfaceDown(x, y)
+        val curWidth = measuredWidth
+        val curHeight = measuredHeight
+        val edgeSize = context.dip(80).let {
+            min(min(curWidth, curHeight), it) / 2
+        }
+        if (x.toInt() in edgeSize..(curWidth - edgeSize)
+            && y.toInt() in edgeSize..(curHeight - edgeSize)) {
+            // 屏幕边缘不触发长按倍数，且只有未放大时才启动长按计时
+            if (mScaleFactor == 1.0f) {
+                touchSurfaceDownTime = System.currentTimeMillis()
+                postDelayed(longClickControlTask, 500)
+            }
+        }
+    }
+
+    override fun touchSurfaceMove(deltaX: Float, deltaY: Float, y: Float) {
+        if (isSpeedPlaying || mScaleFactor > 1.0f || (mScaleDetector?.isInProgress == true)) {
+            mChangePosition = false
+            mChangeVolume = false
+            mBrightness = false
+            return
+        }
+        if (mDownY < context.dip(25)) {
+            // 顶部防误触
+            mChangePosition = false
             return
         }
         var curHeight = 0
@@ -633,7 +644,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             if (mDownPosition == 0L) {
                 mDownPosition = currentPosition
             }
-            //
             val totalTimeDuration = duration
             val offsetPosition = deltaX / context.dip(1) * mSeekRatio
             mSeekTimePosition = (mDownPosition + offsetPosition).toLong()
@@ -660,19 +670,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             }
         }
     }
-
-    // end
-
-//    override fun setProgressAndTime(
-//        progress: Long,
-//        secProgress: Long,
-//        currentTime: Long,
-//        totalTime: Long,
-//        forceChange: Boolean
-//    ) {
-//        super.setProgressAndTime(progress, secProgress, currentTime, totalTime, forceChange)
-//        setBottomSubtitleText(currentTime)
-//    }
 
     override fun startProgressTimer() {
         super.startProgressTimer()
@@ -837,7 +834,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         // 加载新视频时，强制重置视频画面的缩放状态
         resetScale()
         
-        // super.startPrepare()
         // 重写方法，加入音频焦点开关
         this.gsyVideoManager.listener()?.onCompletion()
 
@@ -850,7 +846,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         this.gsyVideoManager.playTag = mPlayTag
         this.gsyVideoManager.playPosition = mPlayPosition
 
-        // AudioManager.requestAudioFocus(onAudioFocusChangeListener, 3, 2)
         if (enabledAudioFocus) {
             requestAudioFocus()
         }
@@ -1093,10 +1088,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             if (mDialogProgressBarDrawable != null) {
                 mDialogProgressBar.progressDrawable = mDialogProgressBarDrawable
             }
-            mDialogProgressBar = localView.findViewById(progressDialogProgressId)
-            if (mDialogProgressBarDrawable != null) {
-                mDialogProgressBar.progressDrawable = mDialogProgressBarDrawable
-            }
             mDialogSeekTime = localView.findViewById(progressDialogCurrentDurationTextId)
             mDialogSeekTime.setTextColor(mThemeColor)
             mDialogTotalTime = localView.findViewById(progressDialogAllDurationTextId)
@@ -1176,7 +1167,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             getLocationOnScreen(location)
             localLayoutParams.x = location[0]
             localLayoutParams.y = location[1]
-            // 针对异型屏适配
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 localLayoutParams.layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -1191,19 +1181,9 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mPlaySpeedValue.text = "x$speed"
     }
 
+    override fun onLossTransientCanDuck() {}
 
-    /**
-     * 暂时失去AudioFocus，但是可以继续播放，不过要在降低音量
-     */
-    override fun onLossTransientCanDuck() {
-        // 暂时失去AudioFocus，但是可以继续播放，不过要在降低音量
-    }
-
-    /**
-     * 暂时失去Audio Focus，并会很快再次获得
-     */
     override fun onLossTransientAudio() {
-        // 暂时失去Audio Focus，并会很快再次获得。必须停止A
         if (enabledAudioFocus) {
             Handler(Looper.getMainLooper()).post {
                 onVideoPause()
@@ -1211,9 +1191,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 获得了Audio Focus
-     */
     override fun onGankAudio() {
         if (enabledAudioFocus) {
             Handler(Looper.getMainLooper()).post {
@@ -1224,9 +1201,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 失去了Audio Focus，并将会持续很长的时间
-     */
     override fun onLossAudio() {
         miaoLogger() debug "onLossAudio"
         if (enabledAudioFocus) {
@@ -1300,27 +1274,26 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mDragBarLayout.visibility = mTopContainer.visibility
     }
 
-    fun getHoldButtonWidth():Int{
+    fun getHoldButtonWidth(): Int {
         return mHoldUpBtn.measuredWidth
     }
 
-    fun setHoldStatus(isHold:Boolean){
-        if(isHold){
+    fun setHoldStatus(isHold: Boolean) {
+        if (isHold) {
             mDanmakuView.pause()
             setViewShowState(mBottomLayout, GONE)
             setViewShowState(mDanmakuView, GONE)
             setViewShowState(mTopContainer, GONE)
             setViewShowState(mStartButton, GONE)
-            isHoldUp=true
+            isHoldUp = true
         } else {
-            isHoldUp=false
+            isHoldUp = false
             setViewShowState(mBottomLayout, VISIBLE)
             setViewShowState(mDanmakuView, VISIBLE)
             setViewShowState(mTopContainer, VISIBLE)
             setViewShowState(mStartButton, VISIBLE)
             mDanmakuView.resume()
         }
-
     }
 
     fun updateTextureViewShowType() {
