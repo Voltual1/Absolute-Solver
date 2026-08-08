@@ -47,18 +47,18 @@ jobs:
         run: |
           echo $ENCODED_STRING | base64 -d > release.keystore
 
-#      - name: Build Release APK
-#        if: github.event_name != 'pull_request'
-#        run: ./gradlew assembleRelease
-#        env:
-#          KEYSTORE_PATH: ../release.keystore
-#          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-#          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-#          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Build Debug APK
+      - name: Build Release APK
         if: github.event_name != 'pull_request'
-        run: ./gradlew assembleFossDebug
+        run: ./gradlew assembleFossRelease
+        env:
+          KEYSTORE_PATH: ../release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+#      - name: Build Debug APK
+#        if: github.event_name != 'pull_request'
+#        run: ./gradlew assembleFossDebug
 
       - name: Create Draft Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -69,10 +69,10 @@ jobs:
           draft: true
           files: |
             app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
+#            app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/foss/release/*.apk
-            app/build/outputs/apk/foss/debug/*.apk            
-            app/build/outputs/apk/full/debug/*.apk            
+#            app/build/outputs/apk/foss/debug/*.apk            
+#            app/build/outputs/apk/full/debug/*.apk            
             app/build/outputs/apk/full/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,4 +85,4 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ${{ github.workspace }}/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}          
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}

@@ -294,10 +294,10 @@ private fun SettingPageContent(
             preference(
                 key = "qq_channel",
                 title = {
-                    Text("原作者QQ频道")
+                    Text("原项目QQ频道")
                 },
                 summary = {
-                    Text("Bug反馈与功能建议 (原作者交流群)")
+                    Text("仅为上游项目QQ频道，不对本下游项目负责")
                 },
                 onClick = {
                     viewModel.openUrl("https://pd.qq.com/s/hn9hmg")

@@ -15,8 +15,8 @@ android {
         applicationId = "me.voltual.as"
         minSdk = 21
         targetSdk = 36
-        versionCode = 117
-        versionName = "2.4.8.1"
+        versionCode = 1
+        versionName = "1.0"
 
         flavorDimensions("default")
 

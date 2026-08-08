@@ -218,8 +218,8 @@ private const val WARN_TEXT = """1、本程序为哔哩哔哩动画的第三方A
 private const val MY_WEBSITE_URL = "https://10miaomiao.cn"
 private const val GITHUB_PROJECT_URL = "https://github.com/10miaomiao/bilimiao2"
 private const val GITEE_PROJECT_URL = "https://gitee.com/10miaomiao/bilimiao2"
-private const val FORK_WARN_TEXT = """本版本为基于原版 bilimiao2 的下游分支。
-针对原生硬件兼容性（如软解支持）与部分网络接口稳定性进行了适配。有关于项目的更多官方信息，一切以上游项目实际情况为准。"""
+private const val FORK_WARN_TEXT = """本版本为基于原版 bilimiao2.4.8.1的下游分支。
+针对原生硬件兼容性（如软解支持）与部分网络接口稳定性进行了调整。有关于上游项目的更多官方信息，一切以上游项目实际情况为准。"""
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -432,7 +432,7 @@ private fun AboutPageContent(
                         Text("查看贡献者名单")
                     },
                     summary = {
-                        Text("由于 API 与展示逻辑精简，请前往官方 GitHub 页面查看所有参与项目开发的贡献者")
+                        Text("请前往上游官方 GitHub 页面查看所有参与上游项目开发的贡献者")
                     },
                     onClick = {
                         viewModel.openUrl("https://github.com/10miaomiao/bilimiao2/graphs/contributors")
