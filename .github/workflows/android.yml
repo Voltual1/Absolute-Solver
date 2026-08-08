@@ -28,7 +28,7 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        
+
       - name: Gradle Cache
         uses: actions/cache@v3
         with:
@@ -38,7 +38,7 @@ jobs:
             ${{ github.workspace }}/.gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-        
+            ${{ runner.os }}-gradle-
 
       - name: Decode Keystore
         if: github.event_name != 'pull_request'
@@ -56,9 +56,9 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-#      - name: Build Debug APK
-#        if: github.event_name != 'pull_request'
-#        run: ./gradlew assembleFossDebug
+      #      - name: Build Debug APK
+      #        if: github.event_name != 'pull_request'
+      #        run: ./gradlew assembleFossDebug
 
       - name: Create Draft Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -68,14 +68,8 @@ jobs:
           name: "Android Successful Build"
           draft: true
           files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/foss/release/*.apk
-            app/build/outputs/apk/foss/debug/*.apk            
-            app/build/outputs/apk/full/debug/*.apk            
-            app/build/outputs/apk/full/release/*.apk
-            app/build/outputs/mapping/release/mapping.txt
-            
+            app/build/outputs/mapping/**/mapping.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -87,4 +81,4 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ${{ github.workspace }}/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}          
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
