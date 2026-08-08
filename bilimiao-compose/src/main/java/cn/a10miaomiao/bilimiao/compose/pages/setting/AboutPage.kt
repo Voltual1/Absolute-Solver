@@ -125,71 +125,16 @@ private class AboutPageViewModel(
         }
     }
 
-    val contributorsList = MutableStateFlow(listOf<ContributorInfo>())
-
     val versionState = MutableStateFlow<AppVersionState>(AppVersionState.None)
 
     init {
         viewModelScope.launch {
             runCatching {
-                getGithubContributors()
-//                getGiteeContributors()
                 checkUpdate()
             }.onFailure {
 
             }
         }
-    }
-
-    suspend fun getGithubContributors() {
-        try {
-            val data = MiaoHttp.request {
-                url = "https://api.github.com/repos/10miaomiao/bilimiao2/contributors"
-            }.awaitCall().json<List<GithubContributorInfo>>()
-            contributorsList.value = data.map {
-                ContributorInfo(
-                    email = it.html_url,
-                    name = it.login,
-                    contributions = it.contributions,
-                    avatar_url = it.avatar_url,
-                )
-            }
-        } catch (e: Exception) {
-            // 如果请求失败且无缓存，则改用gitee
-            getGiteeContributors()
-        }
-    }
-
-    suspend fun getGiteeContributors() {
-        val data = MiaoHttp.request {
-            url = "https://gitee.com/api/v5/repos/10miaomiao/bilimiao2/contributors"
-        }.awaitCall().json<List<ContributorInfo>>()
-        val list = mutableListOf<ContributorInfo>()
-        // 合并email或name相同的贡献者
-        data.forEach {
-            val name = it.name
-            val email = it.email
-            val contributions = it.contributions
-            val i = list.indexOfFirst {
-                name == it.name || email == it.email
-            }
-            if (i == -1) {
-                list.add(
-                    ContributorInfo(
-                        name = name,
-                        email = email,
-                        contributions = contributions,
-                        avatar_url = null,
-                    )
-                )
-            } else {
-                val item = list[i]
-                list[i] = item.copy(
-                    contributions = contributions + item.contributions
-                )
-            }
-        }
-        contributorsList.value = list
     }
 
     /**
@@ -267,29 +212,16 @@ private class AboutPageViewModel(
     fun toTestPage() {
         pageNavigation.navigate(TestPage())
     }
-
-    @Serializable
-    data class ContributorInfo(
-        val email: String,
-        val name: String,
-        val contributions: Int,
-        val avatar_url: String?,
-    )
-
-    @Serializable
-    data class GithubContributorInfo(
-        val login: String,
-        val html_url: String,
-        val contributions: Int,
-        val avatar_url: String,
-    )
 }
 
 private const val WARN_TEXT = """1、本程序为哔哩哔哩动画的第三方APP，资源均来自哔哩哔哩动画(bilibili.com)
-2、如果侵犯您的合法权益，请及时联系本人以第一时间删除"""
+2、如果侵犯您的合法权益，请及时联系原作者以第一时间删除"""
 private const val MY_WEBSITE_URL = "https://10miaomiao.cn"
 private const val GITHUB_PROJECT_URL = "https://github.com/10miaomiao/bilimiao2"
 private const val GITEE_PROJECT_URL = "https://gitee.com/10miaomiao/bilimiao2"
+private const val FORK_WARN_TEXT = """本版本为基于原版 bilimiao2 的下游分支。
+针对原生硬件兼容性（如软解支持）与部分网络接口稳定性进行了适配。有关于项目的更多官方信息，一切以上游项目实际情况为准。"""
+
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun AboutPageContent(
@@ -306,7 +238,6 @@ private fun AboutPageContent(
         maxScrollPosition = 340.dp,
     )
     val listState = rememberLazyListState()
-    val contributionsList = viewModel.contributorsList.collectAsState()
 
     DoubleColumnAutofitLayout(
         modifier = Modifier
@@ -348,7 +279,7 @@ private fun AboutPageContent(
                 )
 
                 Text(
-                    text = "哔哩喵~",
+                    text = "哔哩喵~ (下游修改版)",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -415,13 +346,36 @@ private fun AboutPageContent(
                     key = "author",
                     modifier = Modifier.itemStyle(),
                     title = {
-                        Text("作者")
+                        Text("原作者")
                     },
                     summary = {
                         Text("10喵喵")
                     },
                     onClick = {
                         viewModel.openUrl(MY_WEBSITE_URL)
+                    }
+                )
+                preference(
+                    key = "donate_author",
+                    modifier = Modifier.itemStyle(),
+                    title = {
+                        Text("赞助原作者")
+                    },
+                    summary = {
+                        Text("疯狂星期四, V我50 (支持原作者 10喵喵)")
+                    },
+                    onClick = {
+                        viewModel.openUrl("https://10miaomiao.cn/donate/comment")
+                    }
+                )
+                preference(
+                    key = "fork_statement",
+                    modifier = Modifier.itemStyle(),
+                    title = {
+                        Text("分支维护声明")
+                    },
+                    summary = {
+                        Text(FORK_WARN_TEXT)
                     }
                 )
                 preference(
@@ -437,7 +391,7 @@ private fun AboutPageContent(
                 preferenceCategory(
                     key = "url",
                     title = {
-                        Text("开源链接")
+                        Text("原项目开源链接")
                     }
                 )
                 preference(
@@ -469,44 +423,22 @@ private fun AboutPageContent(
                 preferenceCategory(
                     key = "contributors",
                     title = {
-                        Text("贡献者")
+                        Text("贡献者列表")
                     }
                 )
-
-                contributionsList.value.forEach {
-                    if (it.name == "10miaomiao") {
-                        return@forEach
+                preference(
+                    key = "view_contributors",
+                    modifier = Modifier.itemStyle(),
+                    title = {
+                        Text("查看贡献者名单")
+                    },
+                    summary = {
+                        Text("由于 API 与展示逻辑精简，请前往官方 GitHub 页面查看所有参与项目开发的贡献者")
+                    },
+                    onClick = {
+                        viewModel.openUrl("https://github.com/10miaomiao/bilimiao2/graphs/contributors")
                     }
-                    preference(
-                        key = "contributors.${it.name}",
-                        modifier = Modifier.itemStyle(),
-                        icon = it.avatar_url?.let { avatarUrl ->
-                            {
-                                GlideImage(
-                                    model = avatarUrl,
-                                    contentDescription = null,
-                                    loading = placeholder(R.drawable.bili_akari_img),
-                                    failure = placeholder(R.drawable.bili_akari_img),
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                )
-                            }
-                        },
-                        title = {
-                            Text(it.name)
-                        },
-                        summary = {
-                            Text(it.email)
-                        },
-                        onClick = {
-                            viewModel.openUrl(it.email)
-                        }
-                    )
-                }
-
+                )
             }
         }
     }

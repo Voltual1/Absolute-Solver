@@ -282,7 +282,7 @@ private fun SettingPageContent(
                     Text("屏蔽管理")
                 },
                 summary = {
-                    Text("对时光机、首页推荐和热门生效")
+                    Text("对时光机、首页推荐 and 热门生效")
                 },
                 onClick = viewModel::toFilterSettingPage
             )
@@ -335,13 +335,15 @@ private fun SettingPageContent(
             )
             moreSettingList.forEach {
                 if (it.type == "pref") {
+                    val finalTitle = if (it.name == "donate") "赞助原作者" else it.title
+                    val finalSummary = if (it.name == "donate") "支持原作者 10喵喵" else it.summary
                     preference(
                         key = it.name,
                         title = {
-                            Text(text = it.title)
+                            Text(text = finalTitle)
                         },
                         summary = {
-                            Text(text = it.summary)
+                            Text(text = finalSummary)
                         },
                         onClick = {
                             viewModel.preferenceClick(it)
