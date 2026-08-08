@@ -22,12 +22,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 只保留 v7a + v8a，并开启 ABI 分包
-ndk {
-    abiFilters.add("armeabi-v7a")
-    abiFilters.add("arm64-v8a")
-}
-
 splits {
     abi {
         isEnable = true
