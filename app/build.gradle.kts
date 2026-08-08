@@ -21,7 +21,7 @@ android {
         flavorDimensions("default")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
+    }
 splits {
     abi {
         isEnable = true
@@ -30,7 +30,6 @@ splits {
         isUniversalApk = false           // 不生成包含所有 ABI 的万能包
     }
 }
-    }
 
     signingConfigs {
         create("miao") {
