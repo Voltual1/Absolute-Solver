@@ -26,7 +26,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
+        android:layout_parentBottom="true"
         android:background="#000000"
         android:scaleType="fitCenter" />
 
@@ -132,12 +132,6 @@
                 android:text="发送弹幕"
                 android:background="@drawable/shape_send_danmaku_bg"
                 android:gravity="center" />
-
-<!--            <FrameLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:orientation="horizontal"></FrameLayout>-->
 
             <LinearLayout
                 android:id="@+id/subtitle_switch"
@@ -468,5 +462,20 @@
             android:text="倍速播放中"
             android:textColor="@color/white"/>
     </LinearLayout>
+
+    <!-- 新增：重置缩放按钮 -->
+    <ImageView
+        android:id="@+id/reset_scale"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/button_circle_shape"
+        android:padding="8dp"
+        android:src="@drawable/ic_exchange_24dp"
+        android:visibility="gone"
+        android:alpha="0.8"
+        android:contentDescription="还原大小" />
 
 </RelativeLayout>
