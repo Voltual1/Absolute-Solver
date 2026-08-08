@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = me.voltual.as"
+        applicationId = "me.voltual.as"
         minSdk = 21
         targetSdk = 36
         versionCode = 117
