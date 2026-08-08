@@ -4,3 +4,4 @@
 }
 
 -keep class com.a10miaomiao.bilimiao.comm.store.** { *; }
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
