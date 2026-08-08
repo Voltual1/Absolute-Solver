@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white"/>
+    <item android:drawable="@color/solver_background"/>
 
     <item
-        android:width="249dp"
-        android:height="200dp"
-        android:gravity="center">
-        <bitmap
-            android:src="@drawable/ic_splash_default"/>
-    </item>
-
+        android:drawable="@drawable/ic_splash_default"
+        android:gravity="center"
+        android:width="240dp"
+        android:height="240dp">
+        </item>
 </layer-list>
