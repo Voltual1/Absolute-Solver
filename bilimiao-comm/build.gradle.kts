@@ -3,7 +3,6 @@ import java.nio.file.Paths
 
 plugins {
     id("com.android.library")
-    id("kotlin-android")
     id("kotlin-parcelize")
     id("com.google.protobuf") // proto
     kotlin("plugin.serialization")
