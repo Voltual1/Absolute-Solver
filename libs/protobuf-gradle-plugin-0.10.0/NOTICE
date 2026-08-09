@@ -1,0 +1,9 @@
+Custom Protobuf Gradle Plugin
+Copyright (c) 2026, Google Inc. and contributors.
+
+This product includes software developed by Google Inc. (https://github.com/google/protobuf-gradle-plugin)
+and has been modified to support compatibility with Gradle 9.x and newer versions.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted under the terms of the BSD 3-Clause License.
+For the full license text, please refer to the LICENSE file in this directory.
