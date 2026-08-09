@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -8,12 +7,12 @@ plugins {
 
 android {
 
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(keystorePropertiesFile.inputStream())
     }
-    
+
     namespace = "com.a10miaomiao.bilimiao"
     compileSdk = 36
 
@@ -24,34 +23,43 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
         versionCode = 1
         versionName = "1.0"
 
-        flavorDimensions("default")
+        // AGP 9: flavorDimensions 是 MutableList，用 += 添加
+        flavorDimensions += "default"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-splits {
-    abi {
-        isEnable = true
-        reset()                          // 清空默认
-        include("armeabi-v7a", "arm64-v8a")
-        isUniversalApk = false           // 不生成包含所有 ABI 的万能包
+
+    splits {
+        abi {
+            isEnable = true
+            reset()                          // 清空默认
+            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = false           // 不生成包含所有 ABI 的万能包
+        }
     }
-}
 
     signingConfigs {
         create("miao") {
-            storeFile = file(System.getenv("KEYSTORE_PATH") ?: keystoreProperties.getProperty("storeFile") ?: "debug.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
-            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
-            keyPassword = System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
+            storeFile = file(
+                System.getenv("KEYSTORE_PATH")
+                    ?: keystoreProperties.getProperty("storeFile")
+                    ?: "debug.keystore"
+            )
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+                ?: keystoreProperties.getProperty("storePassword")
+            keyAlias = System.getenv("KEY_ALIAS")
+                ?: keystoreProperties.getProperty("keyAlias")
+            keyPassword = System.getenv("KEY_PASSWORD")
+                ?: keystoreProperties.getProperty("keyPassword")
         }
     }
-    
+
     packaging {
         resources {
             excludes.add("/google/protobuf/**")
         }
     }
-    
+
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
@@ -79,12 +87,12 @@ splits {
 
     productFlavors {
         create("full") {
-            dimension = flavorDimensionList[0]
+            dimension = "default"          // 直接写字符串，不要再用 flavorDimensionList
             val channelName = project.properties["channel"] ?: "Unknown"
             manifestPlaceholders["channel"] = channelName
         }
         create("foss") {
-            dimension = flavorDimensionList[0]
+            dimension = "default"
             manifestPlaceholders["channel"] = "FOSS"
         }
     }
@@ -95,7 +103,7 @@ splits {
 
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-    }    
+    }
 
     lint {
         checkReleaseBuilds = false
@@ -153,7 +161,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.gsy.video.player)
-    
+
     implementation("io.github.anilbeesetti:nextlib-media3ext:1.10.1-0.13.0") // To add media3 software decoders and extensions
     implementation("io.github.anilbeesetti:nextlib-mediainfo:1.10.1-0.13.0") // To get media info through ffmpeg
 
