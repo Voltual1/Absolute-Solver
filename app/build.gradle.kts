@@ -29,6 +29,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+buildFeatures {
+    resValues = true
+}
+
     splits {
         abi {
             isEnable = true
