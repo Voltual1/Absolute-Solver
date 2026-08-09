@@ -11,4 +11,4 @@
     <init>(org.kodein.di.DI);
     <init>(org.kodein.di.DI, ...);
 }
--keep class com.a10miaomiao.bilimiao.comm.store.** { *; }
+-keep class org.kodein.** { *; }
