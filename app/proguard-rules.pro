@@ -12,3 +12,9 @@
     <init>(org.kodein.di.DI, ...);
 }
 -keep class org.kodein.** { *; }
+
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>(org.kodein.di.DI);
+}
+
+-keep class com.a10miaomiao.bilimiao.store.** { *; }#for WindowStore 
