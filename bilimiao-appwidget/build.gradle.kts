@@ -10,7 +10,6 @@ android {
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 36
 
         version = "1.0"
 
@@ -33,9 +32,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
     namespace = "cn.a10miaomiao.bilimiao.appwidget"
 }
 
