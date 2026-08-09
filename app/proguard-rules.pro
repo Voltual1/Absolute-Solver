@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 -keep class com.a10miaomiao.bilimiao.comm.store.** { *; }
 -keepattributes Signature
 
@@ -18,3 +19,5 @@
 }
 
 -keep class com.a10miaomiao.bilimiao.store.** { *; }#for WindowStore 
+=======
+>>>>>>> aaafd0e3 (引入koin计划迁移kodein到koin&proguard-rules.pro留空不再keep kodein相关 ci开启debug构建禁用Release构建)
