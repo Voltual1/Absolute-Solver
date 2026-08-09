@@ -14,6 +14,15 @@ buildscript {
         mavenCentral()
         maven("https://maven.aliyun.com/repository/public")
         maven("https://jitpack.io")
+        mavenLocal()
+        flatDir {
+            dirs("libs")
+        }
+    }
+
+    dependencies {
+        classpath(files("libs/protobuf-gradle-plugin-0.10.0.jar"))
+        classpath("com.google.gradle:osdetector-gradle-plugin:1.7.3")
     }
 
 }
@@ -23,7 +32,7 @@ plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.jetbrains.kotlin.compose) apply false
     alias(libs.plugins.jetbrains.kotlin.serialization) apply false
-    alias(libs.plugins.google.protobuf)  apply false
+    alias(libs.plugins.google.protobuf) apply false
 }
 
 allprojects {
@@ -35,15 +44,15 @@ allprojects {
         }
         
         // 统一强制将所有 androidx.media3 相关依赖锁定为 1.8.0
-resolutionStrategy.eachDependency {
-    if (requested.group == "androidx.media3") {
-        useVersion("1.8.0")
-        because("Lock all Media3 dependencies to version 1.8.0 project-wide")
-    }
-}
+        resolutionStrategy.eachDependency {
+            if (requested.group == "androidx.media3") {
+                useVersion("1.8.0")
+                because("Lock all Media3 dependencies to version 1.8.0 project-wide")
+            }
+        }
     }
 }
 
 tasks.register<Delete>("clean") {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory)
 }

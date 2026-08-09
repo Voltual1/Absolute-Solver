@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        mavenLocal()
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -18,6 +19,7 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://maven.aliyun.com/repository/public")
         maven("https://jitpack.io")
+        mavenLocal()
     }
 }
 rootProject.name = "bilimiao"
