@@ -27,6 +27,9 @@ accompanist = "0.35.0-alpha"
 materialKolor = "2.0.2"
 microgSafeParcel = "1.7.1"
 
+# 临时保留 Kodein 以实现渐进式迁移
+kodeinDi = "7.12.0"
+
 # Koin 4.x 配置
 koin = "4.2.1"
 koinCompiler = "1.0.0-RC1"
@@ -92,6 +95,10 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 # accompanist
 accompanist-drawablepainter = { group = "com.google.accompanist", name = "accompanist-drawablepainter", version.ref = "accompanist" }
 accompanist-adaptive = { group = "com.google.accompanist", name = "accompanist-adaptive", version.ref = "accompanist" }
+
+# 重新声明旧的 Kodein 依赖库
+kodein-di = { group = "org.kodein.di", name = "kodein-di-framework-android-x", version.ref = "kodeinDi" }
+kodein-di-compose = { group = "org.kodein.di", name = "kodein-di-framework-compose", version.ref = "kodeinDi" }
 
 # network
 okhttp3 = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
