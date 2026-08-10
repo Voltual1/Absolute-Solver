@@ -1,7 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.time
 
-import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.pages.time.components.getMonthDayNum
@@ -9,19 +7,12 @@ import com.a10miaomiao.bilimiao.comm.store.TimeSettingStore
 import com.a10miaomiao.bilimiao.comm.store.model.DateModel
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import java.util.Date
 
 class TimeSettingViewMode(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val timeSettingStore by instance<TimeSettingStore>()
-    private val pageNavigation by instance<PageNavigation>()
-
-//    private val calendar = Calendar.getInstance()
+    private val timeSettingStore: TimeSettingStore,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val cardIndex = MutableStateFlow(timeSettingStore.state.timeType)
 
@@ -33,9 +24,6 @@ class TimeSettingViewMode(
 
     val maxDate = DateModel().also {
         it.setDate(Date())
-//        it.year = Calendar.getInstance().get(Calendar.YEAR)
-//        it.month = Calendar.getInstance().get(Calendar.MONTH + 1)
-//        it.date = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
     }
 
     val yearCount = maxDate.year - minDate.year + 1
@@ -43,14 +31,14 @@ class TimeSettingViewMode(
     val currentTime = MutableStateFlow(TimeInfo().apply {
         val now = Date()
         timeTo.setDate(now)
-        timeFrom.set(timeTo.getTimeByGapCount(-7)) //最近7天
+        timeFrom.set(timeTo.getTimeByGapCount(-7))
     })
 
     val monthTime = MutableStateFlow(TimeInfo().apply {
         val dateModel = timeSettingStore.state.timeFrom.copy()
-        dateModel.date = 1 // 当月第一天
+        dateModel.date = 1
         timeFrom.set(dateModel)
-        dateModel.date = getMonthDayNum(dateModel.year, dateModel.month) // 当月最后一天
+        dateModel.date = getMonthDayNum(dateModel.year, dateModel.month)
         timeTo.set(dateModel)
     })
 
@@ -84,15 +72,15 @@ class TimeSettingViewMode(
         }
     }
 
-    fun setCurrentCardAsCurrent(avtive: Boolean) {
+    fun setCurrentCardAsCurrent(active: Boolean) {
         cardIndex.value = TimeSettingStore.TIME_TYPE_CURRENT
     }
 
-    fun setCurrentCardAsMonth(avtive: Boolean) {
+    fun setCurrentCardAsMonth(active: Boolean) {
         cardIndex.value = TimeSettingStore.TIME_TYPE_MONTH
     }
 
-    fun setCurrentCardAsCustom(avtive: Boolean) {
+    fun setCurrentCardAsCustom(active: Boolean) {
         cardIndex.value = TimeSettingStore.TIME_TYPE_CUSTOM
     }
 

@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/SearchInputViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search
 
 import android.content.Context
@@ -9,16 +8,11 @@ import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
 
 class SearchInputViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val context: Context by instance()
+    private val context: Context,
+) : ViewModel() {
 
     val historyListFlow = MutableStateFlow(listOf<SuggestInfo>())
     val historyList get() = historyListFlow
@@ -72,7 +66,6 @@ class SearchInputViewModel(
             }
             suggestListFlow.value = getInitSuggestData(keyword)
             try {
-                // 使用本地 Extractor 获取搜索建议
                 val extractor = ServiceList.BiliBili.suggestionExtractor
                 val suggestions = extractor.suggestionList(keyword)
                 
@@ -115,15 +108,15 @@ class SearchInputViewModel(
     }
 
     enum class SuggestType {
-        TEXT, // 普通文本
-        SEARCH, // 直接搜索
-        AV, // 视频ID，AV号跳转
-        SS, // 番剧ID，SS号跳转
-        HISTORY, // 历史搜索
+        TEXT,
+        SEARCH,
+        AV,
+        SS,
+        HISTORY,
     }
 
     data class SuggestInfo(
-        val text: String, // 显示文字
+        val text: String,
         val type: SuggestType,
         val value: String,
     )
