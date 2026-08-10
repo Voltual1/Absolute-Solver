@@ -32,6 +32,7 @@ kodeinDi = "7.12.0"
 
 # Koin 4.x 配置
 koin = "4.1.1"
+koin-annotations = "2.3.1"
 koinCompiler = "1.0.0-RC1"
 
 # ui components
@@ -120,7 +121,7 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-workmanager = { module = "io.insert-koin:koin-androidx-workmanager", version.ref = "koin" }
-koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
+koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-startup = { module = "io.insert-koin:koin-androidx-startup", version.ref = "koin" }
 
 base-recyclerview-adapter-helper = { group = "com.github.CymChad", name = "BaseRecyclerViewAdapterHelper", version.ref = "baseRecyclerViewAdapterHelper" }
