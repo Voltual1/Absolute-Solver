@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.kodein.di)
     implementation(libs.koin.core)
     implementation(libs.koin.android)
+    implementation(libs.koin.annotations) // 补充 Koin Annotations 依赖以配合 Compiler Plugin 
 
     implementation(libs.glide)
     implementation(libs.kongzue.dialogx) {
