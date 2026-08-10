@@ -31,7 +31,7 @@ microgSafeParcel = "1.7.1"
 kodeinDi = "7.12.0"
 
 # Koin 4.x 配置
-koin = "4.2.1"
+koin = "4.1.1"
 koinCompiler = "1.0.0-RC1"
 
 # ui components
