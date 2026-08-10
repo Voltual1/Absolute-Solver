@@ -69,7 +69,7 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.comm.store.*
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehaviorDelegate
-import com.aShuyu.gsyvideoplayer.video.base.GSYVideoPlayer
+import com.shuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -99,7 +99,6 @@ class MainActivity
     override val di: DI = DI.lazy {
         bindSingleton { this@MainActivity }
         
-        // Koin to Kodein Bridge: 桥接注册，从全局的 Koin 容器中动态解析 Store
         bindSingleton<AppStore> { org.koin.core.context.GlobalContext.get().get() }
         bindSingleton<WindowStore> { org.koin.core.context.GlobalContext.get().get() }
         bindSingleton<PlayListStore> { org.koin.core.context.GlobalContext.get().get() }
@@ -130,7 +129,6 @@ class MainActivity
         )
     }
     
-    // ThemeDelegate 的构造参数修改
     val themeDelegate by lazy { ThemeDelegate(this) }
     private val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this, di) }
     private val statusBarHelper by lazy { StatusBarHelper(this) }
@@ -138,7 +136,6 @@ class MainActivity
     private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
 
     private lateinit var navHostFragment: ComposeFragment
-
     private var subNavHostFragment: ComposeFragment? = null
 
     val currentNav: ComposeFragment
@@ -157,7 +154,6 @@ class MainActivity
             currentNav
         }
     }
-
 
     var pageConfig: MyPageConfigInfo? = null
         private set
@@ -369,7 +365,6 @@ class MainActivity
         setMyPageConfig(currentNav.pageConfig.configInfo)
     }
 
-
     fun setMyPageConfig(config: MyPageConfigInfo) {
         if (config.title.isNotBlank()) {
             pageConfig = config
@@ -500,6 +495,15 @@ class MainActivity
         Handler(Looper.getMainLooper()).postDelayed({
             ui.root.openDrawer()
         }, 10)
+    }
+
+    private fun startMenuOpenScanner(callback: (result: String) -> Unit): Boolean {
+        ui.root.closeDrawer()
+        return BilimiaoScanner.openScanner(
+            this,
+            themeDelegate.themeColor.toInt(),
+            callback,
+        )
     }
 
     fun setWindowInsetsAndroidL() {
