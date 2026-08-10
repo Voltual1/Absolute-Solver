@@ -54,7 +54,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Koin 依赖
+    // 双 DI 容器支持
+    implementation(libs.kodein.di.core)
+    implementation(libs.kodein.di)
+    implementation(libs.kodein.di.compose)
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.android.compose)

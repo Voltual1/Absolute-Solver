@@ -25,8 +25,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
 import cn.a10miaomiao.bilimiao.compose.ComposeFragment
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
@@ -45,16 +43,16 @@ import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
 import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
+import com.a10miaomiao.bilimiao.comm.store.*
 import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.page.MainBackPopupMenu
-import com.a10miaomiao.bilimiao.service.PlaybackService
 import com.a10miaomiao.bilimiao.store.Store
+import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehaviorDelegate
-import com.Shuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -62,18 +60,44 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.materialkolor.hct.Hct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.bindSingleton
 
-class MainActivity : AppCompatActivity() {
+class MainActivity
+    : AppCompatActivity(),
+    DIAware {
 
     private var mainUi: MainUi? = null
     private val ui get() = mainUi!!
 
+    override val di: DI = DI.lazy {
+        bindSingleton { this@MainActivity }
+        
+        // Koin to Kodein Bridge: 桥接注册，从全局的 Koin 容器中动态解析 Store
+        bindSingleton<AppStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<WindowStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<PlayListStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<PlayerStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<UserStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<UserLibraryStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<MessageStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<TimeSettingStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<FilterStore> { org.koin.core.context.GlobalContext.get().get() }
+        bindSingleton<RegionStore> { org.koin.core.context.GlobalContext.get().get() }
+
+        bindSingleton { startViewWrapper }
+        bindSingleton { basePlayerDelegate }
+        bindSingleton { themeDelegate }
+        bindSingleton { statusBarHelper }
+        bindSingleton { supportHelper }
+        bindSingleton { biliGeetestUtil }
+    }
+
     private val store by lazy { Store(this) }
-    
-    val startViewWrapper by lazy {
+    private val startViewWrapper by lazy {
         StartViewWrapper(
             this,
             this::startMenuNavigate,
@@ -82,12 +106,11 @@ class MainActivity : AppCompatActivity() {
             this::startMenuOpenScanner,
         )
     }
-    
-    val themeDelegate by lazy { ThemeDelegate(this) }
-    val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this) }
-    val statusBarHelper by lazy { StatusBarHelper(this) }
-    val supportHelper by lazy { SupportHelper(this) }
-    val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
+    private val themeDelegate by lazy { ThemeDelegate(this) }
+    private val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this, di) }
+    private val statusBarHelper by lazy { StatusBarHelper(this) }
+    private val supportHelper by lazy { SupportHelper(this) }
+    private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
 
     private lateinit var navHostFragment: ComposeFragment
     private var subNavHostFragment: ComposeFragment? = null

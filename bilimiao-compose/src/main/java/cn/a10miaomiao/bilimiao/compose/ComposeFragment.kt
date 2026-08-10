@@ -48,7 +48,9 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.LocalContainerView
@@ -67,7 +69,6 @@ import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.components.image.MyImagePreviewer
 import cn.a10miaomiao.bilimiao.compose.components.image.provider.ImagePreviewerProvider
 import cn.a10miaomiao.bilimiao.compose.pages.home.HomePage
-import com.a10miaomiao.bilimiao.MainActivity
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.myPageConfig
@@ -75,10 +76,25 @@ import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
-import org.koin.compose.koinInject
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
+import org.kodein.di.android.subDI
+import org.kodein.di.bindSingleton
+import org.kodein.di.compose.rememberInstance
+import org.kodein.di.compose.withDI
+import org.kodein.di.instance
 
-class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
+class ComposeFragment : Fragment(), MyPage, DIAware, OnBackPressedDispatcherOwner {
+
+    override val di: DI = subDI(closestDI()) {
+        bindSingleton { this@ComposeFragment }
+        bindSingleton { this@ComposeFragment.requireArguments() }
+        bindSingleton { messageDialogState }
+        bindSingleton { emitter }
+        bindSingleton { pageNavigation }
+        bindSingleton { bottomSheetState }
+    }
 
     private val pageNavigation = PageNavigation(
         navHostController = { composeNav },
@@ -94,9 +110,9 @@ class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
         }
     }
 
-    private val startViewWrapper by lazy { (requireActivity() as MainActivity).startViewWrapper }
-    private val appStore by inject<AppStore>()
-    private val windowStore by inject<WindowStore>()
+    private val startViewWrapper by instance<StartViewWrapper>()
+    private val appStore by instance<AppStore>()
+    private val windowStore by instance<WindowStore>()
 
     private var _pageConfig = PageConfigState.Cofing(-1)
     override val pageConfig = myPageConfig {
@@ -141,41 +157,43 @@ class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
                     LocalEmitter provides emitter,
                     LocalUriHandler provides uriHandler
                 ) {
-                    val appState = appStore.stateFlow.collectAsState().value
-                    val windowState = windowStore.stateFlow.collectAsState().value
-                    val windowInsets = windowState.getContentInsets(localContainerView())
-                    BilimiaoTheme(
-                        appState = appState,
-                    ) {
-                        ImagePreviewerProvider(
-                            contentPadding = windowInsets.addPaddingValues(
-                                addBottom = windowStore.bottomAppBarHeightDp.dp
-                            ),
-                            previewer = { state, innerPadding ->
-                                MyImagePreviewer(state, innerPadding)
-                            }
+                    withDI(di = di) {
+                        val appState = appStore.stateFlow.collectAsState().value
+                        val windowState = windowStore.stateFlow.collectAsState().value
+                        val windowInsets = windowState.getContentInsets(localContainerView())
+                        BilimiaoTheme(
+                            appState = appState,
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .nestedScroll(connection)
-                                    .background(MaterialTheme.colorScheme.background),
+                            ImagePreviewerProvider(
+                                contentPadding = windowInsets.addPaddingValues(
+                                    addBottom = windowStore.bottomAppBarHeightDp.dp
+                                ),
+                                previewer = { state, innerPadding ->
+                                    MyImagePreviewer(state, innerPadding)
+                                }
                             ) {
-                                MyNavHost(composeNav, HomePage)
+                                Box(
+                                    modifier = Modifier
+                                        .nestedScroll(connection)
+                                        .background(MaterialTheme.colorScheme.background),
+                                ) {
+                                    MyNavHost(composeNav, HomePage)
+                                }
+                                val bottomSheetPage = bottomSheetState.page.collectAsState().value
+                                if (bottomSheetPage != null) {
+                                    MyBottomSheet(
+                                        bottomSheetView,
+                                        bottomSheetPage,
+                                        onClose = {
+                                            bottomSheetState.close()
+                                        }
+                                    )
+                                }
                             }
-                            val bottomSheetPage = bottomSheetState.page.collectAsState().value
-                            if (bottomSheetPage != null) {
-                                MyBottomSheet(
-                                    bottomSheetView,
-                                    bottomSheetPage,
-                                    onClose = {
-                                        bottomSheetState.close()
-                                    }
-                                )
-                            }
+                            MessageDialog(messageDialogState)
                         }
-                        MessageDialog(messageDialogState)
+                        MyStartView(startViewWrapper = startViewWrapper)
                     }
-                    MyStartView(startViewWrapper = startViewWrapper)
                 }
             }
         }
@@ -237,19 +255,19 @@ class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
     fun openBottomSheet(page: ComposePage) {
         bottomSheetState.open(page)
     }
-}
 
-@Composable
-fun MyNavHost(
-    navController: NavHostController,
-    startRoute: Any,
-) {
-    NavHost(
-        navController = navController,
-        startDestination = startRoute,
+    @Composable
+    fun MyNavHost(
+        navController: NavHostController,
+        startRoute: Any,
     ) {
-        BilimiaoPageRoute(this)
-            .initRoute()
+        NavHost(
+            navController = navController,
+            startDestination = startRoute,
+        ) {
+            BilimiaoPageRoute(this@ComposeFragment)
+                .initRoute()
+        }
     }
 }
 
@@ -260,7 +278,7 @@ fun MyBottomSheet(
     page: ComposePage,
     onClose: () -> Unit,
 ) {
-    val parentPageNavigation = koinInject<PageNavigation>()
+    val parentPageNavigation by rememberInstance<PageNavigation>()
     val bottomSheetNav = rememberNavController()
     val pageNavigation = remember {
         PageNavigation(
@@ -272,23 +290,31 @@ fun MyBottomSheet(
     val pageConfigState = remember {
         PageConfigState()
     }
-
-    CompositionLocalProvider(
-        LocalContainerView provides container,
-        LocalPageConfigState provides pageConfigState,
-        LocalPageNavigation provides pageNavigation,
+    org.kodein.di.compose.subDI(
+        diBuilder = {
+            bindSingleton(
+                overrides = true
+            ) { pageNavigation }
+        }
     ) {
-        AutoSheetDialog(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .heightIn(max = 500.dp),
-            content = {
-                MyNavHost(bottomSheetNav, page)
-                MyBottomSheetTitleBar(pageConfigState, onClose)
-            },
-            onDismiss = onClose,
-            onPreDismiss = bottomSheetNav::popBackStack,
-        )
+        CompositionLocalProvider(
+            LocalContainerView provides container,
+            LocalPageConfigState provides pageConfigState,
+            LocalPageNavigation provides pageNavigation,
+        ) {
+            AutoSheetDialog(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .heightIn(max = 500.dp),
+                content = {
+                    val composeFragment by rememberInstance<ComposeFragment>()
+                    composeFragment.MyNavHost(bottomSheetNav, page)
+                    MyBottomSheetTitleBar(pageConfigState, onClose)
+                },
+                onDismiss = onClose,
+                onPreDismiss = bottomSheetNav::popBackStack,
+            )
+        }
     }
 }
 
@@ -348,7 +374,7 @@ fun MyBottomSheetTitleBar(
 fun MyStartView(
     startViewWrapper: StartViewWrapper,
 ) {
-    val appStore = koinInject<AppStore>()
+    val appStore by rememberInstance<AppStore>()
 
     fun openSearch() {
         startViewWrapper.openSearchDialog("", 0, true)

@@ -30,7 +30,7 @@ microgSafeParcel = "1.7.1"
 # 临时保留 Kodein 以实现渐进式迁移
 kodeinDi = "7.12.0"
 
-# Koin 4.x 配置
+# Koin 4.1.1 配置 (兼容 Android 5)
 koin = "4.1.1"
 koin-annotations = "2.3.1"
 koinCompiler = "1.0.0-RC1"
@@ -97,7 +97,8 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 accompanist-drawablepainter = { group = "com.google.accompanist", name = "accompanist-drawablepainter", version.ref = "accompanist" }
 accompanist-adaptive = { group = "com.google.accompanist", name = "accompanist-adaptive", version.ref = "accompanist" }
 
-# 重新声明旧的 Kodein 依赖库
+# 重新声明旧的 Kodein 依赖库 (补全核心包以确保旧的 DI 语法可被编译)
+kodein-di-core = { group = "org.kodein.di", name = "kodein-di", version.ref = "kodeinDi" }
 kodein-di = { group = "org.kodein.di", name = "kodein-di-framework-android-x", version.ref = "kodeinDi" }
 kodein-di-compose = { group = "org.kodein.di", name = "kodein-di-framework-compose", version.ref = "kodeinDi" }
 
@@ -127,7 +128,7 @@ koin-startup = { module = "io.insert-koin:koin-androidx-startup", version.ref = 
 base-recyclerview-adapter-helper = { group = "com.github.CymChad", name = "BaseRecyclerViewAdapterHelper", version.ref = "baseRecyclerViewAdapterHelper" }
 google-android-flexbox = { group = "com.google.android.flexbox", name = "flexbox", version.ref = "flexbox" }
 foreground-compat = { group = "me.zhanghai.android.foregroundcompat", name = "library", version.ref = "foregroundCompat" }
-drakeet-drawer = { group = "com.drakeet.drawer", name = "drawer", version.ref = "drawer" }
+drakeet-drawer = { group = "com. drakeet.drawer", name = "drawer", version.ref = "drawer" }
 gsy-video-player = { group = "com.github.CarGuo.GSYVideoPlayer", name = "gsyvideoplayer-java", version.ref = "gsyVideoPlayer" }
 mojito = { group = "com.github.mikaelzero.mojito", name = "mojito", version.ref = "mojito" }
 mojito-sketch = { group = "com.github.mikaelzero.mojito", name = "SketchImageViewLoader", version.ref = "mojito" }
