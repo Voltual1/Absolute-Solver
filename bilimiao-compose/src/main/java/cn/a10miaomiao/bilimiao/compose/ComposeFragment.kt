@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
@@ -50,7 +51,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.LocalContainerView
@@ -78,8 +78,8 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.closestDI
 import org.kodein.di.android.subDI
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.bindSingleton
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.compose.withDI
@@ -255,19 +255,19 @@ class ComposeFragment : Fragment(), MyPage, DIAware, OnBackPressedDispatcherOwne
     fun openBottomSheet(page: ComposePage) {
         bottomSheetState.open(page)
     }
+}
 
-    @Composable
-    fun MyNavHost(
-        navController: NavHostController,
-        startRoute: Any,
+@Composable
+fun MyNavHost(
+    navController: NavHostController,
+    startRoute: Any,
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startRoute,
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = startRoute,
-        ) {
-            BilimiaoPageRoute(this@ComposeFragment)
-                .initRoute()
-        }
+        BilimiaoPageRoute(this)
+            .initRoute()
     }
 }
 
@@ -307,8 +307,7 @@ fun MyBottomSheet(
                     .background(MaterialTheme.colorScheme.surface)
                     .heightIn(max = 500.dp),
                 content = {
-                    val composeFragment by rememberInstance<ComposeFragment>()
-                    composeFragment.MyNavHost(bottomSheetNav, page)
+                    MyNavHost(bottomSheetNav, page)
                     MyBottomSheetTitleBar(pageConfigState, onClose)
                 },
                 onDismiss = onClose,
