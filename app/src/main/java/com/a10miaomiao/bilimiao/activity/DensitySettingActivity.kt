@@ -8,7 +8,6 @@ import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import com.a10miaomiao.bilimiao.Bilimiao
 import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
@@ -16,7 +15,6 @@ import com.a10miaomiao.bilimiao.config.config
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.DI
 import splitties.dimensions.dip
 import splitties.experimental.InternalSplittiesApi
 import splitties.views.backgroundColor
@@ -35,10 +33,9 @@ import splitties.views.textColorResource
 
 class DensitySettingActivity : AppCompatActivity() {
 
-    private val di: DI = DI.lazy {}
-
+    // 修正 ThemeDelegate 初始化
     private val themeDelegate by lazy {
-        ThemeDelegate(this@DensitySettingActivity, di)
+        ThemeDelegate(this@DensitySettingActivity)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +47,6 @@ class DensitySettingActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         if (isChanged()) {
-            // 直接重启APP
             val intent = packageManager.getLaunchIntentForPackage(packageName)!!
             val componentName = intent.component
             val mainIntent = Intent.makeRestartActivityTask(componentName)
@@ -72,9 +68,9 @@ class DensitySettingActivity : AppCompatActivity() {
     private fun reStartActivity() {
         val intent = intent
         intent.putExtra("changed", true)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        finish();
-        overridePendingTransition(0, 0);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+        finish()
+        overridePendingTransition(0, 0)
         startActivity(intent)
     }
 
@@ -88,7 +84,6 @@ class DensitySettingActivity : AppCompatActivity() {
         val newContext = newBase.createConfigurationContext(configuration)
         super.attachBaseContext(newContext)
     }
-
 
     @OptIn(InternalSplittiesApi::class)
     class DensitySettingUi(
@@ -156,7 +151,6 @@ class DensitySettingActivity : AppCompatActivity() {
                 horizontalMargin = dip(10)
             })
 
-
             addView(view<MaterialButton> {
                 text = "确认修改"
                 backgroundColor = activity.themeDelegate.themeColor.toInt()
@@ -180,7 +174,5 @@ class DensitySettingActivity : AppCompatActivity() {
         }.wrapInScrollView(height = ViewGroup.LayoutParams.MATCH_PARENT) {
             backgroundColor = config.windowBackgroundColor
         }
-
     }
-
 }

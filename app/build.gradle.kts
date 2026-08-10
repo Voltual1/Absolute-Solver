@@ -131,7 +131,7 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
     
-    // Koin 注入依赖
+    implementation(libs.kodein.di)
     implementation(libs.koin.core)
     implementation(libs.koin.android)
 

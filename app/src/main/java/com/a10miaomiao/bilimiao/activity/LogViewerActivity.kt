@@ -15,7 +15,6 @@ import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.config.config
 import com.google.android.material.appbar.MaterialToolbar
-import org.kodein.di.DI
 import splitties.dimensions.dip
 import splitties.experimental.InternalSplittiesApi
 import splitties.views.backgroundColor
@@ -31,10 +30,9 @@ import splitties.views.dsl.core.wrapInScrollView
 
 class LogViewerActivity : AppCompatActivity() {
 
-    private val di: DI = DI.lazy {}
-
+    // 修正 ThemeDelegate 初始化
     private val themeDelegate by lazy {
-        ThemeDelegate(this@LogViewerActivity, di)
+        ThemeDelegate(this@LogViewerActivity)
     }
 
     private var mLogSummary = ""
@@ -105,7 +103,6 @@ class LogViewerActivity : AppCompatActivity() {
             }.wrapInScrollView {
                 backgroundColor = config.windowBackgroundColor
             }, lParams(matchParent, matchParent))
-
         }
     }
 }

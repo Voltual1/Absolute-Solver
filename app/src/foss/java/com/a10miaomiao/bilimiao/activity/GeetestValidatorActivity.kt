@@ -3,24 +3,18 @@ package com.a10miaomiao.bilimiao.activity
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
-import com.a10miaomiao.bilimiao.config.config
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import org.kodein.di.DI
 import splitties.dimensions.dip
 import splitties.experimental.InternalSplittiesApi
 import splitties.views.backgroundColor
@@ -28,16 +22,13 @@ import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.setContentView
-import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.verticalLayout
 import splitties.views.dsl.core.view
 import splitties.views.dsl.core.wrapContent
-import splitties.views.dsl.core.wrapInScrollView
 
 class GeetestValidatorActivity : AppCompatActivity() {
 
     companion object {
-
         private var tempCallback: CallBack? = null
 
         fun openGeetestValidatorActivity(activity: Activity, callback: CallBack) {
@@ -47,12 +38,11 @@ class GeetestValidatorActivity : AppCompatActivity() {
         }
     }
 
-    private val di: DI = DI.lazy {}
-
     private var mCallback: CallBack? = null
 
+    // 修正 ThemeDelegate 初始化
     private val themeDelegate by lazy {
-        ThemeDelegate(this@GeetestValidatorActivity, di)
+        ThemeDelegate(this@GeetestValidatorActivity)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,7 +127,6 @@ class GeetestValidatorActivity : AppCompatActivity() {
             addView(webView, lParams(matchParent, matchParent) {
                 weight = 1f
             })
-
         }
     }
 

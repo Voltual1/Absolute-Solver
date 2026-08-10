@@ -1,6 +1,8 @@
 package com.a10miaomiao.bilimiao
 
 import android.Manifest
+import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -24,13 +26,25 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentOnAttachListener
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.ComposeFragment
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.base.PageSearchMethod
+import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import com.a10miaomiao.bilimiao.comm.BiliGeetestUtilImpl
 import com.a10miaomiao.bilimiao.comm.BilimiaoStatService
+import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.delegate.helper.StatusBarHelper
 import com.a10miaomiao.bilimiao.comm.delegate.helper.SupportHelper
@@ -42,29 +56,38 @@ import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
 import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
+import com.a10miaomiao.bilimiao.comm.network.BiliGRPCConfig
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
-import com.a10miaomiao.bilimiao.comm.store.*
 import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.page.MainBackPopupMenu
+import com.a10miaomiao.bilimiao.service.PlaybackService
 import com.a10miaomiao.bilimiao.store.Store
 import com.a10miaomiao.bilimiao.store.WindowStore
+import com.a10miaomiao.bilimiao.comm.store.*
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehaviorDelegate
+import com.aShuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.common.util.concurrent.MoreExecutors
+import com.kongzue.dialogx.dialogs.PopTip
+import com.materialkolor.dynamiccolor.MaterialDynamicColors
 import com.materialkolor.hct.Hct
+import com.materialkolor.ktx.DynamicScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.bindSingleton
+import splitties.views.backgroundColor
 
 class MainActivity
     : AppCompatActivity(),
@@ -97,7 +120,7 @@ class MainActivity
     }
 
     private val store by lazy { Store(this) }
-    private val startViewWrapper by lazy {
+    val startViewWrapper by lazy {
         StartViewWrapper(
             this,
             this::startMenuNavigate,
@@ -106,13 +129,16 @@ class MainActivity
             this::startMenuOpenScanner,
         )
     }
-    private val themeDelegate by lazy { ThemeDelegate(this) }
+    
+    // ThemeDelegate 的构造参数修改
+    val themeDelegate by lazy { ThemeDelegate(this) }
     private val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this, di) }
     private val statusBarHelper by lazy { StatusBarHelper(this) }
     private val supportHelper by lazy { SupportHelper(this) }
     private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
 
     private lateinit var navHostFragment: ComposeFragment
+
     private var subNavHostFragment: ComposeFragment? = null
 
     val currentNav: ComposeFragment
@@ -131,6 +157,7 @@ class MainActivity
             currentNav
         }
     }
+
 
     var pageConfig: MyPageConfigInfo? = null
         private set
@@ -338,10 +365,10 @@ class MainActivity
         ui.mAppBar.pointerOrientation = ui.root.pointerExchanged
         notifyConfigChanged()
     }
-    
     fun notifyConfigChanged(){
         setMyPageConfig(currentNav.pageConfig.configInfo)
     }
+
 
     fun setMyPageConfig(config: MyPageConfigInfo) {
         if (config.title.isNotBlank()) {
@@ -397,7 +424,6 @@ class MainActivity
             goBackHome()
         }
     }
-    
     private val onPointerClick = View.OnClickListener {
         ui.root.pointerExchanged = !ui.root.pointerExchanged
         notifyFocusChanged()
@@ -681,6 +707,7 @@ class MainActivity
             }
         }
     }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onPictureInPictureModeChanged(
