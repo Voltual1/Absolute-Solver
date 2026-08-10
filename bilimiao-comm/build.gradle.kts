@@ -6,6 +6,8 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.protobuf") // proto
     kotlin("plugin.serialization")
+    // 引入 Koin 编译器插件
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -92,7 +94,12 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    
+    // 双 DI 容器共存
     implementation(libs.kodein.di)
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+
     implementation(libs.glide)
     implementation(libs.kongzue.dialogx) {
         exclude("com.github.kongzue.DialogX", "DialogXInterface")
