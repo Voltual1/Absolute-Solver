@@ -2,17 +2,12 @@ package com.a10miaomiao.bilimiao.comm.store
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.app.dynamic.v2.ThreePointType
 import bilibili.app.view.v1.ViewGRPC
-import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerSource
-import com.a10miaomiao.bilimiao.comm.delegate.player.VideoPlayerSource
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.history.ToViewInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaDetailInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaResponseV2Info
 import com.a10miaomiao.bilimiao.comm.entity.player.PlayListFrom
-import com.a10miaomiao.bilimiao.comm.entity.player.PlayListInfo
 import com.a10miaomiao.bilimiao.comm.entity.player.PlayListItemInfo
 import com.a10miaomiao.bilimiao.comm.entity.player.PlayListItemInfo.VideoPageInfo
 import com.a10miaomiao.bilimiao.comm.entity.video.UgcSeasonInfo
@@ -20,7 +15,6 @@ import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,10 +22,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
 
-
-class PlayListStore(override val di: DI) :
+class PlayListStore :
     ViewModel(), BaseStore<PlayListStore.State> {
 
     data class State(
@@ -101,7 +93,6 @@ class PlayListStore(override val di: DI) :
             return
         }
         val items = state.items.filter {
-            // 去重
             it.cid != item.cid
         }.toMutableList()
         if (index == -1) {
@@ -239,7 +230,6 @@ class PlayListStore(override val di: DI) :
                 loading = true
             )
             val items = mutableListOf<PlayListItemInfo>()
-            val pageSize = 20
             var pageNum = 1
             var loadFinish = false
             while (!loadFinish) {
@@ -266,12 +256,8 @@ class PlayListStore(override val di: DI) :
                                 from = listFrom,
                             )
                         } ?: emptyList()
-                        if (newItems != null) {
-                            items.addAll(newItems)
-                            loadFinish = !result.has_more || newItems.isEmpty()
-                        } else {
-                            loadFinish = true
-                        }
+                        items.addAll(newItems)
+                        loadFinish = !result.has_more || newItems.isEmpty()
                         pageNum++
                     } else {
                         withContext(Dispatchers.Main) {
@@ -418,7 +404,7 @@ class PlayListStore(override val di: DI) :
         }
 
     fun setToviewList(
-        sortField: Int, // 1全部, 10未看完
+        sortField: Int,
         asc: Boolean = false,
     ) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -426,7 +412,7 @@ class PlayListStore(override val di: DI) :
         }
     }
     private suspend fun _setToviewList(
-        sortField: Int, // 1全部, 10未看完
+        sortField: Int,
         asc: Boolean = false,
     ) =  playListLoadingMutex.withLock {
         clearPlayList(
@@ -522,4 +508,3 @@ class PlayListStore(override val di: DI) :
         )
     }
 }
-

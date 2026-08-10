@@ -5,12 +5,8 @@ import android.view.View
 import androidx.lifecycle.ViewModel
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.kodein.di.DI
 
-
-class WindowStore(
-    override val di: DI
-) : ViewModel(), BaseStore<WindowStore.State> {
+class WindowStore : ViewModel(), BaseStore<WindowStore.State> {
 
     data class State(
         var bottomAppBarHeight: Int = 0,
@@ -79,5 +75,4 @@ class WindowStore(
         val rightDp = right / density
         val bottomDp = bottom / density
     }
-
 }

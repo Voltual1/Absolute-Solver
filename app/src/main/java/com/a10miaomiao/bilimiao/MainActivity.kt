@@ -1,8 +1,6 @@
 package com.a10miaomiao.bilimiao
 
 import android.Manifest
-import android.app.Activity
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -26,25 +24,15 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentOnAttachListener
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.ComposeFragment
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.base.PageSearchMethod
-import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import com.a10miaomiao.bilimiao.comm.BiliGeetestUtilImpl
 import com.a10miaomiao.bilimiao.comm.BilimiaoStatService
-import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.delegate.helper.StatusBarHelper
 import com.a10miaomiao.bilimiao.comm.delegate.helper.SupportHelper
@@ -56,7 +44,6 @@ import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
 import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCConfig
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
 import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
@@ -67,46 +54,26 @@ import com.a10miaomiao.bilimiao.service.PlaybackService
 import com.a10miaomiao.bilimiao.store.Store
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehaviorDelegate
+import com.Shuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.common.util.concurrent.MoreExecutors
-import com.kongzue.dialogx.dialogs.PopTip
-import com.materialkolor.dynamiccolor.MaterialDynamicColors
 import com.materialkolor.hct.Hct
-import com.materialkolor.ktx.DynamicScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.bindSingleton
-import splitties.views.backgroundColor
 
-
-class MainActivity
-    : AppCompatActivity(),
-    DIAware {
+class MainActivity : AppCompatActivity() {
 
     private var mainUi: MainUi? = null
     private val ui get() = mainUi!!
 
-    override val di: DI = DI.lazy {
-        bindSingleton { this@MainActivity }
-        store.loadStoreModules(this)
-        bindSingleton { startViewWrapper }
-        bindSingleton { basePlayerDelegate }
-        bindSingleton { themeDelegate }
-        bindSingleton { statusBarHelper }
-        bindSingleton { supportHelper }
-        bindSingleton { biliGeetestUtil }
-    }
-
-    private val store by lazy { Store(this, di) }
-    private val startViewWrapper by lazy {
+    private val store by lazy { Store(this) }
+    
+    val startViewWrapper by lazy {
         StartViewWrapper(
             this,
             this::startMenuNavigate,
@@ -115,14 +82,14 @@ class MainActivity
             this::startMenuOpenScanner,
         )
     }
-    private val themeDelegate by lazy { ThemeDelegate(this, di) }
-    private val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this, di) }
-    private val statusBarHelper by lazy { StatusBarHelper(this) }
-    private val supportHelper by lazy { SupportHelper(this) }
-    private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
+    
+    val themeDelegate by lazy { ThemeDelegate(this) }
+    val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this) }
+    val statusBarHelper by lazy { StatusBarHelper(this) }
+    val supportHelper by lazy { SupportHelper(this) }
+    val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
 
     private lateinit var navHostFragment: ComposeFragment
-
     private var subNavHostFragment: ComposeFragment? = null
 
     val currentNav: ComposeFragment
@@ -130,7 +97,6 @@ class MainActivity
     val anotherNav: ComposeFragment
         get() = if (!ui.root.focusOnMain) navHostFragment else subNavHostFragment ?: navHostFragment
 
-    // 指示器，指示新页面该出现的地方
     val pointerNav: ComposeFragment get() {
         return if (ui.root.subContentShown) {
             if (ui.root.pointerExchanged == ui.root.contentExchanged) {
@@ -143,30 +109,25 @@ class MainActivity
         }
     }
 
-
     var pageConfig: MyPageConfigInfo? = null
         private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // API31，安卓11
-            // 设置弹出输入法时不改变窗口高度，使动画更加流畅，高版本安卓可以用imePadding来顶起输入框
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         }
         super.onCreate(savedInstanceState)
         themeDelegate.onCreate(savedInstanceState)
 
-        // 统计服务
         BilimiaoStatService.setAuthorizedState(this, false)
         BilimiaoStatService.start(this)
 
-        // 安卓13开始手动申请通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                //2、申请权限: 参数二：权限的数组；参数三：请求码
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -208,7 +169,7 @@ class MainActivity
             }.flowOn(Dispatchers.Main).collect {
                 if (!ui.root.fullScreenPlayer) {
                     this@MainActivity.requestedOrientation = when (it) {
-                        true -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT // 竖屏锁定
+                        true -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                         else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     }
                 }
@@ -339,11 +300,9 @@ class MainActivity
         }
     }
 
-    //焦点改变时提示页面标题
     private fun changeFocus(focusOnMain: Boolean) {
         if (ui.root.focusOnMain != focusOnMain) {
             ui.root.focusOnMain = focusOnMain
-            //双内容区时自动切换指示器
             if (ui.root.pointerAutoChange && ui.root.subContentShown) {
                 ui.root.pointerExchanged = !ui.root.pointerExchanged
             }
@@ -352,16 +311,14 @@ class MainActivity
     }
 
     fun notifyFocusChanged() {
-//        ui.mAppBar.canBack =
-//            currentNav.navController.currentDestination?.id != MainNavGraph.dest.main
         ui.mAppBar.showPointer = ui.root.subContentShown
         ui.mAppBar.pointerOrientation = ui.root.pointerExchanged
         notifyConfigChanged()
     }
+    
     fun notifyConfigChanged(){
         setMyPageConfig(currentNav.pageConfig.configInfo)
     }
-
 
     fun setMyPageConfig(config: MyPageConfigInfo) {
         if (config.title.isNotBlank()) {
@@ -417,6 +374,7 @@ class MainActivity
             goBackHome()
         }
     }
+    
     private val onPointerClick = View.OnClickListener {
         ui.root.pointerExchanged = !ui.root.pointerExchanged
         notifyFocusChanged()
@@ -427,25 +385,20 @@ class MainActivity
     }
     private val onExchangeClick = View.OnClickListener {
         if (!ui.root.subContentShown) {
-            //单内容区，将焦点给到另一区域
             changeFocus(!ui.root.focusOnMain)
             ui.root.updateLayout(true)
         } else {
-            //双内容区，互换
             ui.root.contentExchanged = !ui.root.contentExchanged
         }
-        //指示器不锁定时，交换一次方向
         if (ui.root.pointerAutoChange) {
             ui.root.pointerExchanged = !ui.root.pointerExchanged
             notifyFocusChanged()
         }
     }
     private val onExchangeLongClick = View.OnLongClickListener {
-        //长按强制全屏
         ui.root.showSubContent = !ui.root.showSubContent
         ui.root.updateLayout(true)
         notifyFocusChanged()
-        //小窗行为跟随
         if (!ui.root.subContentShown) {
             ui.root.playerBehavior?.holdUpPlayer()
         } else {
@@ -462,16 +415,6 @@ class MainActivity
         if (state == DrawerBehaviorDelegate.STATE_COLLAPSED) {
             startViewWrapper.closeSearchDialog()
         }
-        // 太麻烦
-//        supportFragmentManager.beginTransaction().also {
-//            if (state == AppBarBehaviorDelegate.STATE_COLLAPSED
-//                && leftFragment.isVisible) {
-//                leftFragment.hideSoftInput()
-//                it.hide(leftFragment)
-//            } else if (leftFragment.isHidden) {
-//                it.show(leftFragment)
-//            }
-//        }.commit()
     }
 
     fun searchSelfPage(keyword: String) {
@@ -508,15 +451,6 @@ class MainActivity
         Handler(Looper.getMainLooper()).postDelayed({
             ui.root.openDrawer()
         }, 10)
-    }
-
-    private fun startMenuOpenScanner(callback: (result: String) -> Unit): Boolean {
-        ui.root.closeDrawer()
-        return BilimiaoScanner.openScanner(
-            this,
-            themeDelegate.themeColor.toInt(),
-            callback,
-        )
     }
 
     fun setWindowInsetsAndroidL() {
@@ -604,16 +538,12 @@ class MainActivity
     override fun onResume() {
         super.onResume()
         basePlayerDelegate.onResume()
-
-        // 百度移动统计埋点
         BilimiaoStatService.onResume(this)
     }
 
     override fun onPause() {
         super.onPause()
         basePlayerDelegate.onPause()
-
-        // 百度移动统计埋点
         BilimiaoStatService.onPause(this)
     }
 
@@ -679,9 +609,6 @@ class MainActivity
         }
     }
 
-    /**
-     * 通知权限设置界面跳转
-     */
     private fun jumpNotificationSetting() {
         val intent = Intent()
         try {
@@ -706,9 +633,6 @@ class MainActivity
         }
     }
 
-    /**
-     * 通知权限授权提示
-     */
     private fun showNotificationPermissionTips() {
         MaterialAlertDialogBuilder(this).apply {
             setTitle("请求授权”通知权限“")
@@ -721,10 +645,6 @@ class MainActivity
         }.show()
     }
 
-    /**
-     * 判断授权的方法  授权成功直接调用写入方法  这是监听的回调
-     * 参数  上下文   授权结果的数组   申请授权的数组
-     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -739,7 +659,6 @@ class MainActivity
         }
     }
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
@@ -747,11 +666,6 @@ class MainActivity
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         basePlayerDelegate.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        if (isInPictureInPictureMode) { // 进入画中画模式，则隐藏其它控件
-
-        } else {
-
-        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -766,12 +680,8 @@ class MainActivity
     }
 
     private fun onHostNavBack(): Boolean {
-//        if (ui.mAppBar.canBack) {
-            currentNav.onBackPressed()
-            return true
-//        } else {
-//            return false
-//        }
+        currentNav.onBackPressed()
+        return true
     }
 
     override fun onBackPressed() {
@@ -798,5 +708,4 @@ class MainActivity
         val newContext = newBase.createConfigurationContext(configuration)
         super.attachBaseContext(newContext)
     }
-
 }

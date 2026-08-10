@@ -1,17 +1,14 @@
 package com.a10miaomiao.bilimiao.comm.store
 
-import android.app.Activity
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.a10miaomiao.bilimiao.comm.R
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.region.RegionInfo
 import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
 import com.kongzue.dialogx.dialogs.PopTip
@@ -19,15 +16,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import org.kodein.di.DI
-import org.kodein.di.instance
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 
-class RegionStore(override val di: DI) :
+class RegionStore(private val context: Context) :
     ViewModel(), BaseStore<RegionStore.State> {
 
     data class State(
@@ -37,13 +31,10 @@ class RegionStore(override val di: DI) :
     override val stateFlow = MutableStateFlow(State())
     override fun copyState() = state.copy()
 
-    private val activity: Activity by di.instance()
-
     private var networkTime = 0L
 
     override fun init(context: Context) {
         super.init(context)
-        // 加载分区列表
         SettingPreferences.launch(viewModelScope, Dispatchers.IO) {
             context.dataStore.data.map {
                 it[IsBestRegion] ?: false
@@ -57,7 +48,6 @@ class RegionStore(override val di: DI) :
         context: Context,
         isBestRegion: Boolean,
     ) {
-        // 加载分区列表
         try {
             val jsonStr = readRegionJson(context, isBestRegion)!!
             val result = MiaoJson.fromJson<ResponseData<List<RegionInfo>>>(jsonStr)
@@ -70,7 +60,6 @@ class RegionStore(override val di: DI) :
             e.printStackTrace()
             PopTip.show("读取分区列表遇到错误")
         }
-        // 从网络读取最新版本的分区列表
         if (!isBestRegion && System.currentTimeMillis() - networkTime > 3600000) {
             getRegionsByNetwork(context)
         }
@@ -88,7 +77,6 @@ class RegionStore(override val di: DI) :
                     regions = regionList.toMutableList()
                 }
                 networkTime = System.currentTimeMillis()
-                // 保存到本地
                 writeRegionJson(
                     context,
                     ResponseData(
@@ -108,9 +96,6 @@ class RegionStore(override val di: DI) :
         }
     }
 
-    /**
-     * 读取assets下的json数据
-     */
     private fun readRegionJson(
         context: Context,
         isBestRegion: Boolean,
@@ -138,17 +123,14 @@ class RegionStore(override val di: DI) :
     private fun writeRegionJson(context: Context, region: ResponseData<List<RegionInfo>>) {
         try {
             val jsonStr = MiaoJson.toJson(region)
-            val outputStream = context.openFileOutput("region.json", Context.MODE_PRIVATE);
-            outputStream.write(jsonStr.toByteArray());
-            outputStream.close();
+            val outputStream = context.openFileOutput("region.json", Context.MODE_PRIVATE)
+            outputStream.write(jsonStr.toByteArray())
+            outputStream.close()
         } catch (e: IOException) {
             e.printStackTrace()
         }
     }
 
-    /**
-     * 分区图标
-     */
     private fun regionIcon(index: Int, item: RegionInfo) {
         if (item.logo == null) {
             item.icon = intArrayOf(

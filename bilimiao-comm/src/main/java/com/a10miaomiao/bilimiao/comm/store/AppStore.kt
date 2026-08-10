@@ -1,7 +1,6 @@
 package com.a10miaomiao.bilimiao.comm.store
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -9,18 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences.dataStore
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.message.UnreadMessageInfo
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
 import com.kongzue.dialogx.DialogX
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.instance
 
-class AppStore(override val di: DI) :
+class AppStore(private val context: Context) :
     ViewModel(), BaseStore<AppStore.State> {
 
     data class ThemeSettingState (
@@ -44,8 +37,6 @@ class AppStore(override val di: DI) :
 
     override val stateFlow = MutableStateFlow(State())
     override fun copyState() = state.copy()
-
-    private val context: Context by instance()
 
     override fun init(context: Context) {
         super.init(context)
@@ -114,6 +105,4 @@ class AppStore(override val di: DI) :
             }
         }
     }
-
-
 }

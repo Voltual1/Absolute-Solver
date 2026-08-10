@@ -8,30 +8,22 @@ import bilibili.app.interfaces.v1.CursorV2Req
 import bilibili.app.interfaces.v1.HistoryGRPC
 import com.a10miaomiao.bilimiao.comm.entity.ListAndCountInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
-import com.a10miaomiao.bilimiao.comm.entity.bangumi.MyBangumiFollowListInfo
 import com.a10miaomiao.bilimiao.comm.entity.history.ToViewInfo
-import com.a10miaomiao.bilimiao.comm.entity.media.MediaFoldersInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaListInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.instance
 
-class UserLibraryStore (override val di: DI) :
+class UserLibraryStore (private val userStore: UserStore) :
     ViewModel(), BaseStore<UserLibraryStore.State> {
 
     data class FavouriteInfo(
         val defaultFavCount: Int = 0,
         val defaultFavId: String = "",
         val defaultFavTitle: String = "默认收藏夹",
-//        val subscriptionCount: Int = 0,
     )
 
     data class HistoryInfo(
@@ -45,22 +37,13 @@ class UserLibraryStore (override val di: DI) :
         val aid: Long,
         val title: String = "",
         val cover: String = "",
-//        val addToAt: Long = 0,
     )
-
-//    data class BangumiInfo(
-//        val bangumiCount: Int = 0,
-//        val cinemaCount: Int = 0,
-//    )
 
     data class State (
         val favourite: FavouriteInfo = FavouriteInfo(),
         val history: List<HistoryInfo> = emptyList(),
         val watchLater: List<WatchLaterInfo> = emptyList(),
-//        val bangumi: BangumiInfo = BangumiInfo(),
     )
-
-    private val userStore: UserStore by instance()
 
     override val stateFlow = MutableStateFlow(State())
     override fun copyState() = state.copy()
@@ -72,7 +55,6 @@ class UserLibraryStore (override val di: DI) :
             if (mid != null) {
                 loadWatchLaterData()
                 loadFavouriteData(mid)
-//                loadBangumiData()
             }
         }
     }
@@ -150,78 +132,15 @@ class UserLibraryStore (override val di: DI) :
                     }
                 }
         }
-//        val collectedResult = kotlin.runCatching {
-//            BiliApiService.userApi
-//                .favCollectedList(
-//                    mid.toString(),
-//                    pageNum = 1,
-//                    pageSize = 1
-//                )
-//                .awaitCall()
-//                .json<ResponseData<MediaFoldersInfo>>()
-//                .let {
-//                    if (it.isSuccess) {
-//                        0
-//                    } else {
-//                        0
-//                    }
-//                }
-//        }
         val defaultFav = defaultFavResult.getOrNull()
         stateFlow.value = state.copy(
             favourite = FavouriteInfo(
                 defaultFavCount = defaultFav?.media_count ?: 0,
                 defaultFavId = defaultFav?.id ?: "",
                 defaultFavTitle = defaultFav?.title ?: "",
-//                subscriptionCount = collectedResult.getOrElse { 0 },
             )
         )
     }
-
-//    private suspend fun loadBangumiData() {
-//        val cinemaResult = kotlin.runCatching {
-//            BiliApiService.bangumiAPI
-//                .followList(
-//                    type = "cinema",
-//                    status = 0,
-//                    pageNum = 1,
-//                    pageSize = 1,
-//                )
-//                .awaitCall()
-//                .json<ResponseResult<MyBangumiFollowListInfo>>()
-//                .let {
-//                    if (it.isSuccess) {
-//                        it.requireData().total
-//                    } else {
-//                        0
-//                    }
-//                }
-//        }
-//        val bangumiResult = kotlin.runCatching {
-//            BiliApiService.bangumiAPI
-//                .followList(
-//                    type = "bangumi",
-//                    status = 0,
-//                    pageNum = 1,
-//                    pageSize = 1,
-//                )
-//                .awaitCall()
-//                .json<ResponseResult<MyBangumiFollowListInfo>>()
-//                .let {
-//                    if (it.isSuccess) {
-//                        it.requireData().total
-//                    } else {
-//                        0
-//                    }
-//                }
-//        }
-//        stateFlow.value = state.copy(
-//            bangumi = BangumiInfo(
-//                bangumiCount = bangumiResult.getOrNull() ?: 0,
-//                cinemaCount = cinemaResult.getOrNull() ?: 0,
-//            )
-//        )
-//    }
 
     fun appendHistory(history: HistoryInfo) {
         val newHistory = state.history.toMutableList()
@@ -246,30 +165,4 @@ class UserLibraryStore (override val di: DI) :
             watchLater = list.take(2)
         )
     }
-
-//    fun setFavouriteCount(
-//        defaultFavCount: Int = 0,
-//        subscriptionCount: Int = 0,
-//    ) {
-//        stateFlow.value = state.copy(
-//            favourite = FavouriteInfo(
-//                defaultFavCount = defaultFavCount,
-//                subscriptionCount = subscriptionCount,
-//            )
-//        )
-//    }
-//
-//    fun setBangumiCount(
-//        bangumiCount: Int = 0,
-//        cinemaCount: Int = 0,
-//    ) {
-//        stateFlow.value = state.copy(
-//            bangumi = BangumiInfo(
-//                bangumiCount = bangumiCount,
-//                cinemaCount = cinemaCount,
-//            )
-//        )
-//    }
-
-
 }

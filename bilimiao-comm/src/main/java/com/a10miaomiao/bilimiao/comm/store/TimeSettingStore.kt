@@ -2,17 +2,14 @@ package com.a10miaomiao.bilimiao.comm.store
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModel
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
 import com.a10miaomiao.bilimiao.comm.store.model.DateModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.kodein.di.DI
-import org.kodein.di.instance
 import java.util.*
 
-class TimeSettingStore(override val di: DI) :
+class TimeSettingStore(private val context: Context) :
     ViewModel(), BaseStore<TimeSettingStore.State> {
 
     companion object {
@@ -37,7 +34,7 @@ class TimeSettingStore(override val di: DI) :
                 "click" -> 0
                 "scores" -> 1
                 "stow" -> 2
-                "coin" ->3
+                "coin" -> 3
                 "dm" -> 4
                 else -> 0
             }
@@ -49,8 +46,6 @@ class TimeSettingStore(override val di: DI) :
         timeTo = DateModel(),
     ))
 
-    private val activity: AppCompatActivity by instance()
-
     override fun copyState() = state.copy()
 
     override fun init(context: Context) {
@@ -59,7 +54,7 @@ class TimeSettingStore(override val di: DI) :
     }
 
     fun initState () {
-        val sp = activity.getSharedPreferences(BilimiaoCommApp.APP_NAME, Context.MODE_PRIVATE)
+        val sp = context.getSharedPreferences(BilimiaoCommApp.APP_NAME, Context.MODE_PRIVATE)
         val timeType = readTimeType(sp)
         setTime(
             timeType,
@@ -111,11 +106,10 @@ class TimeSettingStore(override val di: DI) :
     }
 
     fun save() {
-        val sp = activity.getSharedPreferences(BilimiaoCommApp.APP_NAME, Context.MODE_PRIVATE)
+        val sp = context.getSharedPreferences(BilimiaoCommApp.APP_NAME, Context.MODE_PRIVATE)
         val editor = sp.edit()
         editor.putString(TIME_FROM, state.timeFrom.getValue())
         editor.putString(TIME_TO, state.timeTo.getValue())
-//        editor.putBoolean(TIME_IS_LINK, isLink)
         editor.putInt(TIME_TYPE, state.timeType)
         editor.apply()
     }
@@ -131,7 +125,7 @@ class TimeSettingStore(override val di: DI) :
             || state.timeTo != tTo
         ) {
             setState {
-                timeType= tType
+                timeType = tType
                 timeFrom = tFrom
                 timeTo = tTo
             }

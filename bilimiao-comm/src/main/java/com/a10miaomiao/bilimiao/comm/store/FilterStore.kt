@@ -1,25 +1,18 @@
 package com.a10miaomiao.bilimiao.comm.store
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import bilibili.app.view.v1.ViewGRPC
 import bilibili.app.view.v1.ViewReq
 import com.a10miaomiao.bilimiao.comm.db.FilterTagDB
 import com.a10miaomiao.bilimiao.comm.db.FilterUpperDB
 import com.a10miaomiao.bilimiao.comm.db.FilterWordDB
-import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.kodein.di.DI
-import org.kodein.di.instance
 
-class FilterStore(override val di: DI) :
+class FilterStore(private val context: Context) :
     ViewModel(), BaseStore<FilterStore.State> {
 
     data class State (
@@ -31,19 +24,14 @@ class FilterStore(override val di: DI) :
     override val stateFlow = MutableStateFlow(State())
     override fun copyState() = state.copy()
 
-    private val activity: AppCompatActivity by instance()
-
-    private val filterWordDB = FilterWordDB(activity)
-
-    private val filterUpperDB = FilterUpperDB(activity)
-
-    private val filterTagDB = FilterTagDB(activity)
+    private val filterWordDB = FilterWordDB(context)
+    private val filterUpperDB = FilterUpperDB(context)
+    private val filterTagDB = FilterTagDB(context)
 
     val filterWordCount get() = state.filterWordList.size
-
     val filterUpperCount get() = state.filterUpperList.size
-
     val filterTagCount get() = state.filterTagList.size
+
     init {
         queryFilterWord()
         queryFilterUpper()
@@ -141,7 +129,6 @@ class FilterStore(override val di: DI) :
     }
 
     fun filterUpperName(name: String): Boolean {
-        // TODO: 筛选UP主昵称
         return true
     }
 
@@ -154,11 +141,8 @@ class FilterStore(override val di: DI) :
         return true
     }
 
-    /**
-     * 根据av号或bv号筛选视频标签
-     */
     suspend fun filterTag(
-        id: String, // av号或bv号
+        id: String,
     ): Boolean {
         if (state.filterTagList.isEmpty()) {
             return true

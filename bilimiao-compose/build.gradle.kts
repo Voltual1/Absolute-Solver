@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     kotlin("plugin.serialization")
     kotlin("plugin.compose")
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -9,7 +10,6 @@ android {
 
     defaultConfig {
         minSdk = 21
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -53,8 +53,13 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kodein.di)
-    implementation(libs.kodein.di.compose)
+
+    // Koin 依赖
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.android.compose)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -97,7 +102,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     
-    //PipePipe
     implementation(project(":timeago-parser"))
     implementation(project(":extractor"))
 }

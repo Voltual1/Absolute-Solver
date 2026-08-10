@@ -26,3 +26,5 @@ include(":bilimiao-comm", ":bilimiao-cover", ":bilimiao-download", "bilimiao-app
 include(":DanmakuFlameMaster")
 include(":benchmark")
 include(":grpc-generator")
+
+include (":extractor", "timeago-parser")

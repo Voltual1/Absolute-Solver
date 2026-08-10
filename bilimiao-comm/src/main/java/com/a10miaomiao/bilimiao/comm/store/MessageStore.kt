@@ -1,27 +1,18 @@
 package com.a10miaomiao.bilimiao.comm.store
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.message.UnreadMessageInfo
-import com.a10miaomiao.bilimiao.comm.entity.user.UserInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.base.BaseStore
-import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.instance
-import java.io.File
 
-class MessageStore(override val di: DI) :
+class MessageStore :
     ViewModel(), BaseStore<MessageStore.State> {
 
     data class State (
@@ -29,15 +20,13 @@ class MessageStore(override val di: DI) :
     ) {
         fun totalCount(): Int {
             return unread?.let { unread ->
-                unread.reply + unread.at + unread.like // + unread.sys_msg
+                unread.reply + unread.at + unread.like
             } ?: 0
         }
     }
 
     override val stateFlow = MutableStateFlow(State())
     override fun copyState() = state.copy()
-
-    private val activity: AppCompatActivity by instance()
 
     override fun init(context: Context) {
         super.init(context)
