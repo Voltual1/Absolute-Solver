@@ -1,12 +1,11 @@
 package cn.a10miaomiao.bilimiao.compose.common
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavOptions
 import cn.a10miaomiao.bilimiao.compose.R
 import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
+import org.koin.core.parameter.ParametersHolder
 
 val defaultNavOptions get() = NavOptions.Builder()
     .setEnterAnim(R.anim.miao_fragment_open_enter)
@@ -18,9 +17,10 @@ val defaultNavOptions get() = NavOptions.Builder()
 @Composable
 inline fun <reified VM : ViewModel> diViewModel(
     key: String? = null,
+    noinline parameters: (() -> ParametersHolder)? = null,
 ): VM {
-    // 默认直接委托给 Koin ViewModel 解析
     return koinViewModel(
-        key = key
+        key = key,
+        parameters = parameters
     )
 }

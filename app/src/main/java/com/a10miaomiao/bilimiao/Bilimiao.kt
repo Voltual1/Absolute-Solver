@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.comm.store.commStoreModule
+import cn.a10miaomiao.bilimiao.compose.composeStoreModule
 import com.kongzue.dialogx.DialogX
 import net.mikaelzero.mojito.Mojito
 import net.mikaelzero.mojito.loader.glide.GlideImageLoader
@@ -28,10 +29,10 @@ class Bilimiao: Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // 初始化 Koin 依赖注入
+        // 装载两个子模块的 DI 依赖
         startKoin {
             androidContext(this@Bilimiao)
-            modules(commStoreModule)
+            modules(commStoreModule, composeStoreModule)
         }
 
         AppCrashHandler.getInstance(this)

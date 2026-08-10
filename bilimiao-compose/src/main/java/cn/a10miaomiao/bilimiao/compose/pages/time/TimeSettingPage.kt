@@ -22,6 +22,7 @@ import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
+import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.pages.time.components.*
 import com.a10miaomiao.bilimiao.comm.store.TimeSettingStore
 import com.a10miaomiao.bilimiao.comm.store.model.DateModel
@@ -32,6 +33,7 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
+import org.koin.core.parameter.parametersOf
 import java.util.*
 
 @Serializable
@@ -39,7 +41,12 @@ class TimeSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel = diViewModel<TimeSettingViewMode>()
+        // 从 Kodein 容器获取 Fragment Scoped 级别的 PageNavigation
+        val pageNavigation by rememberInstance<PageNavigation>()
+        // 动态传递至 Koin 容器中进行 ViewModel 创建
+        val viewModel = diViewModel<TimeSettingViewMode>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         TimeSettingPageContent(viewModel)
     }
 
@@ -110,9 +117,5 @@ private fun TimeSettingPageContent(
                 )
             }
         }
-
     }
-
 }
-
-
