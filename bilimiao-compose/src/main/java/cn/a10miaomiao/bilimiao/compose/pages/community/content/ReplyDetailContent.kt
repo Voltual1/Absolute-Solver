@@ -4,42 +4,31 @@ import android.view.View
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,23 +37,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.main.community.reply.v1.CursorReply
 import bilibili.main.community.reply.v1.CursorReq
 import bilibili.main.community.reply.v1.DetailListReq
 import bilibili.main.community.reply.v1.DetailListScene
-import bilibili.main.community.reply.v1.MainListReq
 import bilibili.main.community.reply.v1.ReplyGRPC
 import bilibili.main.community.reply.v1.ReplyInfo
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
-import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.community.ReplyItemBox
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
@@ -92,21 +77,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class ReplyDetailContentViewModel(
-    override val di: DI,
+internal class ReplyDetailContentViewModel(
     private val currentReply: ReplyInfo,
     private val onDeletedReply: (ReplyInfo) -> Unit = {},
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    private val messageDialog: MessageDialogState by instance()
-
-    private val userStore: UserStore by instance()
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val editDialogState = ReplyEditDialogState(
         scope = viewModelScope,
@@ -132,7 +113,6 @@ private class ReplyDetailContentViewModel(
     }
 
     private fun addNewReply(reply: VideoCommentReplyInfo) {
-        // TODO: 自定义通用Reply实体类
         refreshList()
     }
 
@@ -355,17 +335,14 @@ fun ReplyDetailContent(
     onDeletedReply: (ReplyInfo) -> Unit = {},
     onLikeReply: (ReplyInfo) -> Unit = {},
 ) {
-    val userStore by rememberInstance<UserStore>()
+    val userStore: UserStore = koinInject()
     val userState by userStore.stateFlow.collectAsState()
-    val viewModel = diViewModel(
-        key = "reply-detail-${reply.id}"
-    ) {
-        ReplyDetailContentViewModel(
-            di = it,
-            currentReply = reply,
-            onDeletedReply = onDeletedReply,
-        )
-    }
+    val viewModel: ReplyDetailContentViewModel = koinViewModel(
+        key = "reply-detail-${reply.id}",
+        parameters = {
+            parametersOf(reply, onDeletedReply)
+        }
+    )
 
     val list by viewModel.list.data.collectAsState()
     val listLoading by viewModel.list.loading.collectAsState()
@@ -541,7 +518,6 @@ fun ReplyDetailContent(
                         }.fillMaxWidth(),
                         item = reply,
                         isUpper = replyMid == upMid,
-//                        showDelete = userState.isSelf(replyMid),
                         onAvatarClick = {
                             viewModel.toUserPage(reply.mid.toString())
                         },

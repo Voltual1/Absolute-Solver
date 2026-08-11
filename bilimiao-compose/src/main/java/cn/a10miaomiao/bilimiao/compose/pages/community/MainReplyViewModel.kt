@@ -30,24 +30,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.comments.CommentsExtractor
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem
 
 class MainReplyViewModel(
-    override val di: DI,
     val oid: String,
     val type: Int,
     val extra: String = "",
     val filterTagName: String = "",
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    private val messageDialog: MessageDialogState by instance()
-    private val userStore: UserStore by instance()
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val editDialogState = ReplyEditDialogState(
         scope = viewModelScope,

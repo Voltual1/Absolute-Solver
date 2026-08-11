@@ -2,29 +2,14 @@ package cn.a10miaomiao.bilimiao.compose.pages.community
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
-import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
-import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
-import cn.a10miaomiao.bilimiao.compose.components.community.ReplyItemBox
-import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleBox
 import cn.a10miaomiao.bilimiao.compose.components.layout.DataDrivenNavigator
-import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
-import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyListContent
 import com.a10miaomiao.bilimiao.store.WindowStore
@@ -42,13 +27,9 @@ class MainReplyListPage(
 
     @Composable
     override fun Content() {
-        val pageNavigation = koinInject<PageNavigation>()
-        val messageDialog = koinInject<MessageDialogState>()
-
-        // 动态传递至 Koin
         val viewModel = koinViewModel<MainReplyViewModel>(
             key = oid,
-            parameters = { parametersOf(oid, type, "", "", pageNavigation, messageDialog) }
+            parameters = { parametersOf(oid, type, "", "") }
         )
         MainReplyListPageContent(
             headerContent = {

@@ -1,7 +1,9 @@
 package cn.a10miaomiao.bilimiao.compose
 
+import ReplyDetailListPageViewModel
 import androidx.fragment.app.Fragment
 import bilibili.app.dynamic.v2.UpListItem
+import bilibili.main.community.reply.v1.ReplyInfo
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
@@ -24,6 +26,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicUpperContent
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicVideoListContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicDetailPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicOpusPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -48,7 +52,6 @@ import cn.a10miaomiao.bilimiao.compose.pages.message.content.ReplyMessageContent
 import cn.a10miaomiao.bilimiao.compose.pages.message.content.SystemMessageContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.video.*
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.*
-import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -61,6 +64,36 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Community Reply 模块 ViewModel
+    viewModel { (oid: String, type: Int, extra: String, filterTagName: String) ->
+        MainReplyViewModel(
+            oid = oid,
+            type = type,
+            extra = extra,
+            filterTagName = filterTagName,
+            pageNavigation = get(),
+            messageDialog = get(),
+            userStore = get()
+        )
+    }
+
+    viewModel { (currentReply: ReplyInfo, onDeletedReply: (ReplyInfo) -> Unit) ->
+        ReplyDetailContentViewModel(
+            currentReply = currentReply,
+            onDeletedReply = onDeletedReply,
+            pageNavigation = get(),
+            messageDialog = get(),
+            userStore = get()
+        )
+    }
+
+    viewModel { (rootId: Long) ->
+        ReplyDetailListPageViewModel(
+            rootId = rootId,
+            pageNavigation = get()
+        )
+    }
 
     // 注册 Dynamic 相关 ViewModel
     viewModel { (pageNavigation: PageNavigation) ->
