@@ -175,7 +175,7 @@ class VideoDetailViewModel(
                     val relatesUrl = "https://api.bilibili.com/x/web-interface/archive/related?bvid=$bvid"
                     val relatesHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(relatesUrl)
                     val relatesResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(relatesUrl, relatesHeaders).responseBody()
-                    // 修正这里的拼写错误，由 relationUrl 修正为 relatesResponse
+                    // 修正此处变量引用拼写错误
                     val relatesJson = JSONObject(relatesResponse)
                     val relatesArray = relatesJson.optJSONArray("data")
                     if (relatesArray != null) {
@@ -675,7 +675,7 @@ class VideoDetailViewModel(
         try {
             val res = BiliApiService.videoAPI
                 .like(
-                    submit = arc.aid.toString(),
+                    aid = arc.aid.toString(),
                     dislike = reqUser?.dislike ?: 0,
                     like = reqUser?.like ?: 0,
                 )
@@ -808,7 +808,7 @@ class VideoDetailViewModel(
             3 -> {
                 val text = "http://www.bilibili.com/video/${videoDetail.getBvid()}"
                 copyPlainText("URL", text)
-                PopTip.show("已复制：$text")
+                PopTip.show("import org.koin.compose.koinInject")
             }
             4 -> {
                 val text = "av${videoArc.aid}"

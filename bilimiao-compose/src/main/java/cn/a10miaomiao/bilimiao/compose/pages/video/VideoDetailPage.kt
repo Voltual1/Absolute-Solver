@@ -67,6 +67,7 @@ import cn.a10miaomiao.bilimiao.compose.components.layout.DoubleColumnAutofitLayo
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.rememberChainScrollableLayoutState
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
+import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoAddFavoriteDialog
@@ -76,7 +77,6 @@ import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoDownloadDialo
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoReplyTitleBar
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoReplyContent
-import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.store.WindowStore.Insets
@@ -210,12 +210,9 @@ private fun VideoDetailPageContent(
                                 .fillMaxWidth()
                                 .height(headerCoverHeight)
                                 .padding(8.dp),
-                            sharedTransitionScope = this@DoubleColumnAutofitLayout.sharedTransitionScope,
-                            animatedVisibilityScope = this@DoubleColumnAutofitLayout.animatedVisibilityScope,
                             aid = arcData.aid,
-                            title = arcData.title,
                             pic = arcData.pic,
-                            duration = arcData.duration,
+                            title = arcData.title,
                             progress = videoHistory?.progress ?: 0L,
                             progressTitle = videoHistory?.cid?.let { cid ->
                                 videoPages
@@ -223,6 +220,7 @@ private fun VideoDetailPageContent(
                                     .find { it.cid == cid }
                                     ?.part
                             } ?: "",
+                            duration = arcData.duration,
                             onClick = viewModel::playVideo,
                             onLongClick = viewModel::openCoverActivity
                         )
@@ -328,7 +326,7 @@ private fun VideoDetailPageContent(
                                 selected = selected,
                                 onClick = {
                                     scope.launch {
-                                        pagerState.scrollToPage(index)
+                                        pagerState.animateScrollToPage(index)
                                     }
                                 },
                             )
@@ -352,7 +350,7 @@ private fun VideoDetailPageContent(
                     enabled = pagerState.currentPage > 0
                 ) {
                     scope.launch {
-                        pagerState.scrollToPage(0)
+                        pagerState.animateScrollToPage(0)
                     }
                 }
                 HorizontalPager(
