@@ -1,6 +1,4 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpacePage.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
-
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -43,7 +41,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.foundation.combinedTabDoubleClick
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
@@ -52,7 +49,9 @@ import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
+import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
+import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.ChainScrollableLayout
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.rememberChainScrollableLayoutState
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
@@ -67,7 +66,9 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.store.WindowStore.Insets
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 
 @Serializable
@@ -77,12 +78,21 @@ data class UserSpacePage(
 
     @Composable
     override fun Content() {
-        val archiveViewModel = diViewModel(key = "archive$id") {
-            UserArchiveViewModel(it, id)
-        }
-        val viewModel = diViewModel() {
-            UserSpaceViewModel(it, id, archiveViewModel)
-        }
+        val pageNavigation = koinInject<PageNavigation>()
+        val messageDialog = koinInject<MessageDialogState>()
+
+        // 使用 koinViewModel 加载 UserArchiveViewModel，传入 vmid 与 pageNavigation
+        val archiveViewModel = koinViewModel<UserArchiveViewModel>(
+            key = "archive$id",
+            parameters = { parametersOf(id, pageNavigation) }
+        )
+
+        // 使用 koinViewModel 加载 UserSpaceViewModel，传入 vmid、archiveViewModel、pageNavigation 和 messageDialog
+        val viewModel = koinViewModel<UserSpaceViewModel>(
+            key = "space$id",
+            parameters = { parametersOf(id, archiveViewModel, pageNavigation, messageDialog) }
+        )
+
         UserSpacePageContent(viewModel, archiveViewModel)
     }
 }
@@ -93,7 +103,7 @@ private fun UserSpacePageContent(
     viewModel: UserSpaceViewModel,
     archiveViewModel: UserArchiveViewModel,
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -146,6 +156,7 @@ private fun UserSpacePageDetailContent(
     windowInsets: Insets,
     detailData: SpaceInfo,
 ) {
+    val windowStore = koinInject<WindowStore>()
     val isFollow = viewModel.isFollow.collectAsState().value
     val rankOrder = archiveViewModel.rankOrder.collectAsState().value
     val pageConfigId = PageConfig(
@@ -168,7 +179,6 @@ private fun UserSpacePageDetailContent(
                     myItem { key = 5; title = "分享" }
                 }
             }
-            // 调整：当前 index 为 1 时是投稿页
             if (viewModel.currentPage == 1) {
                 myItem {
                     key = MenuKeys.filter
