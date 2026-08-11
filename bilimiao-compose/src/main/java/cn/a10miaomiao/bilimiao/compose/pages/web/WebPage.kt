@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
@@ -30,7 +29,6 @@ import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.BiliJsBridge
 import cn.a10miaomiao.bilimiao.compose.common.navigation.BilibiliNavigation
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -38,10 +36,9 @@ import com.a10miaomiao.bilimiao.comm.network.ApiHelper
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class WebPage(
@@ -50,45 +47,37 @@ class WebPage(
 
     @Composable
     override fun Content() {
-        val viewModel: WebPageViewModel = diViewModel {
-            WebPageViewModel(it, url)
-        }
+        val viewModel: WebPageViewModel = koinViewModel(parameters = { parametersOf(url) })
         WebPageContent(viewModel)
     }
 }
 
-private class WebPageViewModel(
-    override val di: DI,
+internal class WebPageViewModel(
     private val startUrl: String,
-) : ViewModel(), DIAware {
+    private val fragment: Fragment,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     private val userAgent = """
-            |os/android 
-            |model/${Build.MODEL} 
-            |build/${ApiHelper.BUILD_VERSION} 
-            |osVer/${Build.VERSION.RELEASE} 
-            |sdkInt/${Build.VERSION.SDK_INT}  
-            |network/2 
-            |BiliApp/${ApiHelper.BUILD_VERSION} 
-            |mobi_app/android_hd 
-            |channel/bili 
-            |c_locale/zh_CN 
-            |s_locale/zh_CN 
-            |disable_rcmd/0
+os/android 
+model/${Build.MODEL} 
+build/${ApiHelper.BUILD_VERSION} 
+osVer/${Build.VERSION.RELEASE} 
+sdkInt/${Build.VERSION.SDK_INT}  
+network/2 
+BiliApp/${ApiHelper.BUILD_VERSION} 
+mobi_app/android_hd 
+channel/bili 
+c_locale/zh_CN 
+s_locale/zh_CN 
+disable_rcmd/0
         """.trimMargin().replace("\n", "")
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
 
     var webView: WebView? = null
 
     val loading = mutableStateOf(false)
     val pageTitle = mutableStateOf("")
     val hideNavbar = mutableStateOf(false)
-
-    init {
-//        initWebView(webView)
-    }
 
     fun initWebView(view: WebView) {
         val biliJsBridge = BiliJsBridge(fragment, pageNavigation, view)
@@ -156,27 +145,12 @@ private class WebPageViewModel(
                     }
                 })()
             """.trimIndent()) {
-//                DebugMiao.log("callback", it)
             }
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             loading.value = false
-//            val js = """javascript:(function() {
-//                        var parent = document.getElementsByTagName('head').item(0);
-//                        var style = document.createElement('style');
-//                        style.type = 'text/css';
-//                        style.innerHTML = '#dynamic-openapp, #dynamic-openapp-mask,.mini-header-container,.fixed-header-container,.v-navbar__body,#internationalHeader,.international-footer,.bili-footer,#cannot-check{display: none !important;} #app{padding-bottom: 0;}';
-//                        parent.appendChild(style);
-//                        window.java_obj.showDescription(
-//                               'theme-color',
-//                               document.querySelector('meta[name="theme-color"]').getAttribute('content')
-//                        );
-//                        window.java_obj.test.hello('from js');
-//                    })()
-//                """
-//            view.loadUrl(js)
         }
     }
 
@@ -196,7 +170,7 @@ private fun WebPageContent(
     PageConfig(
         title = viewModel.pageTitle.value,
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

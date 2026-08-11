@@ -14,6 +14,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.filter.FilterSettingPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterTagListContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterUpperListContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterWordListContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.web.WebPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -52,6 +53,15 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 WebPageViewModel
+    viewModel { (url: String) ->
+        WebPageViewModel(
+            startUrl = url,
+            fragment = org.koin.core.context.GlobalContext.get().get(),
+            pageNavigation = get()
+        )
+    }
 
     // 注册 Filter 模块 ViewModel
     viewModelOf(::FilterSettingPageViewModel)
