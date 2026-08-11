@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
@@ -8,31 +7,17 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.components.FavouriteEditDialog
 import com.a10miaomiao.bilimiao.comm.entity.ListAndCountInfo
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaFoldersInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaListInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
-import com.a10miaomiao.bilimiao.comm.store.PlayListStore
-import com.a10miaomiao.bilimiao.comm.store.PlayerStore
-import com.a10miaomiao.bilimiao.comm.store.UserStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 
 internal class UserFavouriteViewModel(
-    override val di: DI,
     val mid: String,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val userStore: UserStore by instance()
-
-    private val playerStore by instance<PlayerStore>()
-    private val playListStore by instance<PlayListStore>()
+) : ViewModel() {
 
     val createdList = FlowPaginationInfo<MediaListInfo>(
         pageSize = 10

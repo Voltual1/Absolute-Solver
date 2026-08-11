@@ -11,6 +11,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.download.*
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserArchiveViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpaceViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouriteViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserFavouriteDetailViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.video.*
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.*
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
@@ -21,6 +23,7 @@ import org.koin.dsl.module
 val composeStoreModule = module {
     viewModelOf(::SearchInputViewModel)
     viewModelOf(::AutoStopTimerPageViewModel)
+    viewModelOf(::RepositoryOfSettings) // 等同原有逻辑
     viewModelOf(::FlagsSettingPageViewModel)
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
@@ -95,6 +98,27 @@ val composeStoreModule = module {
             messageDialog = messageDialog,
             userStore = get(),
             filterStore = get()
+        )
+    }
+
+    // 注册 UserFavouriteViewModel
+    viewModel { (mid: String) ->
+        UserFavouriteViewModel(
+            mid = mid
+        )
+    }
+
+    // 注册 UserFavouriteDetailViewModel
+    viewModel { (mediaId: String, mediaTitle: String, keyword: String) ->
+        UserFavouriteDetailViewModel(
+            mediaId = mediaId,
+            mediaTitle = mediaTitle,
+            keyword = keyword,
+            pageNavigation = get(),
+            userStore = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerStore = get(),
+            playListStore = get()
         )
     }
 

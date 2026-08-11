@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user.content
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -32,14 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.assets.BilimiaoIcons
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.Common
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menufold
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menuunfold
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -59,7 +56,6 @@ import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.delegate.player.VideoPlayerSource
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaDetailInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediaListInfo
 import com.a10miaomiao.bilimiao.comm.entity.media.MediasInfo
@@ -78,23 +74,20 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class UserFavouriteDetailViewModel(
-    override val di: DI,
+internal class UserFavouriteDetailViewModel(
     private val mediaId: String,
     private val mediaTitle: String,
     private val keyword: String = "",
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    val userStore: UserStore by instance()
-    private val playerDelegate: BasePlayerDelegate by instance()
-    private val playerStore by instance<PlayerStore>()
-    private val playListStore by instance<PlayListStore>()
+    private val pageNavigation: PageNavigation,
+    val userStore: UserStore,
+    private val playerDelegate: BasePlayerDelegate,
+    private val playerStore: PlayerStore,
+    private val playListStore: PlayListStore,
+) : ViewModel() {
 
     var mediaInfo = MutableStateFlow<MediaListInfo?>(null)
     val isRefreshing = MutableStateFlow(false)
@@ -307,11 +300,12 @@ internal fun UserFavouriteDetailContent(
     onClose: () -> Unit,
     onRefresh: () -> Unit,
 ) {
-    val viewModel = diViewModel(key = mediaId + keyword) {
-        UserFavouriteDetailViewModel(it, mediaId, mediaTitle, keyword)
-    }
+    val viewModel: UserFavouriteDetailViewModel = koinViewModel(
+        key = mediaId + keyword,
+        parameters = { parametersOf(mediaId, mediaTitle, keyword) }
+    )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
