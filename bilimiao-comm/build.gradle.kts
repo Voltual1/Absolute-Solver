@@ -121,3 +121,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+koinCompiler {
+    compileSafety = false
+}

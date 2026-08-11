@@ -182,3 +182,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+koinCompiler {
+    compileSafety = false // 渐进式迁移期间关闭静态依赖检查，防止因桥接依赖导致编译失败
+}

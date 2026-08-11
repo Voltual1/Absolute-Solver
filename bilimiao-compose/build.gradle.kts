@@ -108,3 +108,7 @@ dependencies {
     implementation(project(":timeago-parser"))
     implementation(project(":extractor"))
 }
+
+koinCompiler {
+    compileSafety = false
+}
