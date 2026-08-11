@@ -40,24 +40,15 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
 
-
-private class FilterWordListContentModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-
-    private val filterStore by instance<FilterStore>()
+internal class FilterWordListContentModel(
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     val stateFlow get() = filterStore.stateFlow
 
@@ -85,7 +76,7 @@ private class FilterWordListContentModel(
 
 @Composable
 internal fun FilterWordListContent() {
-    val viewModel: FilterWordListContentModel = diViewModel()
+    val viewModel: FilterWordListContentModel = koinViewModel()
 
     val state by viewModel.stateFlow.collectAsState()
     val filterWordList = state.filterWordList
@@ -217,9 +208,6 @@ internal fun FilterWordListContent() {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(inputMode) {
         if (inputMode > -2) {
-//            if (inputMode > -1) {
-//                inputText = filterWordList[inputMode]
-//            }
             launch {
                 focusRequester.requestFocus()
             }
@@ -278,17 +266,6 @@ internal fun FilterWordListContent() {
                         ),
                     )
                     Text(text =  "注：支持正则表达式（语法：/正则表达式主体/）")
-//                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
-//                    ) {
-//                        Checkbox(
-//                            checked = false,
-//                            onCheckedChange = {
-//
-//                            }
-//                        )
-//                        Text(text = "使用正则表达式")
-//                    }
                 }
 
             },

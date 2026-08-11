@@ -1,7 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.filter
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,11 +21,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterTagListContent
@@ -36,32 +31,26 @@ import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterWordListConten
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class FilterSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: FilterSettingPageViewModel = diViewModel()
+        val viewModel: FilterSettingPageViewModel = koinViewModel()
         FilterSettingPageContent(viewModel)
     }
 
 }
 
-private class FilterSettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-
+internal class FilterSettingPageViewModel : ViewModel() {
+    // 原有 fragment 引用未被使用，已移除
 }
 
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterSettingPageContent(
     viewModel: FilterSettingPageViewModel
@@ -71,7 +60,7 @@ private fun FilterSettingPageContent(
     )
     val scope = rememberCoroutineScope()
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
     val pagerState = rememberPagerState(pageCount = { 3 })

@@ -41,24 +41,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
-
+import org.koin.androidx.compose.koinViewModel
 
 internal class FilterTagListContentModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-
-    private val filterStore by instance<FilterStore>()
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     val stateFlow get() = filterStore.stateFlow
 
@@ -86,7 +77,7 @@ internal class FilterTagListContentModel(
 
 @Composable
 internal fun FilterTagListContent() {
-    val viewModel: FilterTagListContentModel = diViewModel()
+    val viewModel: FilterTagListContentModel = koinViewModel()
 
     val state by viewModel.stateFlow.collectAsState()
     val filterTagList = state.filterTagList

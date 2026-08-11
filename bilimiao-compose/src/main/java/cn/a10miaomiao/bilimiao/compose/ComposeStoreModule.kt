@@ -10,6 +10,10 @@ import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchAllContentView
 import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchByTypeContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.rank.RankPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.rank.content.RankListContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.filter.FilterSettingPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterTagListContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterUpperListContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterWordListContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -48,6 +52,12 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Filter 模块 ViewModel
+    viewModelOf(::FilterSettingPageViewModel)
+    viewModelOf(::FilterTagListContentModel)
+    viewModelOf(::FilterUpperListContentModel)
+    viewModelOf(::FilterWordListContentModel)
 
     // 注册 Message 模块 ViewModel
     viewModelOf(::MessagePageViewModel)

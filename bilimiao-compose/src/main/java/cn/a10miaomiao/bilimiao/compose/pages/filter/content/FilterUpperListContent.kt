@@ -29,22 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
 
-private class FilterUpperListContentModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-
-    private val filterStore by instance<FilterStore>()
+internal class FilterUpperListContentModel(
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     val stateFlow get() = filterStore.stateFlow
 
@@ -59,7 +51,7 @@ private class FilterUpperListContentModel(
 
 @Composable
 internal fun FilterUpperListContent() {
-    val viewModel: FilterUpperListContentModel = diViewModel()
+    val viewModel: FilterUpperListContentModel = koinViewModel()
 
     val state by viewModel.stateFlow.collectAsState()
     val filterUpperList = state.filterUpperList
