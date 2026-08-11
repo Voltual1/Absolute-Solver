@@ -22,12 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
+import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.foundation.combinedTabDoubleClick
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
+import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchAllContent
 import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchByTypeContent
@@ -50,7 +52,7 @@ class SearchResultPage(
 }
 
 @Stable
-private sealed class SearchResultPageTab(
+internal sealed class SearchResultPageTab(
     val id: String,
     val name: String,
 ) {
