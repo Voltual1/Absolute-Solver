@@ -21,12 +21,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -55,14 +57,16 @@ import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
+import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
+import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
+import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.components.layout.DataDrivenNavigator
 import cn.a10miaomiao.bilimiao.compose.components.layout.DoubleColumnAutofitLayout
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.rememberChainScrollableLayoutState
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
-import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoAddFavoriteDialog
@@ -72,12 +76,11 @@ import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoDownloadDialo
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoReplyTitleBar
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoReplyContent
-import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.store.WindowStore.Insets
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
 import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -151,7 +154,6 @@ private fun VideoDetailPageContent(
     val pageNavigation = koinInject<PageNavigation>()
     val messageDialog = koinInject<MessageDialogState>()
 
-    // 使用 koinViewModel 获取 MainReplyViewModel，解决编译报错
     val mainReplyViewModel = koinViewModel<MainReplyViewModel>(
         key = "main-reply-${arcData.aid}",
         parameters = { parametersOf(arcData.aid.toString(), 1, "", "", pageNavigation, messageDialog) }
@@ -207,6 +209,8 @@ private fun VideoDetailPageContent(
                                 .fillMaxWidth()
                                 .height(headerCoverHeight)
                                 .padding(8.dp),
+                            this@VideoDetailPageContent.sharedTransitionScope,
+                            this@VideoDetailPageContent.animatedVisibilityScope,
                             aid = arcData.aid,
                             title = arcData.title,
                             pic = arcData.pic,
@@ -347,7 +351,7 @@ private fun VideoDetailPageContent(
                     enabled = pagerState.currentPage > 0
                 ) {
                     scope.launch {
-                        pagerState.animateScrollToPage(0)
+                        pagerState.scrollToPage(0)
                     }
                 }
                 HorizontalPager(

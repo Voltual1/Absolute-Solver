@@ -175,7 +175,7 @@ class VideoDetailViewModel(
                     val relatesUrl = "https://api.bilibili.com/x/web-interface/archive/related?bvid=$bvid"
                     val relatesHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(relatesUrl)
                     val relatesResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(relatesUrl, relatesHeaders).responseBody()
-                    val relatesJson = JSONObject(relatesResponse)
+                    val relatesJson = JSONObject(relationUrl)
                     val relatesArray = relatesJson.optJSONArray("data")
                     if (relatesArray != null) {
                         for (i in 0 until relatesArray.length()) {
@@ -610,7 +610,7 @@ class VideoDetailViewModel(
     }
 
     private fun updateFavoriteState(state: Int) {
-        val videoDetail = videoDetail = detailData.value ?: return
+        val videoDetail = detailData.value ?: return
         var videoArc = videoDetail.getArcData()
         var reqUser = videoDetail.getReqUserData()
         val stat = videoArc?.stat
