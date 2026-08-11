@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,7 +28,6 @@ import bilibili.app.dynamic.v2.DynamicGRPC
 import bilibili.app.dynamic.v2.DynamicItem
 import bilibili.app.dynamic.v2.Module.ModuleItem
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
@@ -193,16 +193,17 @@ private fun DynamicDetailPageDetailContent(
     detailData: DynamicItem,
 ) {
     val oid = detailData.extend!!.dynIdStr
-    val replyViewModel = diViewModel(
-        key = "dynamic.reply.${oid}"
-    ) {
-        MainReplyViewModel(
-            it, oid,
-            type = 17,
-            extra = "{\"spmid\":\"dt.dt-detail.0.0\",\"from_spmid\":\"\"}",
-            filterTagName = "全部"
-        )
-    }
+    val replyViewModel: MainReplyViewModel = koinViewModel(
+        key = "dynamic.reply.${oid}",
+        parameters = {
+            parametersOf(
+                oid,
+                17,
+                "{\"spmid\":\"dt.dt-detail.0.0\",\"from_spmid\":\"\"}",
+                "全部"
+            )
+        }
+    )
 
     val buttomModule = remember(detailData) {
         detailData.modules.lastOrNull()?.let {
