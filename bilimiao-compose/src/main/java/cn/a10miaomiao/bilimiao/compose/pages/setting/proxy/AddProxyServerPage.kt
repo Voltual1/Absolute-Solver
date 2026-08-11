@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting.proxy
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
@@ -27,28 +27,29 @@ import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class AddProxyServerPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: AddProxyServerPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<AddProxyServerPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         AddProxyServerPageContent(viewModel)
     }
 
 }
 
-internal class AddProxyServerPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+class AddProxyServerPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     fun addProxyServer(
         formState: ProxyServerFormState
@@ -62,7 +63,7 @@ internal class AddProxyServerPageViewModel(
             return
         }
         ProxyHelper.saveServer(
-            fragment.requireActivity(),
+            context,
             ProxyServerInfo(
                 name = formState.name,
                 host = formState.host,
@@ -97,12 +98,11 @@ internal fun AddProxyServerPageContent(
         title = "添加代理服务器"
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
     val scrollState = rememberScrollState()
-
     val formState = rememberProxyServerFormState()
 
     Column(

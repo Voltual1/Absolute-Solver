@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting.proxy
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
@@ -30,10 +30,10 @@ import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class EditProxyServerPage(
@@ -42,21 +42,24 @@ class EditProxyServerPage(
 
     @Composable
     override fun Content() {
-        val viewModel: EditProxyServerPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<EditProxyServerPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         EditProxyServerPageContent(index, viewModel)
     }
 
 }
-internal class EditProxyServerPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
 
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+class EditProxyServerPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
+
     var index = -1
 
     fun getProxyServer(): ProxyServerInfo? {
-        val serverList = ProxyHelper.serverList(fragment.requireContext())
+        val serverList = ProxyHelper.serverList(context)
         if (index in 0 until serverList.size) {
             return serverList[index]
         }
@@ -75,7 +78,7 @@ internal class EditProxyServerPageViewModel(
             return
         }
         ProxyHelper.saveServer(
-            fragment.requireActivity(),
+            context,
             ProxyServerInfo(
                 name = formState.name,
                 host = formState.host,
@@ -104,7 +107,7 @@ internal class EditProxyServerPageViewModel(
 
     fun deleteProxyServer() {
         ProxyHelper.saveServer(
-            fragment.requireActivity(),
+            context,
             null,
             index,
         )
@@ -122,12 +125,11 @@ internal fun EditProxyServerPageContent(
         title = "编辑代理服务器"
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
     val scrollState = rememberScrollState()
-
     val formState = rememberProxyServerFormState()
 
     LaunchedEffect(viewModel, index) {

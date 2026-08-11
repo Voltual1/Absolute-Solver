@@ -1,6 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting.proxy
 
-import android.app.Activity
+import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
@@ -32,65 +31,41 @@ import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class SelectProxyServerPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: SelectProxyServerPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<SelectProxyServerPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         SelectProxyServerPageContent(viewModel)
     }
 
 }
 
-internal class SelectProxyServerPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val activity by instance<Activity>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
+class SelectProxyServerPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val basePlayerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     val serverList = MutableStateFlow(emptyList<ProxyServerInfo>())
     var selectedServerIndex = MutableStateFlow(-1)
 
-//    bos（百度）upos-sz-mirrorbos.bilivideo.com
-//    cos（騰訊） upos-sz-mirrorcos.bilivideo.com
-//    cosb（騰訊）upos-sz-mirrorcosb.bilivideo.com
-//    coso1（騰訊） upos-sz-mirrorcoso1.bilivideo.com
-//    hw（華為） upos-sz-mirrorhw.bilivideo.com
-//    hwb（華為） upos-sz-mirrorhwb.bilivideo.com
-//    hwo1（華為） upos-sz-mirrorhwo1.bilivideo.com
-//    08c（華為）upos-sz-mirror08c.bilivideo.com
-//    08h（華為） upos-sz-mirror08h.bilivideo.com
-//    08ct（華為） upos-sz-mirror08ct.bilivideo.com
-//    ali（阿里） upos-sz-mirrorali.bilivideo.com
-//    alib（阿里） upos-sz-mirroralib.bilivideo.com
-//    alio1（阿里） upos-sz-mirroralio1.bilivideo.com
-//    Akamai海外 upos-hz-mirrorakam.akamaized.net
-//    aliov（阿里海外） upos-sz-mirroraliov.bilivideo.com
-//    hwov（華為海外） upos-sz-mirrorhwov.bilivideo.com
-//    cosov（騰訊海外） upos-sz-mirrorcosov.bilivideo.com
-//    hk_bcache（Bilibili海外） cn-hk-eq-bcache-01.bilivideo.com
-//    tf_hw（華為） upos-tf-all-hw.bilivideo.com
-//    tf_tx（騰訊） upos-tf-all-tx.bilivideo.com
     val uposList = listOf(
         BiliUposInfo("none", "不替换", ""),
-//        BiliUposInfo("ks3", "ks3（金山云）", "upos-sz-mirrorali.bilivideo.com"),
-//        BiliUposInfo("kodo", "kodo（七牛云）", "upos-sz-mirrorkodo.bilivideo.com"),
         BiliUposInfo("ali", "ali（阿里云）", "upos-sz-mirrorali.bilivideo.com"),
         BiliUposInfo("cos", "cos（腾讯云）", "upos-sz-mirrorcos.bilivideo.com"),
-//        BiliUposInfo("bos", "bos（百度云）", "upos-sz-mirrorbos.bilivideo.com"),
-//        BiliUposInfo("wcs", "wcs（网宿云）", "upos-sz-mirrorwcs.bilivideo.com"),
         BiliUposInfo("hw", "hw（华为云）", "upos-sz-mirrorhw.bilivideo.com"),
         BiliUposInfo("akamai", "akamai（Akamai海外）", "upos-hz-mirrorakam.akamaized.net"),
         BiliUposInfo("aliov", "aliov（阿里海外）", "upos-sz-mirroraliov.bilivideo.com"),
-//        BiliUposInfo("aliov", "hwov（华为海外）", "upos-sz-mirrorhwov.bilivideo.com"),
         BiliUposInfo("aliov", "cosov（腾讯海外）", "upos-sz-mirrorcosov.bilivideo.com"),
         BiliUposInfo("tf_hw", "tf_hw（华为）", "upos-tf-all-hw.bilivideo.com"),
         BiliUposInfo("tf_tx", "tf_tx（腾讯）", "upos-tf-all-tx.bilivideo.com"),
@@ -99,8 +74,8 @@ internal class SelectProxyServerPageViewModel(
     val selectedUpos = MutableStateFlow(uposList[0])
 
     fun readServerList() {
-        serverList.value = ProxyHelper.serverList(activity)
-        val uposName = ProxyHelper.uposName(activity)
+        serverList.value = ProxyHelper.serverList(context)
+        val uposName = ProxyHelper.uposName(context)
         uposList.find { it.name == uposName }?.let {
             selectedUpos.value = it
         }
@@ -119,7 +94,7 @@ internal class SelectProxyServerPageViewModel(
     }
 
     fun applyServer() {
-        ProxyHelper.saveUposName(activity, selectedUpos.value.name)
+        ProxyHelper.saveUposName(context, selectedUpos.value.name)
         val uposHost = selectedUpos.value.host
         val proxyServer = serverList.value[selectedServerIndex.value]
         basePlayerDelegate.setProxy(proxyServer, uposHost)
@@ -146,8 +121,7 @@ internal fun SelectProxyServerPageContent(
     PageConfig(
         title = "区域限制-选择代理"
     )
-    val basePlayerDelegate: BasePlayerDelegate by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -227,7 +201,7 @@ internal fun SelectProxyServerPageContent(
                     }
                 }
             }
-        } // LazyColumn
+        }
         if (selectedServerIndex >= 0) {
             val selectedServer = serverList[selectedServerIndex]
             AlertDialog(
@@ -253,7 +227,7 @@ internal fun SelectProxyServerPageContent(
                     }
                 },
                 text = {
-                    Column() {
+                    Column {
                         Text(
                             text = "服务器：${selectedServer.host}",
                             fontSize = 16.sp,
@@ -336,7 +310,7 @@ internal fun SelectProxyServerPageContent(
                         )
                     }
                 }
-            ) // AlertDialog
-        }  // if
+            )
+        }
     }
 }
