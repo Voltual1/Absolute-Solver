@@ -1,7 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.rank.content
 
-import android.app.Activity
-import android.net.Uri
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,38 +16,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.show.v1.RankAllResultReq
 import bilibili.app.show.v1.RankGRPC
 import bilibili.app.show.v1.RankRegionResultReq
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
-import cn.a10miaomiao.bilimiao.compose.pages.mine.MyFollowViewModel
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class RankListContentViewModel(
-    override val di: DI,
+internal class RankListContentViewModel(
     val regionId: Int,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val count = MutableStateFlow(1)
     val isRefreshing = MutableStateFlow(false)
@@ -81,15 +72,6 @@ private class RankListContentViewModel(
                     RankGRPC.rankRegion(req)
                 }
             }.awaitCall()
-//            var totalCount = 0 // 屏蔽前数量
-//            if (result.size < list.pageSize) {
-//                ui.setState { list.finished = true }
-//            }
-//            totalCount = result.size
-//            result = result.filter {
-//                filterStore.filterWord(it.title)
-//                        && filterStore.filterUpper(it.mid.toLong())
-//            }
             if (pageNum == 1) {
                 list.data.value = result.items
             } else {
@@ -98,9 +80,6 @@ private class RankListContentViewModel(
                     .also { it.addAll(result.items) }
             }
             list.pageNum = pageNum
-//            if (list.data.size < 10 && totalCount != result.size) {
-//                _loadData(pageNum + 1)
-//            }
         } catch (e: Exception) {
             e.printStackTrace()
             list.fail.value = "无法连接到御坂网络"
@@ -134,12 +113,12 @@ private class RankListContentViewModel(
 internal fun RankListContent(
     regionId: Int,
 ) {
-    val viewModel = diViewModel(key = regionId.toString()) {
-        RankListContentViewModel(it, regionId)
-    }
-    val myFollowViewModel: MyFollowViewModel by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
-    val userStore: UserStore by rememberInstance()
+    val viewModel: RankListContentViewModel = koinViewModel(
+        key = regionId.toString(),
+        parameters = { parametersOf(regionId) }
+    )
+    val windowStore: WindowStore = koinInject()
+    val userStore: UserStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

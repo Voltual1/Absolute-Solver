@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/search/content/SearchByTypeContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.search.content
 
 import android.net.Uri
@@ -19,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -47,10 +45,9 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.search.filter.FilterGroup
@@ -89,13 +86,11 @@ private fun getBilibiliFilterItem(filters: BilibiliFilters, name: String): Filte
     throw IllegalArgumentException("Filter item $name not found")
 }
 
-private class SearchByTypeContentViewModel(
-    override val di: DI,
+internal class SearchByTypeContentViewModel(
     val type: Int,
     val keyword: String,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     private var _nextPage: org.schabi.newpipe.extractor.Page? = null
     private var _extractor: org.schabi.newpipe.extractor.search.SearchExtractor? = null
@@ -262,16 +257,15 @@ internal fun SearchByTypeContent(
     keyword: String,
     isActive: Boolean
 ) {
-    val viewModel = diViewModel(
-        key = PageTabIds.SearchByType[type] + keyword
-    ) {
-        SearchByTypeContentViewModel(it, type, keyword)
-    }
+    val viewModel: SearchByTypeContentViewModel = koinViewModel(
+        key = PageTabIds.SearchByType[type] + keyword,
+        parameters = { parametersOf(type, keyword) }
+    )
     if (isActive) {
         SearchByTypeContentConfig(type, keyword, viewModel)
     }
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

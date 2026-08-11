@@ -4,6 +4,11 @@ import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.search.SearchPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchAllContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.search.content.SearchByTypeContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.rank.RankPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.rank.content.RankListContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -31,11 +36,38 @@ import org.koin.dsl.module
 
 val composeStoreModule = module {
     viewModelOf(::SearchInputViewModel)
+    viewModelOf(::SearchPageViewModel)
     viewModelOf(::AutoStopTimerPageViewModel)
     viewModelOf(::FlagsSettingPageViewModel)
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Search 详情与分类 ViewModel
+    viewModel { (type: Int, keyword: String) ->
+        SearchByTypeContentViewModel(
+            type = type,
+            keyword = keyword,
+            pageNavigation = get()
+        )
+    }
+
+    viewModel { (keyword: String) ->
+        SearchAllContentViewModel(
+            keyword = keyword,
+            pageNavigation = get(),
+            regionStore = get()
+        )
+    }
+
+    // 注册 Rank 相关 ViewModel
+    viewModelOf(::RankPageViewModel)
+    viewModel { (regionId: Int) ->
+        RankListContentViewModel(
+            regionId = regionId,
+            pageNavigation = get()
+        )
+    }
 
     // 注册 Auth 系列 ViewModel
     viewModelOf(::LoginPageViewModel)
