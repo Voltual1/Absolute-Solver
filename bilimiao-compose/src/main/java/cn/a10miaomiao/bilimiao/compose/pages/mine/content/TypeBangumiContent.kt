@@ -11,8 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -250,7 +249,7 @@ fun TypeBangumiContent(
                 listOf(0 to "取消${viewModel.typeName}")
             } else {
                 listOf(
-                    Pair(0,"取消${viewModel.typeName}"),
+                    Pair(0, "取消${viewModel.typeName}"),
                     Pair(1, "标记为『想看』").takeIf {
                         currentStatus != 1
                     },
@@ -260,7 +259,7 @@ fun TypeBangumiContent(
                     Pair(3, "标记为『看过』").takeIf {
                         currentStatus != 3
                     },
-                )
+                ).filterNotNull()
             }
         }
 
@@ -290,19 +289,20 @@ fun TypeBangumiContent(
                 columns = GridCells.Adaptive(300.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                items(list, { it.season_id }) {
+                items(list.size, key = { list[it].season_id }) { index ->
+                    val item = list[index]
                     BangumiItemBox(
                         modifier = Modifier.padding(
                             horizontal = 10.dp,
                             vertical = 5.dp
                         ),
-                        title = it.title,
-                        cover = it.cover,
-                        statusText = it.new_ep.index_show,
-                        desc = it.progress?.index_show,
+                        title = item.title,
+                        cover = item.cover,
+                        statusText = item.new_ep.index_show,
+                        desc = item.progress?.index_show,
                         moreMenu = moreMenu,
                         coverBadge1 = {
-                            val badge = it.badge_info
+                            val badge = item.badge_info
                             if (badge != null && badge.text.isNotBlank()) {
                                 Text(
                                     modifier = Modifier
@@ -319,7 +319,7 @@ fun TypeBangumiContent(
                             }
                         },
                         coverBadge2 = {
-                            if (it.season_type == 4) {
+                            if (item.season_type == 4) {
                                 Text(
                                     modifier = Modifier
                                         .background(
@@ -336,10 +336,10 @@ fun TypeBangumiContent(
                             }
                         },
                         onMenuItemClick = { menu ->
-                            viewModel.changeFollowStatus(it, menu.first)
+                            viewModel.changeFollowStatus(item, menu.first)
                         },
                         onClick = {
-                            viewModel.toDetailPage(it)
+                            viewModel.toDetailPage(item)
                         }
                     )
                 }
