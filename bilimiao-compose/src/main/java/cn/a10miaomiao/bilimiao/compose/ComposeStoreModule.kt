@@ -17,6 +17,11 @@ import cn.a10miaomiao.bilimiao.compose.pages.mine.MyFollowViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.content.TagFollowContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.HistoryPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.WatchLaterPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.auth.LoginPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.auth.SMSLoginPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.auth.QrCodeLoginPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.auth.TelVerifyPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.auth.H5LoginPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.video.*
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.*
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
@@ -31,6 +36,21 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Auth 系列 ViewModel
+    viewModelOf(::LoginPageViewModel)
+    viewModelOf(::SMSLoginPageViewModel)
+    viewModelOf(::QrCodeLoginPageViewModel)
+    viewModelOf(::TelVerifyPageViewModel)
+    viewModel { (url: String) ->
+        H5LoginPageViewModel(
+            startUrl = url,
+            fragment = org.koin.core.context.GlobalContext.get().get(),
+            userStore = get(),
+            pageNavigation = get(),
+            messageDialog = get()
+        )
+    }
 
     // 注册 VideoPagesPageViewModel
     viewModel { (aid: String, pageNavigation: PageNavigation) ->

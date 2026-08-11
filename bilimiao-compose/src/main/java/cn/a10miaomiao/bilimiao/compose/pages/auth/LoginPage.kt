@@ -27,7 +27,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.R
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
@@ -48,20 +47,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class LoginPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: LoginPageViewModel = diViewModel()
+        val viewModel: LoginPageViewModel = koinViewModel()
         LaunchedEffect(Unit) {
             viewModel.checkLogin()
         }
@@ -70,17 +64,15 @@ class LoginPage : ComposePage() {
 
 }
 
-private class LoginPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware, BiliGeetestUtil.GTCallBack {
+internal class LoginPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+    private val biliGeetestUtil: BiliGeetestUtil,
+    private val messageDialog: MessageDialogState,
+) : ViewModel(), BiliGeetestUtil.GTCallBack {
 
     private var verifyUrl = ""
     private var recaptchaToken = ""
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
-    private val biliGeetestUtil by instance<BiliGeetestUtil>()
-    private val messageDialog by instance<MessageDialogState>()
 
     val loading = MutableStateFlow(false)
     val userName = MutableStateFlow("")
@@ -268,8 +260,8 @@ private fun LoginPageContent(
     viewModel: LoginPageViewModel
 ) {
     PageConfig(title = "登录BILIBILI")
-    val userStore: UserStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val userStore: UserStore = koinInject()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(LocalView.current)
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -376,12 +368,10 @@ private fun LoginPageContent(
                     .focusRequester(passwordFocusRequester)
                     .onFocusChanged { passwordIsFocus = it.isFocused },
                 singleLine = true,
-                // 显示密码样式
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
-                // 显示密码样式
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = passwordKeyboardActions,
             )

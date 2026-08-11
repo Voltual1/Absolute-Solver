@@ -21,20 +21,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
-import cn.a10miaomiao.bilimiao.compose.pages.home.HomePage
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.entity.auth.LoginInfo
@@ -52,28 +47,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class QrCodeLoginPage : ComposePage() {
 
     @Composable
     override fun Content() {
-         val viewModel: QrCodeLoginPageViewModel = diViewModel()
+        val viewModel: QrCodeLoginPageViewModel = koinViewModel()
         QrCodeLoginPageContent(viewModel)
     }
 
 }
-//
-private class QrCodeLoginPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
 
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
+internal class QrCodeLoginPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     private val loginSessionId = ApiHelper.getUUID()
     private var _authCode = ""
@@ -183,10 +174,9 @@ private fun QrCodeLoginPageContent(
     PageConfig(
         title = "二微码登录"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
-    val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
 
     val scrollState = rememberScrollState()
 
@@ -194,7 +184,6 @@ private fun QrCodeLoginPageContent(
     val error = viewModel.error.collectAsState().value
     val qrCodeData = viewModel.qrCodeData.collectAsState().value
     val isScaned = viewModel.isScaned.collectAsState().value
-//    val isFullScreenQrcode by viewModel.isScaned.collectAsState()
 
     var isFullScreenQrcode by remember {
         mutableStateOf(false)

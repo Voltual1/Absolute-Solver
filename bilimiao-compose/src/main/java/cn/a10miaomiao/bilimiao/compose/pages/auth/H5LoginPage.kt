@@ -33,7 +33,6 @@ import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.BiliJsBridge
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.BilibiliNavigation
@@ -57,11 +56,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class H5LoginPage(
@@ -70,37 +67,33 @@ class H5LoginPage(
 
     @Composable
     override fun Content() {
-        val viewModel: H5LoginPageViewModel = diViewModel {
-            H5LoginPageViewModel(it, url)
-        }
+        val viewModel: H5LoginPageViewModel = koinViewModel(parameters = { parametersOf(url) })
         H5LoginPageContent(viewModel)
     }
 }
 
-private class H5LoginPageViewModel(
-    override val di: DI,
+internal class H5LoginPageViewModel(
     private val startUrl: String,
-) : ViewModel(), DIAware {
+    private val fragment: Fragment,
+    private val userStore: UserStore,
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+) : ViewModel() {
 
     private val userAgent = """
-            |os/android 
-            |model/${Build.MODEL} 
-            |build/7082000 
-            |osVer/${Build.VERSION.RELEASE} 
-            |sdkInt/${Build.VERSION.SDK_INT}  
-            |network/2 
-            |BiliApp/7082000 
-            |mobi_app/android_hd 
-            |channel/bili 
-            |c_locale/zh_CN 
-            |s_locale/zh_CN 
-            |disable_rcmd/0
+os/android 
+model/${Build.MODEL} 
+build/7082000 
+osVer/${Build.VERSION.RELEASE} 
+sdkInt/${Build.VERSION.SDK_INT}  
+network/2 
+BiliApp/7082000 
+mobi_app/android_hd 
+channel/bili 
+c_locale/zh_CN 
+s_locale/zh_CN 
+disable_rcmd/0
         """.trimMargin().replace("\n", "")
-
-    private val fragment by instance<Fragment>()
-    private val userStore by instance<UserStore>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val messageDialog by instance<MessageDialogState>()
 
     private var _authUrl = ""
     private var _authCode = ""
@@ -111,10 +104,6 @@ private class H5LoginPageViewModel(
     val loading = mutableStateOf(false)
     val pageTitle = mutableStateOf("")
     val hideNavbar = mutableStateOf(false)
-
-    init {
-//        initWebView(webView)
-    }
 
     fun initWebView(view: WebView) {
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
@@ -199,27 +188,12 @@ private class H5LoginPageViewModel(
                     }
                 })()
             """.trimIndent()) {
-//                DebugMiao.log("callback", it)
             }
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             loading.value = false
-//            val js = """javascript:(function() {
-//                        var parent = document.getElementsByTagName('head').item(0);
-//                        var style = document.createElement('style');
-//                        style.type = 'text/css';
-//                        style.innerHTML = '#dynamic-openapp, #dynamic-openapp-mask,.mini-header-container,.fixed-header-container,.v-navbar__body,#internationalHeader,.international-footer,.bili-footer,#cannot-check{display: none !important;} #app{padding-bottom: 0;}';
-//                        parent.appendChild(style);
-//                        window.java_obj.showDescription(
-//                               'theme-color',
-//                               document.querySelector('meta[name="theme-color"]').getAttribute('content')
-//                        );
-//                        window.java_obj.test.hello('from js');
-//                    })()
-//                """
-//            view.loadUrl(js)
         }
     }
 
@@ -359,7 +333,7 @@ private fun H5LoginPageContent(
     PageConfig(
         title = viewModel.pageTitle.value,
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

@@ -17,16 +17,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
-import cn.a10miaomiao.bilimiao.compose.pages.home.HomePage
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.entity.auth.*
@@ -44,10 +40,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 data class TelVerifyPage(
@@ -58,7 +52,7 @@ data class TelVerifyPage(
 
     @Composable
     override fun Content() {
-        val viewModel: TelVerifyPageViewModel = diViewModel()
+        val viewModel: TelVerifyPageViewModel = koinViewModel()
         LaunchedEffect(code, requestId, source) {
             viewModel.code = code
             viewModel.requestId = requestId
@@ -70,9 +64,12 @@ data class TelVerifyPage(
 
 }
 
-private class TelVerifyPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware, BiliGeetestUtil.GTCallBack {
+internal class TelVerifyPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+    private val messageDialog: MessageDialogState,
+    private val biliGeetestUtil: BiliGeetestUtil,
+) : ViewModel(), BiliGeetestUtil.GTCallBack {
 
     var code = ""
     var requestId = ""
@@ -80,12 +77,6 @@ private class TelVerifyPageViewModel(
     var recaptchaToken = ""
 
     private var captchaKey = ""
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
-    private val messageDialog by instance<MessageDialogState>()
-
-    private val biliGeetestUtil by instance<BiliGeetestUtil>()
 
     val verifyType = MutableStateFlow(VerifyType.TEL)
     val tmpAccountInfo = MutableStateFlow<TmpUserInfo.AccountInfo?>(null)
@@ -330,7 +321,7 @@ private fun TelVerifyPageCompose(
 ) {
     PageConfig(title = "帐号验证")
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(LocalView.current)
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -388,10 +379,6 @@ private fun TelVerifyPageCompose(
                         .fillMaxWidth()
                 )
             }
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    verticalAlignment = Alignment.CenterVertically,
-//                ) {
             TextField(
                 label = {
                     if (verifyType == TelVerifyPageViewModel.VerifyType.TEL) {
@@ -427,8 +414,6 @@ private fun TelVerifyPageCompose(
                 ),
                 keyboardActions = verifyCodeKeyboardActions,
             )
-
-//                }
             Spacer(modifier = Modifier.height(10.dp))
             Button(
                 onClick = viewModel::verifyTel,

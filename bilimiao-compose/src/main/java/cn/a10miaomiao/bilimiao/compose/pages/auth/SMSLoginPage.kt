@@ -20,19 +20,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -46,14 +40,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.auth.components.InternationalDialingPrefixSelect
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.auth.LoginInfo
 import com.a10miaomiao.bilimiao.comm.entity.auth.SmsSendInfo
 import com.a10miaomiao.bilimiao.comm.entity.auth.WebKeyInfo
@@ -77,35 +69,31 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+
 @Serializable
 class SMSLoginPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: SMSLoginPageViewModel = diViewModel()
+        val viewModel: SMSLoginPageViewModel = koinViewModel()
         SMSLoginPageCompose(viewModel)
     }
 
 }
 
-private class SMSLoginPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware, BiliGeetestUtil.GTCallBack {
+internal class SMSLoginPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+    private val messageDialog: MessageDialogState,
+    private val biliGeetestUtil: BiliGeetestUtil,
+) : ViewModel(), BiliGeetestUtil.GTCallBack {
 
     private var recaptchaUrl = ""
     private var recaptchaToken = ""
 
     private var captchaKey = ""
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
-    private val messageDialog by instance<MessageDialogState>()
-
-    private val biliGeetestUtil by instance<BiliGeetestUtil>()
 
     val selectedCid = MutableStateFlow("86") // 国际区号
     val telNumber = MutableStateFlow("")
@@ -298,7 +286,7 @@ private fun SMSLoginPageCompose(
 ) {
     PageConfig(title = "手机号登录")
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(LocalView.current)
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -323,7 +311,6 @@ private fun SMSLoginPageCompose(
             viewModel.smsLogin()
         }
     }
-
 
     val scrollState = rememberScrollState()
 
@@ -402,8 +389,6 @@ private fun SMSLoginPageCompose(
                 ),
                 keyboardActions = verifyCodeKeyboardActions,
             )
-
-//                }
             Spacer(modifier = Modifier.height(10.dp))
             Button(
                 onClick = viewModel::smsLogin,
