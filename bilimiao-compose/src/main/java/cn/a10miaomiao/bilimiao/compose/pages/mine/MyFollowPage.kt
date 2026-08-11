@@ -44,7 +44,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
@@ -59,32 +58,26 @@ import com.kongzue.dialogx.dialogs.MessageDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.bindSingleton
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.compose.subDI
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class MyFollowPage() : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel = diViewModel<MyFollowViewModel>()
-        subDI(
-            diBuilder = {
-                bindSingleton { viewModel }
-            }
-        ) {
-            MyFollowPageContent()
-        }
+        val viewModel: MyFollowViewModel = koinViewModel()
+        MyFollowPageContent(viewModel)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun MyFollowPageContent() {
-    val viewModel: MyFollowViewModel by rememberInstance()
-    val userStore: UserStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+private fun MyFollowPageContent(
+    viewModel: MyFollowViewModel
+) {
+    val userStore: UserStore = koinInject()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(LocalView.current)
 
@@ -268,6 +261,7 @@ private fun MyFollowPageContent() {
                 TagFollowContent(
                     tagId = id,
                     orderType = orderType,
+                    myFollowViewModel = viewModel,
                 )
             }
         }

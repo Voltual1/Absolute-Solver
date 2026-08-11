@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.mine.content
 
-import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
@@ -53,34 +51,23 @@ import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.string
 import com.a10miaomiao.bilimiao.comm.store.UserStore
-
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.localDI
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class TagFollowContentModel(
+internal class TagFollowContentModel(
     val tagId: Int,
     val orderType: String,
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val activity by instance<Activity>()
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
-    private val myFollowViewModel by instance<MyFollowViewModel>()
-
-
-//    var orderType = "attention"
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+    private val myFollowViewModel: MyFollowViewModel,
+) : ViewModel() {
 
     val count = MutableStateFlow(1)
     val isRefreshing = MutableStateFlow(false)
@@ -387,21 +374,14 @@ private fun AttentionButton(
 internal fun TagFollowContent(
     tagId: Int,
     orderType: String,
+    myFollowViewModel: MyFollowViewModel,
 ) {
-    val di = localDI()
-    val viewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+    val viewModel: TagFollowContentModel = koinViewModel(
         key = tagId.toString() + orderType,
-        initializer = {
-            TagFollowContentModel(
-                tagId = tagId,
-                orderType = orderType,
-                di
-            )
-        }
+        parameters = { parametersOf(tagId, orderType, myFollowViewModel) }
     )
-    val myFollowViewModel: MyFollowViewModel by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
-    val userStore: UserStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
+    val userStore: UserStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
