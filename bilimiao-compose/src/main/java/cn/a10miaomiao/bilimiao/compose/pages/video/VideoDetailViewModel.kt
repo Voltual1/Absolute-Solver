@@ -175,7 +175,8 @@ class VideoDetailViewModel(
                     val relatesUrl = "https://api.bilibili.com/x/web-interface/archive/related?bvid=$bvid"
                     val relatesHeaders = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(relatesUrl)
                     val relatesResponse = org.schabi.newpipe.extractor.NewPipe.getDownloader().get(relatesUrl, relatesHeaders).responseBody()
-                    val relatesJson = JSONObject(relationUrl)
+                    // 修正这里的拼写错误，由 relationUrl 修正为 relatesResponse
+                    val relatesJson = JSONObject(relatesResponse)
                     val relatesArray = relatesJson.optJSONArray("data")
                     if (relatesArray != null) {
                         for (i in 0 until relatesArray.length()) {
@@ -674,7 +675,7 @@ class VideoDetailViewModel(
         try {
             val res = BiliApiService.videoAPI
                 .like(
-                    aid = arc.aid.toString(),
+                    submit = arc.aid.toString(),
                     dislike = reqUser?.dislike ?: 0,
                     like = reqUser?.like ?: 0,
                 )

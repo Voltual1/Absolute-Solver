@@ -76,6 +76,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoDownloadDialo
 import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoReplyTitleBar
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoReplyContent
+import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.store.WindowStore.Insets
@@ -209,8 +210,8 @@ private fun VideoDetailPageContent(
                                 .fillMaxWidth()
                                 .height(headerCoverHeight)
                                 .padding(8.dp),
-                            this@VideoDetailPageContent.sharedTransitionScope,
-                            this@VideoDetailPageContent.animatedVisibilityScope,
+                            sharedTransitionScope = this@DoubleColumnAutofitLayout.sharedTransitionScope,
+                            animatedVisibilityScope = this@DoubleColumnAutofitLayout.animatedVisibilityScope,
                             aid = arcData.aid,
                             title = arcData.title,
                             pic = arcData.pic,
