@@ -82,7 +82,7 @@ object HomePage : ComposePage() {
 }
 
 @Stable
-private sealed class HomePageTab(
+internal sealed class HomePageTab(
     val id: String,
     val name: String,
 ) {
