@@ -1,7 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
 import android.os.Build
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -16,9 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -32,33 +29,34 @@ import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.serialization.Serializable
+import me.zhanghai.compose.preference.ListPreferenceType
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.listPreference
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
 import androidx.compose.runtime.collectAsState
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class VideoSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: VideoSettingPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<VideoSettingPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         VideoSettingPageContent(viewModel)
     }
 }
 
-private class VideoSettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+class VideoSettingPageViewModel(
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     private val fnvalSelection = mapOf(
         SettingConstants.PLAYER_FNVAL_DASH to AnnotatedString("dash(支持4K)"),
@@ -89,7 +87,6 @@ private class VideoSettingPageViewModel(
         fullModeSelection[value] ?: AnnotatedString(value.toString())
 
     val fullModeSelectionList = fullModeSelection.keys.toList()
-
 
     private val openModeSelection = mapOf(
         SettingConstants.PLAYER_OPEN_MODE_AUTO_PLAY to AnnotatedString("无视频播放时，自动播放"),
@@ -147,9 +144,7 @@ private class VideoSettingPageViewModel(
     fun autoStopTimerClick() {
         pageNavigation.navigate(AutoStopTimerPage())
     }
-
 }
-
 
 @Composable
 private fun VideoSettingPageContent(
@@ -158,7 +153,7 @@ private fun VideoSettingPageContent(
     PageConfig(
         title = "播放设置"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -334,7 +329,7 @@ private fun VideoSettingPageContent(
                 defaultValue = SettingConstants.PLAYER_SPEED_SETS,
                 valueText = {
                     Text(
-                        text = "$it 倍速",  // 使用字符串模板
+                        text = "$it 倍速",
                         modifier = Modifier.widthIn(min = 48.dp),
                         textAlign = TextAlign.Center,
                     )

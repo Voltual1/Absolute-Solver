@@ -14,6 +14,28 @@ val composeStoreModule = module {
     viewModelOf(::FlagsSettingPageViewModel)
     viewModelOf(::HomeSettingPageViewModel)
 
+    // 注册 AboutPageViewModel
+    viewModel { (pageNavigation: PageNavigation) ->
+        AboutPageViewModel(
+            context = get(),
+            pageNavigation = pageNavigation
+        )
+    }
+
+    // 注册 DanmakuSettingPageViewModel
+    viewModel { (pageNavigation: PageNavigation) ->
+        DanmakuSettingPageViewModel(
+            pageNavigation = pageNavigation
+        )
+    }
+
+    // 注册 VideoSettingPageViewModel
+    viewModel { (pageNavigation: PageNavigation) ->
+        VideoSettingPageViewModel(
+            pageNavigation = pageNavigation
+        )
+    }
+
     viewModel { (pageNavigation: PageNavigation) ->
         ProxySettingPageViewModel(
             context = get(),

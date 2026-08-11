@@ -1,10 +1,10 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -17,24 +17,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
-import cn.a10miaomiao.bilimiao.compose.R
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
@@ -44,14 +42,10 @@ import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.layout.DoubleColumnAutofitLayout
 import cn.a10miaomiao.bilimiao.compose.components.layout.chain_scrollable.rememberChainScrollableLayoutState
 import cn.a10miaomiao.bilimiao.compose.pages.TestPage
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
 import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
 import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
@@ -62,53 +56,42 @@ import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class AboutPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: AboutPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<AboutPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         AboutPageContent(viewModel)
     }
 }
 
-private sealed class AppVersionState {
-
+sealed class AppVersionState {
     data object None: AppVersionState()
-
     data object Checking: AppVersionState()
-
-    data class Fail(
-        val message: String,
-    ): AppVersionState()
-
-    data class HasUpdate(
-        val version: String,
-        val url: String,
-    ): AppVersionState()
-
+    data class Fail(val message: String): AppVersionState()
+    data class HasUpdate(val version: String, val url: String): AppVersionState()
     data object NotUpdate: AppVersionState()
 }
 
-private class AboutPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
+class AboutPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-
-    val applicationIcon: Drawable = with(fragment.requireActivity()) {
+    val applicationIcon: Drawable = with(context) {
         val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
         applicationInfo.loadIcon(packageManager)
     }
 
-    val versionName: String = with(fragment.requireActivity()) {
+    val versionName: String = with(context) {
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
         packageInfo.versionName ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             packageInfo.longVersionCode.toString()
@@ -117,7 +100,7 @@ private class AboutPageViewModel(
         }
     }
 
-    val versionCode: Long = with(fragment.requireActivity()) {
+    val versionCode: Long = with(context) {
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             packageInfo.longVersionCode
@@ -132,16 +115,11 @@ private class AboutPageViewModel(
         viewModelScope.launch {
             runCatching {
                 checkUpdate()
-            }.onFailure {
-
             }
         }
     }
 
-    /**
-     * 检测更新
-     */
-     fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
+    fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
         try {
             versionState.value = AppVersionState.Checking
             val result = UpdateChecker.checkForUpdates(versionName)
@@ -173,7 +151,7 @@ private class AboutPageViewModel(
         val urlRegex = """^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$""".toRegex()
         if (urlRegex.matches(url)) {
             BiliUrlMatcher.toUrlLink(
-                fragment.requireActivity(),
+                context,
                 url,
             )
             return
@@ -181,13 +159,13 @@ private class AboutPageViewModel(
         runCatching {
             val emailRegex = """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$""".toRegex()
             val intent = Intent(Intent.ACTION_VIEW)
-            val activity = fragment.requireActivity()
             if (emailRegex.matches(url)) {
                 intent.data = Uri.parse("mailto:$url")
             } else {
                 intent.data = Uri.parse(url)
             }
-            activity.startActivity(intent)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
         }.onFailure {
             PopTip.show("打开失败")
         }
@@ -199,7 +177,8 @@ private class AboutPageViewModel(
             try {
                 val intent = Intent(Intent.ACTION_VIEW)
                 intent.data = Uri.parse(version.url)
-                fragment.requireActivity().startActivity(intent)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
             } catch (e: Exception) {
                 PopTip.show("打开失败:" + version.url)
             }
@@ -221,7 +200,6 @@ private const val GITEE_PROJECT_URL = "https://gitee.com/10miaomiao/bilimiao2"
 private const val FORK_WARN_TEXT = """本版本为基于原版 bilimiao2.4.8.1的下游分支。
 针对原生硬件兼容性（如软解支持）与部分网络接口稳定性进行了调整。有关于上游项目的更多官方信息，一切以上游项目实际情况为准。"""
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun AboutPageContent(
     viewModel: AboutPageViewModel
@@ -229,7 +207,7 @@ private fun AboutPageContent(
     PageConfig(
         title = "关于bilimiao"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -442,7 +420,6 @@ private fun AboutPageContent(
         }
     }
 }
-
 
 private fun Modifier.itemStyle() = composed {
     this

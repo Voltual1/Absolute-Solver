@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -14,9 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -31,28 +28,27 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class DanmakuSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: DanmakuSettingPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<DanmakuSettingPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         DanmakuSettingPageContent(viewModel)
     }
 }
 
-private class DanmakuSettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-
+class DanmakuSettingPageViewModel(
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     private fun toDisplaySettingPage(
         name: String,
@@ -84,7 +80,6 @@ private class DanmakuSettingPageViewModel(
     }
 }
 
-
 @Composable
 private fun DanmakuSettingPageContent(
     viewModel: DanmakuSettingPageViewModel
@@ -92,7 +87,7 @@ private fun DanmakuSettingPageContent(
     PageConfig(
         title = "弹幕设置"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -232,4 +227,3 @@ private fun DanmakuSettingPageContent(
         }
     }
 }
-        
