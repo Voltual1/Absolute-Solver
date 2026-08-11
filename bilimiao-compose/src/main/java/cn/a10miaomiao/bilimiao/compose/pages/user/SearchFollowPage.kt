@@ -17,11 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -33,34 +31,29 @@ import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.UserStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class SearchFollowPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: SearchFollowPageViewModel = diViewModel()
+        val viewModel: SearchFollowPageViewModel = koinViewModel()
         SearchFollowPageContent(viewModel)
     }
 }
 
-private class SearchFollowPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val activity by instance<Activity>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val userStore by instance<UserStore>()
+internal class SearchFollowPageViewModel(
+    private val activity: Activity,
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val searchText = MutableStateFlow("")
     val isRefreshing = MutableStateFlow(false)
@@ -143,7 +136,7 @@ private fun SearchFollowPageContent(
     PageConfig(
         title = "搜索我的关注"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -152,7 +145,6 @@ private fun SearchFollowPageContent(
     val listLoading by viewModel.list.loading.collectAsState()
     val listFinished by viewModel.list.finished.collectAsState()
     val listFail by viewModel.list.fail.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -186,8 +178,8 @@ private fun SearchFollowPageContent(
                         end = windowInsets.rightDp.dp,
                     )
                 ) {
-                    items(list.size, { list[it].mid }) {
-                        val item = list[it]
+                    items(list.size, { list[it].mid }) { index ->
+                        val item = list[index]
                         Box(
                             modifier = Modifier.padding(vertical = 5.dp),
                         ) {

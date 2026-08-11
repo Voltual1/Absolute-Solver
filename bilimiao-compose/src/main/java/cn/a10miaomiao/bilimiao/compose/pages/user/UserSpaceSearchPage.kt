@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.foundation.combinedTabDoubleClick
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
@@ -36,14 +35,11 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserSearchArchiveConte
 import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserSearchDynamicContent
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.SearchConfigInfo
-import com.a10miaomiao.bilimiao.comm.mypage.myMenuItem
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class UserSpaceSearchPage(
@@ -53,7 +49,7 @@ class UserSpaceSearchPage(
 
     @Composable
     override fun Content() {
-        val viewModel: UserSpaceSearchPageViewModel = diViewModel()
+        val viewModel: UserSpaceSearchPageViewModel = koinViewModel()
         UserSpaceSearchPageContent(viewModel, id.toLong(), keyword)
     }
 }
@@ -89,11 +85,9 @@ private sealed class UserSpaceSearchPageTab(
 
 }
 
-private class UserSpaceSearchPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
+internal class UserSpaceSearchPageViewModel(
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val tabs = listOf<UserSpaceSearchPageTab>(
         UserSpaceSearchPageTab.Archive,
@@ -123,7 +117,7 @@ private fun UserSpaceSearchPageContent(
             keyword = keyword,
         )
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

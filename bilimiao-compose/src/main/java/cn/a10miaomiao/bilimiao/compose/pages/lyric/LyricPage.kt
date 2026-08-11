@@ -3,7 +3,6 @@ package cn.a10miaomiao.bilimiao.compose.pages.lyric
 import android.app.Activity
 import android.util.Base64
 import android.view.View
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,14 +31,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.pages.lyric.lib.KrcText
@@ -65,33 +61,28 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-import kotlin.coroutines.coroutineContext
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
-class LyricPage :ComposePage(){
+class LyricPage : ComposePage(){
 
     @Composable
     override fun Content() {
-        val viewModel: LyricPageViewModel = diViewModel()
+        val viewModel: LyricPageViewModel = koinViewModel()
         LyricPageContent(viewModel)
     }
 }
 
 internal class LyricPageViewModel(
-    override val di: DI,
-): ViewModel(), DIAware{
+    private val activity: Activity,
+    private val playerDelegate: BasePlayerDelegate,
+): ViewModel() {
 
     companion object{
         const val KUGOU = "ku"
         const val NETEASE = "net"
     }
-
-    private val activity by instance<Activity>()
-    private val playerDelegate by instance<BasePlayerDelegate>()
 
     var loadingSource = MutableStateFlow(false)
     var loadingLyric = MutableStateFlow(false)
@@ -415,29 +406,12 @@ internal class LyricPageViewModel(
         }
     }
 }
-@Preview
-@Composable
-fun Preview(){
-    val test1= LyricLine(1000,"第一行","first line")
-    val test2= LyricLine(2000,"第二行","second line")
-    val test3= LyricLine(3000,"第3行")
-    val lyric = MutableStateFlow<List<LyricLine>>(listOf(test1,test2,test3)).collectAsState().value
-    LazyColumn(){
-        items(lyric){
-            LyricLineItem(Color(0xffffffff),alpha = 1f, line = it)
-        }
-    }
-}
-
-
-
-
 
 @Composable
 internal fun LyricPageContent(viewModel: LyricPageViewModel){
 
-    val playerStore: PlayerStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val playerStore: PlayerStore = koinInject()
+    val windowStore: WindowStore = koinInject()
     val playerState = playerStore.stateFlow.collectAsState().value
     val windowState = windowStore.stateFlow.collectAsState().value
     val lyric = viewModel.lyric.collectAsState().value

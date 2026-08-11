@@ -36,6 +36,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.home.*
 import cn.a10miaomiao.bilimiao.compose.pages.home.content.*
+import cn.a10miaomiao.bilimiao.compose.pages.lyric.*
 
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -49,6 +50,24 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 LyricPageViewModel
+    viewModel {
+        LyricPageViewModel(
+            activity = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get()
+        )
+    }
+
+    // 注册 SearchFollowPageViewModel 与 UserSpaceSearchPageViewModel
+    viewModel {
+        SearchFollowPageViewModel(
+            activity = org.koin.core.context.GlobalContext.get().get(),
+            pageNavigation = get(),
+            userStore = get()
+        )
+    }
+    viewModelOf(::UserSpaceSearchPageViewModel)
 
     // 注册 Home 模块 ViewModels
     viewModel {
