@@ -23,7 +23,6 @@ import org.koin.dsl.module
 val composeStoreModule = module {
     viewModelOf(::SearchInputViewModel)
     viewModelOf(::AutoStopTimerPageViewModel)
-    viewModelOf(::RepositoryOfSettings) // 等同原有逻辑
     viewModelOf(::FlagsSettingPageViewModel)
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
