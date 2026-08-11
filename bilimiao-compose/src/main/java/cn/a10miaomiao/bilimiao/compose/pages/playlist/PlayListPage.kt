@@ -3,8 +3,6 @@ package cn.a10miaomiao.bilimiao.compose.pages.playlist
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,13 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
@@ -59,10 +52,8 @@ import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.max
@@ -72,18 +63,15 @@ class PlayListPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: PlayListPageViewModel = diViewModel()
+        val viewModel: PlayListPageViewModel = koinViewModel()
         PlayListPageContent(viewModel)
     }
 }
 
-private class PlayListPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-
-    private val playerDelegate by instance<BasePlayerDelegate>()
+internal class PlayListPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val playerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     fun toVideoInfoPage(item: PlayListItemInfo) {
         pageNavigation.navigateToVideoInfo(item.aid)
@@ -101,9 +89,9 @@ private class PlayListPageViewModel(
 private fun PlayListPageContent(
     viewModel: PlayListPageViewModel
 ) {
-    val playerStore: PlayerStore by rememberInstance()
-    val playListStore: PlayListStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val playerStore: PlayerStore = koinInject()
+    val playListStore: PlayListStore = koinInject()
+    val windowStore: WindowStore = koinInject()
     val windowState by windowStore.stateFlow.collectAsState()
     val windowInsets = windowState.getContentInsets(localContainerView())
     val playListState by playListStore.stateFlow.collectAsState()

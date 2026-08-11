@@ -1,12 +1,10 @@
 package cn.a10miaomiao.bilimiao.compose.pages.player
 
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,12 +30,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -53,17 +48,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class SendDanmakuPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: SendDanmakuViewModel = diViewModel()
+        val viewModel: SendDanmakuViewModel = koinViewModel()
         SendDanmakuPageContent(viewModel)
     }
 }
@@ -74,11 +67,9 @@ internal data class SelectItemInfo<T>(
 )
 
 internal class SendDanmakuViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val playerDelegate by instance<BasePlayerDelegate>()
+    private val pageNavigation: PageNavigation,
+    private val playerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     val focusRequester = FocusRequester()
 
@@ -205,7 +196,7 @@ internal fun SendDanmakuPageContent(
     PageConfig(
         title = "发送弹幕"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -288,7 +279,6 @@ internal fun SendDanmakuPageContent(
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 默认为25,极小：12,超小：16,小：18,标准：25,大：36,超大：45,极大：64
             Text(
                 "字体大小：",
                 color = MaterialTheme.colorScheme.onBackground,

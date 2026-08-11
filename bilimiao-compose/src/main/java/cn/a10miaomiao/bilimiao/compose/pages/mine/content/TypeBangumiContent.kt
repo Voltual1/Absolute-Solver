@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,7 +29,6 @@ import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -45,7 +42,6 @@ import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.MyBangumiFollowListInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.MyBangumiInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
@@ -55,16 +51,14 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-class TypeBangumiContentViewModel(
-    override val di: DI,
+internal class TypeBangumiContentViewModel(
     private val type: String,
-) : ViewModel(), DIAware {
-    private val pageNavigation by instance<PageNavigation>()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val typeName = if (type == "cinema") "追剧" else "追番"
     val statusList = listOf(
@@ -201,10 +195,11 @@ fun TypeBangumiContent(
     type: String,
     isActive: Boolean,
 ) {
-    val viewModel = diViewModel(key = type) {
-        TypeBangumiContentViewModel(it, type)
-    }
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: TypeBangumiContentViewModel = koinViewModel(
+        key = type,
+        parameters = { parametersOf(type) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -255,7 +250,7 @@ fun TypeBangumiContent(
                 listOf(0 to "取消${viewModel.typeName}")
             } else {
                 listOf(
-                    Pair(0,"取消$${viewModel.typeName}"),
+                    Pair(0,"取消${viewModel.typeName}"),
                     Pair(1, "标记为『想看』").takeIf {
                         currentStatus != 1
                     },

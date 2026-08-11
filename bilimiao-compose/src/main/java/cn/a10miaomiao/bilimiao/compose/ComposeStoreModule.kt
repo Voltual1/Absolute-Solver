@@ -32,18 +32,13 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.UserBangumiPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserFollowPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserLikeArchivePageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserMedialistPageViewModel
-import cn.a10miaomiao.bilimiao.compose.pages.setting.*
-import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
-import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
-import cn.a10miaomiao.bilimiao.compose.pages.download.*
-import cn.a10miaomiao.bilimiao.compose.pages.user.UserArchiveViewModel
-import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpaceViewModel
-import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouriteViewModel
-import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserFavouriteDetailViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.MyFollowViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.content.TagFollowContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.mine.content.TypeBangumiContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.HistoryPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.WatchLaterPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.playlist.PlayListPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.player.SendDanmakuViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.LoginPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.SMSLoginPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.QrCodeLoginPageViewModel
@@ -68,6 +63,23 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 PlayList 与 SendDanmaku
+    viewModelOf(::PlayListPageViewModel)
+    viewModel {
+        SendDanmakuViewModel(
+            pageNavigation = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get()
+        )
+    }
+
+    // 注册 TypeBangumiContentViewModel
+    viewModel { (type: String) ->
+        TypeBangumiContentViewModel(
+            type = type,
+            pageNavigation = get()
+        )
+    }
 
     // 注册 User 模块二级子页面 ViewModel
     viewModel { (mid: String) ->
