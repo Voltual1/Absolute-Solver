@@ -1,10 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.message
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +11,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -27,13 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -44,17 +35,15 @@ import cn.a10miaomiao.bilimiao.compose.pages.message.content.ReplyMessageContent
 import com.a10miaomiao.bilimiao.comm.store.MessageStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class MessagePage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: MessagePageViewModel = diViewModel()
+        val viewModel: MessagePageViewModel = koinViewModel()
         MessagePageContent(viewModel)
     }
 
@@ -98,12 +87,9 @@ private sealed class MessagePageTab(
 
 }
 
-private class MessagePageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val messageStore by instance<MessageStore>()
+internal class MessagePageViewModel(
+    private val messageStore: MessageStore,
+) : ViewModel() {
 
     val tabs = listOf<MessagePageTab>(
         MessagePageTab.Reply,
@@ -111,13 +97,10 @@ private class MessagePageViewModel(
         MessagePageTab.Like,
     )
 
-    init {
-//        messageStore.clearUnread()
-    }
 }
 
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessagePageContent(
     viewModel: MessagePageViewModel
@@ -127,10 +110,10 @@ private fun MessagePageContent(
     )
     val scope = rememberCoroutineScope()
 
-    val messageStore: MessageStore by rememberInstance()
+    val messageStore: MessageStore = koinInject()
     val messageState = messageStore.stateFlow.collectAsState().value
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose
 
+import androidx.fragment.app.Fragment
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
@@ -27,6 +28,11 @@ import cn.a10miaomiao.bilimiao.compose.pages.auth.SMSLoginPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.QrCodeLoginPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.TelVerifyPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.auth.H5LoginPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.message.MessagePageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.message.content.AtMessageContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.message.content.LikeMessageContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.message.content.ReplyMessageContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.message.content.SystemMessageContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.video.*
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.*
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
@@ -42,6 +48,13 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Message 模块 ViewModel
+    viewModelOf(::MessagePageViewModel)
+    viewModelOf(::AtMessageContentModel)
+    viewModelOf(::LikeMessageContentModel)
+    viewModelOf(::ReplyMessageContentModel)
+    viewModelOf(::SystemMessageContentModel)
 
     // 注册 Search 详情与分类 ViewModel
     viewModel { (type: Int, keyword: String) ->
@@ -74,10 +87,10 @@ val composeStoreModule = module {
     viewModelOf(::SMSLoginPageViewModel)
     viewModelOf(::QrCodeLoginPageViewModel)
     viewModelOf(::TelVerifyPageViewModel)
-    viewModel { (url: String) ->
+    viewModel { (url: String, fragment: Fragment) ->
         H5LoginPageViewModel(
             startUrl = url,
-            fragment = org.koin.core.context.GlobalContext.get().get(),
+            fragment = fragment,
             userStore = get(),
             pageNavigation = get(),
             messageDialog = get()

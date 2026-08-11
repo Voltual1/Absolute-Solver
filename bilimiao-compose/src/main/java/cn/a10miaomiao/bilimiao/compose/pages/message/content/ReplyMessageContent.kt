@@ -1,8 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.message.content
 
-
 import ReplyDetailListPage
-import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,10 +10,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -25,7 +21,6 @@ import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.pages.message.components.MessageItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
-import cn.a10miaomiao.bilimiao.compose.pages.video.VideoDetailPage
 import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.message.MessageCursorInfo
 import com.a10miaomiao.bilimiao.comm.entity.message.MessageResponseInfo
@@ -33,23 +28,17 @@ import com.a10miaomiao.bilimiao.comm.entity.message.ReplyMessageInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.MessageStore
-import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
-private class ReplyMessageContentModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val messageStore by instance<MessageStore>()
+internal class ReplyMessageContentModel(
+    private val pageNavigation: PageNavigation,
+    private val messageStore: MessageStore,
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
     val list = FlowPaginationInfo<ReplyMessageInfo>()
@@ -139,8 +128,6 @@ private class ReplyMessageContentModel(
                     enterUrl = enterUrl,
                 ))
             }
-        } else if (type == "album") {
-//            // 动态
         } else if (type == "danmu") {
             // 弹幕
             val aid = item.item.subject_id
@@ -166,8 +153,8 @@ private class ReplyMessageContentModel(
 
 @Composable
 internal fun ReplyMessageContent() {
-    val viewModel: ReplyMessageContentModel = diViewModel()
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: ReplyMessageContentModel = koinViewModel()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
