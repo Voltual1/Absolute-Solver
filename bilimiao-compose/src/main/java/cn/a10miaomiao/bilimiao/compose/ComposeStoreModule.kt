@@ -34,6 +34,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.community.content.*
 import cn.a10miaomiao.bilimiao.compose.pages.download.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
+import cn.a10miaomiao.bilimiao.compose.pages.home.*
+import cn.a10miaomiao.bilimiao.compose.pages.home.content.*
 
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -47,6 +49,43 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Home 模块 ViewModels
+    viewModel {
+        HomePageViewModel(
+            appStore = get(),
+            fragment = org.koin.core.context.GlobalContext.get().get(),
+            pageNavigation = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            context = get()
+        )
+    }
+
+    viewModel {
+        HomePopularContentViewModel(
+            context = get(),
+            pageNavigation = get(),
+            filterStore = get()
+        )
+    }
+
+    viewModel {
+        HomeRecommendContentViewModel(
+            context = get(),
+            pageNavigation = get(),
+            filterStore = get()
+        )
+    }
+
+    viewModel {
+        HomeTimeMachineContentViewModel(
+            pageNavigation = get(),
+            bottomSheetState = get(),
+            timeSettingStore = get(),
+            regionStore = get(),
+            userStore = get()
+        )
+    }
 
     // 注册 PlayList 与 SendDanmaku
     viewModelOf(::PlayListPageViewModel)

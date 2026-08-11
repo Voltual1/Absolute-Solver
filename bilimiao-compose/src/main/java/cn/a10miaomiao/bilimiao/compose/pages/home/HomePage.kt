@@ -3,29 +3,17 @@ package cn.a10miaomiao.bilimiao.compose.pages.home
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AlertDialog
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -38,20 +26,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.navOptions
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.foundation.combinedTabDoubleClick
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
@@ -66,54 +49,33 @@ import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicPage
 import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomePopularContent
 import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomeRecommendContent
 import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomeTimeMachineContent
-import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
-import com.a10miaomiao.bilimiao.comm.entity.miao.MiaoAdInfo
-import com.a10miaomiao.bilimiao.comm.entity.miao.MiaoSettingInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.comm.store.AppStore.HomeSettingState
-import com.a10miaomiao.bilimiao.comm.store.TimeSettingStore
-import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
 import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-import java.io.IOException
-import java.util.Calendar
-import java.util.GregorianCalendar
-import java.util.Random
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 object HomePage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: HomePageViewModel = diViewModel()
+        val viewModel: HomePageViewModel = koinViewModel()
         HomePageContent(viewModel)
     }
 
@@ -160,15 +122,13 @@ private sealed class HomePageTab(
 
 }
 
-private class HomePageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val appStore by instance<AppStore>()
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-
-    private val playerDelegate by instance<BasePlayerDelegate>()
+internal class HomePageViewModel(
+    private val appStore: AppStore,
+    private val fragment: Fragment,
+    private val pageNavigation: PageNavigation,
+    private val playerDelegate: BasePlayerDelegate,
+    private val context: Context,
+) : ViewModel() {
 
     private var lastBackPressedTime = 0L
 
@@ -177,7 +137,6 @@ private class HomePageViewModel(
     var initialPage = 0
         private set
     val pageState = HomePageState(pageNavigation)
-    val context: Context by instance()
 
     val versionName: String = with(context) {
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
@@ -215,15 +174,12 @@ private class HomePageViewModel(
         return tabs
     }
 
-    /**
-     * 获取更新和运行初始化
-     */
     private fun loadAdData() = viewModelScope.launch(Dispatchers.IO) {
         try {
             val (autoCheckUpdate, ignoreUpdateVersion) = SettingPreferences.mapData(context) {
                 Pair(
-                    it[IsAutoCheckVersion] ?: true,
-                    it[IgnoreUpdateVersion] ?: ""
+                    it[SettingPreferences.IsAutoCheckVersion] ?: true,
+                    it[SettingPreferences.IgnoreUpdateVersion] ?: ""
                 )
             }
             if (autoCheckUpdate) {
@@ -336,7 +292,7 @@ private fun HomePageContent(
 
     val scope = rememberCoroutineScope()
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

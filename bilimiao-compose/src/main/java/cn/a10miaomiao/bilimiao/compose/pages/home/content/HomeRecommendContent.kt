@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/home/content/HomeRecommendContent.kt
 package cn.a10miaomiao.bilimiao.compose.pages.home.content
 
 import android.content.Context
@@ -7,11 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -19,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -37,30 +33,24 @@ import com.a10miaomiao.bilimiao.comm.entity.home.RecommendCardArgsInfo
 import com.a10miaomiao.bilimiao.comm.entity.home.RecommendCardInfo
 import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.search.filter.FilterItem
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliFeedExtractor
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-@Stable
-private class HomeRecommendContentViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val context: Context by instance()
-    private val pageNavigation: PageNavigation by instance()
-    private val filterStore: FilterStore by instance()
+internal class HomeRecommendContentViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     private val lastIdx
         get() = list.data.value.lastOrNull()?.idx ?: 0L
@@ -73,7 +63,7 @@ private class HomeRecommendContentViewModel(
         viewModelScope.launch {
             SettingPreferences.run {
                 context.dataStore.data.map {
-                    it[HomeRecommendListStyle] ?: 0
+                    it[SettingPreferences.HomeRecommendListStyle] ?: 0
                 }
             }.collect {
                 listStyle.value = it
@@ -212,8 +202,8 @@ private class HomeRecommendContentViewModel(
 
 @Composable
 internal fun HomeRecommendContent() {
-    val viewModel: HomeRecommendContentViewModel = diViewModel()
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: HomeRecommendContentViewModel = koinViewModel()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -251,7 +241,8 @@ internal fun HomeRecommendContent() {
                 top = 0.dp,
             )
         ) {
-            items(list, { it.param + it.idx }) {
+            items(list.size, { list[it].param + list[it].idx }) { index ->
+                val it = list[index]
                 if (listStyle == 0) {
                     VideoItemBox(
                         modifier = Modifier.padding(
