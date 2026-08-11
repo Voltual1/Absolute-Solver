@@ -49,7 +49,7 @@ class MessagePage : ComposePage() {
 
 }
 
-private sealed class MessagePageTab(
+internal sealed class MessagePageTab(
     val id: Int,
     val name: String,
 ) {
