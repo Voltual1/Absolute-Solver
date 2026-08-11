@@ -52,10 +52,11 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -102,7 +103,8 @@ internal class LyricPageViewModel(
     private val lyricMutex =Mutex()
 
     val playProgress = flow<Long> {
-        while (coroutineContext.isActive) {
+        val ctx = currentCoroutineContext()
+        while (ctx.isActive) {
             emit(playerDelegate.currentPosition())
             delay(200)
         }

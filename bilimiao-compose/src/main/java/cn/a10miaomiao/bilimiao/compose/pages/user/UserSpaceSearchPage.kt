@@ -55,7 +55,7 @@ class UserSpaceSearchPage(
 }
 
 @Stable
-private sealed class UserSpaceSearchPageTab(
+internal sealed class UserSpaceSearchPageTab(
     val id: String,
     val name: String,
 ) {
