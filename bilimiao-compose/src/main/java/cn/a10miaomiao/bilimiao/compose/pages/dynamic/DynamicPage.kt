@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.dynamic
 
-import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -27,10 +26,10 @@ import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicAllListConte
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicUpperContent
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicVideoListContent
 import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
-import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
