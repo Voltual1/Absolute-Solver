@@ -12,44 +12,34 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
-import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
-import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
-import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
-import cn.a10miaomiao.bilimiao.compose.common.toWindowInsets
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.components.DynamicMiniUpperList
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.components.DynamicPageScaffold
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.components.DynamicUpperList
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicAllListContent
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicUpperContent
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicVideoListContent
-import cn.a10miaomiao.bilimiao.compose.pages.home.HomePage
-import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomePopularContent
-import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomeRecommendContent
-import cn.a10miaomiao.bilimiao.compose.pages.home.content.HomeTimeMachineContent
 import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class DynamicPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: DynamicViewModel = diViewModel()
+        val viewModel: DynamicViewModel = koinViewModel()
         DynamicPageContent(viewModel)
     }
 }
@@ -89,7 +79,7 @@ private fun DynamicPageContent(
 
     val scope = rememberCoroutineScope()
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

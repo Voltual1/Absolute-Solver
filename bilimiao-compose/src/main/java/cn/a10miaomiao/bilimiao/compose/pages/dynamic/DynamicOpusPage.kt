@@ -1,19 +1,15 @@
 package cn.a10miaomiao.bilimiao.compose.pages.dynamic
 
-import android.net.Uri
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,11 +19,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavOptions
 import bilibili.app.archive.middleware.v1.PlayerArgs
 import bilibili.app.dynamic.v2.Module.ModuleItem
 import bilibili.app.dynamic.v2.OpusDetailReq
@@ -36,20 +29,16 @@ import bilibili.app.dynamic.v2.OpusItem
 import bilibili.app.dynamic.v2.Paragraph
 import bilibili.app.dynamic.v2.PicParagraph
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
-import cn.a10miaomiao.bilimiao.compose.components.community.ReplyItemBox
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleBox
-import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyListPageContent
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
-import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
@@ -61,10 +50,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class DynamicOpusPage(
@@ -73,24 +61,21 @@ data class DynamicOpusPage(
 
     @Composable
     override fun Content() {
-        val viewModel = diViewModel(key = "dynamic$id") {
-            DynamicOpusPageViewModel(it, id)
-        }
+        val viewModel: DynamicOpusPageViewModel = koinViewModel(
+            key = "dynamic$id",
+            parameters = { parametersOf(id) }
+        )
         DynamicOpusPageContent(viewModel)
     }
 
 }
 
-private class DynamicOpusPageViewModel(
-    override val di: DI,
+internal class DynamicOpusPageViewModel(
     val dynId: String,
-) : ViewModel(), DIAware {
+    val userStore: UserStore,
+) : ViewModel() {
 
-    private val fragment by instance<Fragment>()
-    val activity: AppCompatActivity by instance()
-    val userStore: UserStore by instance()
-
-    private val _loading = MutableStateFlow(false);
+    private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> get() = _loading
 
     private val _fail = MutableStateFlow<Any?>(null)
@@ -98,6 +83,7 @@ private class DynamicOpusPageViewModel(
 
     private val _detailData = MutableStateFlow<OpusItem?>(null)
     val detailData: StateFlow<OpusItem?> get() = _detailData
+
     init {
         if (dynId.isNotBlank()) {
             loadData()
@@ -146,7 +132,7 @@ private class DynamicOpusPageViewModel(
 private fun DynamicOpusPageContent(
     viewModel: DynamicOpusPageViewModel
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -157,10 +143,7 @@ private fun DynamicOpusPageContent(
         targetState = detailData == null,
         label = "DynamicDetailPageContent",
         transitionSpec = {
-            // Follow M3 Clean fades
-            val fadeIn = fadeIn(
-                tween(),
-            )
+            val fadeIn = fadeIn(tween())
             val fadeOut = fadeOut()
             fadeIn.togetherWith(fadeOut)
         }
@@ -218,12 +201,6 @@ private fun DynamicDetailPageDetailContent(
     ) {
         MainReplyViewModel(it, oid, type = 11)
     }
-    val replyList by replyViewModel.list.data.collectAsState()
-    val replyListLoading by replyViewModel.list.loading.collectAsState()
-    val replyListFinished by replyViewModel.list.finished.collectAsState()
-    val replyListFail by replyViewModel.list.fail.collectAsState()
-    val upMid = replyViewModel.upMid
-//    val replyRefreshing by replyViewModel.isRefreshing.collectAsState()
 
     val origName = detailData.extend?.origName
     PageConfig(
@@ -241,13 +218,6 @@ private fun DynamicDetailPageDetailContent(
             }
             return@indexOfFirst false
         } != -1
-    }
-    val topModule = remember(detailData) {
-        detailData.modules.firstOrNull()?.let {
-            val moduleItem = it.moduleItem
-            if (moduleItem is ModuleItem.ModuleTop) moduleItem.value
-            else null
-        }
     }
     val buttomModule = remember(detailData) {
         detailData.modules.lastOrNull()?.let {
@@ -274,16 +244,6 @@ private fun DynamicDetailPageDetailContent(
                     for(module in detailData.modules) {
                         DynamicModuleBox(module = module)
                     }
-//                topModule?.author?.let {
-//                    Text(
-//                        it.ptimeLocationText,
-//                        style = MaterialTheme.typography.labelMedium,
-//                        color = MaterialTheme.colorScheme.outline,
-//                        modifier = Modifier
-//                            .padding(top = 10.dp)
-//                            .padding(horizontal = 10.dp)
-//                    )
-//                }
                 }
             }
             item {

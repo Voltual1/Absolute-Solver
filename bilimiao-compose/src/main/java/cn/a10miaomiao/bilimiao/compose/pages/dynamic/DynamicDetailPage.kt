@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.dynamic
 
-import android.net.Uri
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContent
@@ -8,53 +7,31 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.ModalDrawer
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavOptions
 import bilibili.app.archive.middleware.v1.PlayerArgs
 import bilibili.app.dynamic.v2.DynDetailReq
 import bilibili.app.dynamic.v2.DynamicGRPC
 import bilibili.app.dynamic.v2.DynamicItem
 import bilibili.app.dynamic.v2.Module.ModuleItem
-import bilibili.app.dynamic.v2.OpusDetailReq
-import bilibili.app.dynamic.v2.OpusGRPC
-import bilibili.app.dynamic.v2.OpusItem
-import bilibili.app.dynamic.v2.Paragraph
-import bilibili.app.dynamic.v2.PicParagraph
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
-import cn.a10miaomiao.bilimiao.compose.components.community.ReplyItemBox
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleBox
-import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyListPageContent
@@ -71,10 +48,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class DynamicDetailPage(
@@ -83,24 +59,21 @@ data class DynamicDetailPage(
 
     @Composable
     override fun Content() {
-        val viewModel = diViewModel(key = "dynamic$id") {
-            DynamicDetailPageViewModel(it, id)
-        }
+        val viewModel: DynamicDetailPageViewModel = koinViewModel(
+            key = "dynamic$id",
+            parameters = { parametersOf(id) }
+        )
         DynamicDetailPageContent(viewModel)
     }
 
 }
 
-private class DynamicDetailPageViewModel(
-    override val di: DI,
+internal class DynamicDetailPageViewModel(
     val dynId: String,
-) : ViewModel(), DIAware {
+    val userStore: UserStore,
+) : ViewModel() {
 
-    private val fragment by instance<Fragment>()
-    val activity: AppCompatActivity by instance()
-    val userStore: UserStore by instance()
-
-    private val _loading = MutableStateFlow(false);
+    private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> get() = _loading
 
     private val _fail = MutableStateFlow<Any?>(null)
@@ -108,6 +81,7 @@ private class DynamicDetailPageViewModel(
 
     private val _detailData = MutableStateFlow<DynamicItem?>(null)
     val detailData: StateFlow<DynamicItem?> get() = _detailData
+
     init {
         if (dynId.isNotBlank()) {
             loadData()
@@ -155,7 +129,7 @@ private class DynamicDetailPageViewModel(
 private fun DynamicDetailPageContent(
     viewModel: DynamicDetailPageViewModel
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -166,10 +140,7 @@ private fun DynamicDetailPageContent(
         targetState = detailData == null,
         label = "DynamicDetailPageContent",
         transitionSpec = {
-            // Follow M3 Clean fades
-            val fadeIn = fadeIn(
-                tween(),
-            )
+            val fadeIn = fadeIn(tween())
             val fadeOut = fadeOut()
             fadeIn.togetherWith(fadeOut)
         }

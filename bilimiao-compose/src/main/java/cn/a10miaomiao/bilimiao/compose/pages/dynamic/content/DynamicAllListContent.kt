@@ -1,19 +1,12 @@
 package cn.a10miaomiao.bilimiao.compose.pages.dynamic.content
 
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -30,45 +23,28 @@ import bilibili.app.dynamic.v2.DynamicItem
 import bilibili.app.dynamic.v2.UpListItem
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.localEmitter
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
-import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicItemCard
-import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleAuthorBox
-import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleStatBox
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
-import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
-import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
-import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicVideoContentInfo
-import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicVideoInfo
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicViewModel
-import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.store.FilterStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-
-class DynamicAllListContenttViewModel(
-    override val di: DI,
+internal class DynamicAllListContentViewModel(
     val dynamicViewModel: DynamicViewModel,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    private val filterStore: FilterStore by instance()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     private var _offset = ""
     private var _baseline = ""
@@ -165,12 +141,11 @@ class DynamicAllListContenttViewModel(
 fun DynamicAllListContent(
     dynamicViewModel: DynamicViewModel,
 ) {
-    val viewModel = diViewModel(
-        key = "dynamic-all-list"
-    ) {
-        DynamicAllListContenttViewModel(it, dynamicViewModel)
-    }
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: DynamicAllListContentViewModel = koinViewModel(
+        key = "dynamic-all-list",
+        parameters = { parametersOf(dynamicViewModel) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

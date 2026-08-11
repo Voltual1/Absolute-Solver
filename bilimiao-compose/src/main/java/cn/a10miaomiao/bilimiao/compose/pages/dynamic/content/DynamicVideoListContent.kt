@@ -18,11 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.Navigation
 import bilibili.app.dynamic.v2.DynamicGRPC
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -33,7 +30,6 @@ import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleAuthorBox
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleStatBox
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
-import cn.a10miaomiao.bilimiao.compose.components.video.MiniVideoItemBox
 import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicVideoContentInfo
@@ -46,17 +42,13 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
-class DynamicVideoListContentViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    private val filterStore: FilterStore by instance()
+internal class DynamicVideoListContentViewModel(
+    private val pageNavigation: PageNavigation,
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     private var _offset = ""
     private var _baseline = ""
@@ -201,10 +193,8 @@ class DynamicVideoListContentViewModel(
 
 @Composable
 fun DynamicVideoListContent() {
-    val viewModel = diViewModel<DynamicVideoListContentViewModel>(
-//        key = "dynamic-video-list"
-    )
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: DynamicVideoListContentViewModel = koinViewModel()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

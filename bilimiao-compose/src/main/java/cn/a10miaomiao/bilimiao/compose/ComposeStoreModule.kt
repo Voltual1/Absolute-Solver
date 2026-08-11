@@ -1,6 +1,7 @@
 package cn.a10miaomiao.bilimiao.compose
 
 import androidx.fragment.app.Fragment
+import bilibili.app.dynamic.v2.UpListItem
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
@@ -17,11 +18,16 @@ import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterWordListConten
 import cn.a10miaomiao.bilimiao.compose.pages.web.WebPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeRegionDetailPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.time.content.TimeRegionDetailListContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicAllListContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicUpperContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.content.DynamicVideoListContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicDetailPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicOpusPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
 import cn.a10miaomiao.bilimiao.compose.pages.download.*
-import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserArchiveViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpaceViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouriteViewModel
@@ -55,6 +61,42 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Dynamic 相关 ViewModel
+    viewModel { (pageNavigation: PageNavigation) ->
+        DynamicViewModel(
+            pageNavigation = pageNavigation
+        )
+    }
+    viewModel { (dynamicViewModel: DynamicViewModel) ->
+        DynamicAllListContentViewModel(
+            dynamicViewModel = dynamicViewModel,
+            pageNavigation = get()
+        )
+    }
+    viewModel { (dynamicViewModel: DynamicViewModel, upper: UpListItem) ->
+        DynamicUpperContentViewModel(
+            dynamicViewModel = dynamicViewModel,
+            upper = upper,
+            pageNavigation = get(),
+            filterStore = get()
+        )
+    }
+    viewModelOf(::DynamicVideoListContentViewModel)
+
+    viewModel { (dynId: String) ->
+        DynamicDetailPageViewModel(
+            dynId = dynId,
+            userStore = get()
+        )
+    }
+
+    viewModel { (dynId: String) ->
+        DynamicOpusPageViewModel(
+            dynId = dynId,
+            userStore = get()
+        )
+    }
 
     // 注册 Time 模块 ViewModel
     viewModel { (tid: Int, name: String, childIds: List<Int>, childNames: List<String>, initialIndex: Int) ->
@@ -185,12 +227,6 @@ val composeStoreModule = module {
             pageNavigation = pageNavigation,
             basePlayerDelegate = org.koin.core.context.GlobalContext.get().get(),
             bottomSheetState = bottomSheetState
-        )
-    }
-
-    viewModel { (pageNavigation: PageNavigation) ->
-        DynamicViewModel(
-            pageNavigation = pageNavigation
         )
     }
 
