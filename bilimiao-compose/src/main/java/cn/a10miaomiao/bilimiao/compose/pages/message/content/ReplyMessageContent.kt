@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.message.content
 
-import ReplyDetailListPage
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,13 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.navigation.BilibiliNavigation
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
+import cn.a10miaomiao.bilimiao.compose.pages.community.ReplyDetailListPage
 import cn.a10miaomiao.bilimiao.compose.pages.message.components.MessageItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
 import com.a10miaomiao.bilimiao.comm.entity.ResultInfo

@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose
 
-import ReplyDetailListPage
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
@@ -28,6 +27,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.auth.TelVerifyPage
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiEpisodesPage
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyListPage
+import cn.a10miaomiao.bilimiao.compose.pages.community.ReplyDetailListPage
 import cn.a10miaomiao.bilimiao.compose.pages.download.DownloadBangumiCreatePage
 import cn.a10miaomiao.bilimiao.compose.pages.download.DownloadDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.download.DownloadListPage
@@ -88,10 +88,6 @@ class BilimiaoPageRoute (
 
         // home
         composable<HomePage>()
-//        builder.composable<HomePage> {
-//            val page = it.toRoute<HomePage>()
-//            page.Content()
-//        }
         
         // search
         composable<SearchResultPage>(
@@ -271,9 +267,7 @@ class BilimiaoPageRoute (
         composable<UserMedialistPage>()
 
         //community
-        composable<MainReplyListPage>(
-
-        )
+        composable<MainReplyListPage>()
         composable<ReplyDetailListPage>(
             deepLinks = listOf(
                 navDeepLink {
