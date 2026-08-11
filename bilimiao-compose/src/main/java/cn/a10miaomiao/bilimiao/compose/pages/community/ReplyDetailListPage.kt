@@ -1,3 +1,5 @@
+package cn.a10miaomiao.bilimiao.compose.pages.community
+
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -117,7 +119,7 @@ internal class ReplyDetailListPageViewModel(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                PopTip.show("喵喵被搞坏了:" + e.message ?: e.toString())
+                PopTip.show("喵喵被搞坏了:" + (e.message ?: e.toString()))
             }
         }
     }

@@ -44,7 +44,7 @@ class MyBangumiPage(
 
     @Composable
     override fun Content() {
-        val viewModel: SearchPageViewModel = koinViewModel()
+        val viewModel: MyBangumiPageViewModel = koinViewModel()
         MyBangumiPageContent(viewModel, type)
     }
 }
@@ -81,7 +81,7 @@ internal sealed class MyBangumiPageTab(
 
 }
 
-internal class SearchPageViewModel(
+internal class MyBangumiPageViewModel(
     private val pageNavigation: PageNavigation,
 ) : ViewModel() {
 
@@ -95,7 +95,7 @@ internal class SearchPageViewModel(
 
 @Composable
 private fun MyBangumiPageContent(
-    viewModel: SearchPageViewModel,
+    viewModel: MyBangumiPageViewModel,
     type: String = "bangumi",
 ) {
     PageConfig(

@@ -7,7 +7,6 @@ import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 
-// 导入所有 sub-packages 里的 ViewModel, 防止 Unresolved Reference
 import cn.a10miaomiao.bilimiao.compose.pages.search.*
 import cn.a10miaomiao.bilimiao.compose.pages.search.content.*
 import cn.a10miaomiao.bilimiao.compose.pages.rank.*
@@ -58,7 +57,8 @@ val composeStoreModule = module {
         )
     }
 
-    // 注册 TypeBangumiContentViewModel
+    // 注册 MyBangumi 模块 ViewModel
+    viewModelOf(::MyBangumiPageViewModel)
     viewModel { (type: String) ->
         TypeBangumiContentViewModel(
             type = type,
