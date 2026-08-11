@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.download
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +11,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
@@ -30,10 +30,10 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import java.io.File
 
 @Serializable
@@ -43,18 +43,20 @@ data class DownloadDetailPage(
 
     @Composable
     override fun Content() {
-        val viewModel: DownloadDetailPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<DownloadDetailPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         DownloadDetailPageContent(path, viewModel)
     }
 
 }
-internal class DownloadDetailPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
 
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
+class DownloadDetailPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val basePlayerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     val downloadInfo = MutableStateFlow<DownloadInfo?>(null)
     val downloadItems = MutableStateFlow(emptyList<DownloadItemInfo>())
@@ -64,7 +66,7 @@ internal class DownloadDetailPageViewModel(
     fun loadDownloadDetail(
         dirPath: String,
     ) = viewModelScope.launch {
-        val service = DownloadService.getService(fragment.requireContext())
+        val service = DownloadService.getService(context)
         downloadService = service
         _loadDownloadDetail(service, dirPath)
         if (downloadInfo.value == null) {
@@ -160,7 +162,7 @@ internal class DownloadDetailPageViewModel(
     fun itemClick(item: DownloadItemInfo) {
         if (item.is_completed) {
             basePlayerDelegate.openPlayer(LocalPlayerSource(
-                activity = fragment.requireActivity(),
+                activity = context as android.app.Activity,
                 entryDirPath = item.dir_path,
                 id = item.id.toString(),
                 title = item.title,
@@ -181,9 +183,9 @@ internal class DownloadDetailPageViewModel(
         item: DownloadItemInfo,
         dirPath: String,
     ) {
-        val info = downloadInfo?.value ?: return
+        val info = downloadInfo.value ?: return
         viewModelScope.launch {
-            val service = DownloadService.getService(fragment.requireContext())
+            val service = DownloadService.getService(context)
             service.deleteDownload(info.dir_path, item.dir_path)
             PopTip.show("已删除：" + info.title + "-"  +item.title)
             _loadDownloadDetail(service, dirPath)
@@ -203,7 +205,7 @@ internal fun DownloadDetailPageContent(
         title = "下载详情"
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -216,14 +218,14 @@ internal fun DownloadDetailPageContent(
         viewModel.loadDownloadDetail(dirPath)
     }
 
-    Column() {
+    Column {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = windowInsets.leftDp.dp, end = windowInsets.rightDp.dp)
         ) {
             item {
-                Column() {
+                Column {
                     Spacer(modifier = Modifier.height(windowInsets.topDp.dp))
                     downloadInfo?.let {
                         DownloadListItem(curDownload, it, onClick = {})
@@ -255,6 +257,4 @@ internal fun DownloadDetailPageContent(
             }
         }
     }
-
 }
-

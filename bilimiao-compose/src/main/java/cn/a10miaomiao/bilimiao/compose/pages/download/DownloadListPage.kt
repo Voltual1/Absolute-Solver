@@ -18,7 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
@@ -38,28 +38,29 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class DownloadListPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: DownloadListPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<DownloadListPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         DownloadListPageContent(viewModel)
     }
 
 }
 
-internal class DownloadListPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+class DownloadListPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     var downloadListVersion = 0
     val downloadList = MutableStateFlow(emptyList<BiliDownloadEntryAndPathInfo>())
@@ -71,7 +72,7 @@ internal class DownloadListPageViewModel(
     }
 
     private fun loadDownloadList() = viewModelScope.launch {
-        val service = DownloadService.getService(fragment.requireContext())
+        val service = DownloadService.getService(context)
         downloadPath = service.getDownloadPath()
         _loadDownloadList(service)
         launch {
@@ -193,20 +194,17 @@ internal class DownloadListPageViewModel(
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = uri
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        fragment.requireContext().startActivity(intent)
+        context.startActivity(intent)
     }
 
     fun copyDownloadPathToClipboard() {
-        val context = fragment.requireContext()
         val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboardManager.setPrimaryClip(ClipData.newPlainText("", downloadPath))
-        // 安卓13(33)以上操作剪切板会自动提示，无需手动toast
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2){
             PopTip.show("已复制路径到剪切板")
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,7 +223,7 @@ internal fun DownloadListPageContent(
             }
         }
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -253,14 +251,14 @@ internal fun DownloadListPageContent(
             onDismissRequest = { showHelpDialog = false },
             title = { Text(text = "下载路径") },
             text = {
-                Column() {
+                Column {
                     Text(text = "视频下载文件夹为：${downloadPath}")
                     Text(text = "目录结构与B站官方客户端保持一致，可与B站官方客户端相互复制缓存文件")
                     Text(text = "如需导出视频文件可使用BiliDownOut导出")
                 }
             },
             confirmButton = {
-                Row() {
+                Row {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
                         TextButton(
                             onClick = {
@@ -290,7 +288,6 @@ internal fun DownloadListPageContent(
             }
         )
     }
-
 
     LazyColumn(
         modifier = Modifier
@@ -349,6 +346,4 @@ internal fun DownloadListPageContent(
             Spacer(modifier = Modifier.height(windowInsets.bottomDp.dp + bottomAppBarHeight.dp))
         }
     }
-
 }
-

@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.download
 
+import android.content.Context
 import android.preference.PreferenceManager
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.background
@@ -15,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
@@ -28,8 +28,6 @@ import cn.a10miaomiao.bilimiao.download.DownloadService
 import cn.a10miaomiao.bilimiao.download.entry.BiliDownloadEntryInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
 import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.EpisodeInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonSectionInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonV2Info
@@ -43,10 +41,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
 
 @Serializable
 class DownloadBangumiCreatePage(
@@ -55,7 +52,7 @@ class DownloadBangumiCreatePage(
 
     @Composable
     override fun Content() {
-        val viewModel: DownloadBangumiCreatePageViewModel = diViewModel()
+        val viewModel = koinViewModel<DownloadBangumiCreatePageViewModel>()
         LaunchedEffect(id) {
             viewModel.loadEpisodeList(id)
         }
@@ -64,11 +61,9 @@ class DownloadBangumiCreatePage(
 
 }
 
-internal class DownloadBangumiCreatePageViewModel(
-    override val di: DI
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
+class DownloadBangumiCreatePageViewModel(
+    private val context: Context,
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
     val listState = MutableStateFlow(LazyListState(0, 0))
@@ -76,21 +71,18 @@ internal class DownloadBangumiCreatePageViewModel(
 
     val acceptQuality = MutableStateFlow(QualityInfo())
 
-    val checkedSet = MutableStateFlow(setOf<String>()) // 已选中
-    val downloadedSet = MutableStateFlow(setOf<String>()) // 已下载
+    val checkedSet = MutableStateFlow(setOf<String>())
+    val downloadedSet = MutableStateFlow(setOf<String>())
 
     private var _sid = ""
     private var _seasonDetail: SeasonV2Info? = null
 
-    /**
-     * 剧集信息
-     */
     fun loadEpisodeList(
         id: String
     ) = viewModelScope.launch(Dispatchers.IO) {
         _sid = id
-        val downloadService = DownloadService.getService(fragment.requireContext())
-        getDowbloadedList(downloadService, id)
+        val downloadService = DownloadService.getService(context)
+        getDownloadedList(downloadService, id)
         loadBangumiDetail(id)
         try {
             list.loading.value = true
@@ -113,7 +105,6 @@ internal class DownloadBangumiCreatePageViewModel(
             list.loading.value = false
             isRefreshing.value = false
         }
-
     }
 
     private fun loadAcceptQuality(
@@ -121,7 +112,7 @@ internal class DownloadBangumiCreatePageViewModel(
         cid: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(fragment.requireContext())
+            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             val quality = prefs.getInt("player_quality", 64)
             val res = BiliApiService.playerAPI.getBangumiUrl(
                 epId, cid, quality, fnval = 4048
@@ -136,7 +127,7 @@ internal class DownloadBangumiCreatePageViewModel(
         }
     }
 
-    private fun getDowbloadedList(
+    private fun getDownloadedList(
         downloadService: DownloadService,
         sid: String,
     ) {
@@ -206,7 +197,7 @@ internal class DownloadBangumiCreatePageViewModel(
             return
         }
         viewModelScope.launch {
-            val downloadService = DownloadService.getService(fragment.requireContext())
+            val downloadService = DownloadService.getService(context)
             episodeList.forEachIndexed { index, item ->
                 if (checkedList.contains(item.id)) {
                     createDownload(index, item, downloadService)
@@ -216,7 +207,7 @@ internal class DownloadBangumiCreatePageViewModel(
                 PopTip.show("成功创建${checkedList.size}条记录")
             }
             checkedSet.value = emptySet()
-            getDowbloadedList(downloadService, _sid)
+            getDownloadedList(downloadService, _sid)
         }
     }
 
@@ -365,18 +356,13 @@ internal fun EpisodeItem(
 internal fun DownloadBangumiCreatePageContent(
     viewModel: DownloadBangumiCreatePageViewModel,
 ) {
-    val userStore: UserStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
-    val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
     val windowInsets = windowState.getContentInsets(localContainerView())
 
-    val viewModel: DownloadBangumiCreatePageViewModel = diViewModel()
     val list by viewModel.list.data.collectAsState()
     val listLoading by viewModel.list.loading.collectAsState()
-    val listFinished by viewModel.list.finished.collectAsState()
     val listFail by viewModel.list.fail.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val acceptQuality by viewModel.acceptQuality.collectAsState()
     val checkedSet by viewModel.checkedSet.collectAsState()
@@ -458,7 +444,7 @@ internal fun DownloadBangumiCreatePageContent(
                 )
                 .padding(5.dp)
         ) {
-            Box() {
+            Box {
                 Button(
                     modifier = Modifier.padding(end = 5.dp),
                     onClick = { expandedQualityMenu = true },
@@ -492,5 +478,4 @@ internal fun DownloadBangumiCreatePageContent(
             Spacer(modifier = Modifier.height(windowInsets.bottomDp.dp + 10.dp))
         }
     }
-
 }
