@@ -29,7 +29,6 @@ import bilibili.app.dynamic.v2.OpusItem
 import bilibili.app.dynamic.v2.Paragraph
 import bilibili.app.dynamic.v2.PicParagraph
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
@@ -196,11 +195,12 @@ private fun DynamicDetailPageDetailContent(
     detailData: OpusItem,
 ) {
     val oid = detailData.oid.toString()
-    val replyViewModel = diViewModel(
-        key = "dynamic.reply.${oid}"
-    ) {
-        MainReplyViewModel(it, oid, type = 11)
-    }
+    val replyViewModel: MainReplyViewModel = koinViewModel(
+        key = "dynamic.reply.${oid}",
+        parameters = {
+            parametersOf(oid, 11, "", "")
+        }
+    )
 
     val origName = detailData.extend?.origName
     PageConfig(
