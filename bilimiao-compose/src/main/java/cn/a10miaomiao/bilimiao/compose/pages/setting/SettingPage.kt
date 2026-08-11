@@ -1,11 +1,9 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
+import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,11 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -43,10 +38,7 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
 
 @Serializable
 class SettingPage : ComposePage() {
@@ -59,15 +51,13 @@ class SettingPage : ComposePage() {
 }
 
 private class SettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     fun openUrl(url: String) {
         BiliUrlMatcher.toUrlLink(
-            fragment.requireActivity(),
+            context,
             url,
         )
     }
@@ -77,10 +67,11 @@ private class SettingPageViewModel(
     }
 
     fun toDipSettingPage() {
-        val activity = fragment.requireActivity()
-        val className = "com.a10miaomiao.bilimiao.activity.DensitySettingActivity";
-        val intent = Intent(activity, Class.forName(className))
-        activity.startActivity(intent)
+        val className = "com.a10miaomiao.bilimiao.activity.DensitySettingActivity"
+        val intent = Intent(context, Class.forName(className)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
     }
 
     fun toHomeSettingPage() {
@@ -108,7 +99,6 @@ private class SettingPageViewModel(
     }
 }
 
-
 @Composable
 private fun SettingPageContent(
     viewModel: SettingPageViewModel
@@ -116,8 +106,8 @@ private fun SettingPageContent(
     PageConfig(
         title = "设置"
     )
-    val windowStore: WindowStore by rememberInstance()
-    val userStore: UserStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
+    val userStore = koinInject<UserStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val userState = userStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())

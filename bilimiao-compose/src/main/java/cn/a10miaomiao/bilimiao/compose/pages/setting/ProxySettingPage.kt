@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,9 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -27,10 +26,7 @@ import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
 
 @Serializable
 class ProxySettingPage : ComposePage() {
@@ -42,17 +38,16 @@ class ProxySettingPage : ComposePage() {
     }
 
 }
-private class ProxySettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
 
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
+private class ProxySettingPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val serverList = MutableStateFlow(emptyList<ProxyServerInfo>())
 
     fun readServerList() {
-        serverList.value = ProxyHelper.serverList(fragment.requireContext())
+        serverList.value = ProxyHelper.serverList(context)
     }
 
     fun toAddPage() {
@@ -75,7 +70,7 @@ private fun ProxySettingPageContent(
     PageConfig(
         title = "区域限制\n-\n代理设置"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
     val bottomAppBarHeight = windowStore.bottomAppBarHeightDp
@@ -157,6 +152,6 @@ private fun ProxySettingPageContent(
                     }
                 }
             }
-        } // LazyColumn
+        }
     }
 }
