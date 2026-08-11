@@ -28,6 +28,10 @@ import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicDetailPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.dynamic.DynamicOpusPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContentViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserBangumiPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserFollowPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserLikeArchivePageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.user.UserMedialistPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -64,6 +68,18 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 User 模块二级子页面 ViewModel
+    viewModel { (mid: String) ->
+        UserBangumiPageViewModel(vmid = mid, pageNavigation = get())
+    }
+    viewModelOf(::UserFollowPageViewModel)
+    viewModel { (mid: String) ->
+        UserLikeArchivePageViewModel(vmid = mid, pageNavigation = get())
+    }
+    viewModel { (mid: String, defaultMedia: UserMedialistPageViewModel.OpenedMediaInfo?) ->
+        UserMedialistPageViewModel(mid = mid, defaultMedia = defaultMedia)
+    }
 
     // 注册 Community Reply 模块 ViewModel
     viewModel { (oid: String, type: Int, extra: String, filterTagName: String) ->

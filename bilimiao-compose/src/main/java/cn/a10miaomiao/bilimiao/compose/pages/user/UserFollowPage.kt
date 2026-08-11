@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
-import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,11 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
@@ -30,7 +27,6 @@ import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.components.user.UserInfoCard
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
@@ -42,11 +38,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
-
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class UserFollowPage(
@@ -55,7 +49,7 @@ class UserFollowPage(
 
     @Composable
     override fun Content() {
-        val viewModel = diViewModel<UserFollowPageViewModel>()
+        val viewModel: UserFollowPageViewModel = koinViewModel()
         val mid = id
         LaunchedEffect(mid) {
             viewModel.mid = mid
@@ -64,14 +58,10 @@ class UserFollowPage(
     }
 }
 
-private class UserFollowPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val activity by instance<Activity>()
-    private val userStore by instance<UserStore>()
+internal class UserFollowPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     var mid = "0"
         set(value) {
@@ -217,8 +207,8 @@ private class UserFollowPageViewModel(
 private fun UserFollowPageContent(
     viewModel: UserFollowPageViewModel,
 ) {
-    val userStore: UserStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val userStore: UserStore = koinInject()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(LocalView.current)
 

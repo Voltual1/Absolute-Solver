@@ -1,8 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,13 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,23 +27,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.R
-import cn.a10miaomiao.bilimiao.compose.assets.BilimiaoIcons
-import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.Common
-import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menufold
-import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menuunfold
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -60,13 +43,9 @@ import cn.a10miaomiao.bilimiao.compose.components.list.SwipeToRefresh
 import cn.a10miaomiao.bilimiao.compose.components.miao.MiaoCard
 import cn.a10miaomiao.bilimiao.compose.pages.user.components.TitleBar
 import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserMedialistDetailContent
-import com.a10miaomiao.bilimiao.comm.entity.ItemAndCountInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.archive.SeriesInfo
 import com.a10miaomiao.bilimiao.comm.entity.archive.SeriesListInfo
-import com.a10miaomiao.bilimiao.comm.entity.comm.PaginationInfo
-import com.a10miaomiao.bilimiao.comm.entity.media.MediaListV2Info
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.utils.UrlUtil
@@ -80,10 +59,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class UserMedialistPage(
@@ -102,18 +80,18 @@ data class UserMedialistPage(
                 title = bizTitle
             )
         } else null
-        val viewModel: UserMedialistPageViewModel = diViewModel(key = mid) {
-            UserMedialistPageViewModel(it, mid, defaultMedia)
-        }
+        val viewModel: UserMedialistPageViewModel = koinViewModel(
+            key = mid,
+            parameters = { parametersOf(mid, defaultMedia) }
+        )
         UserMedialistPageContent(viewModel)
     }
 }
 
-private class UserMedialistPageViewModel(
-    override val di: DI,
+internal class UserMedialistPageViewModel(
     val mid: String,
     val defaultMedia: OpenedMediaInfo?,
-) : ViewModel(), DIAware {
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
     val list = FlowPaginationInfo<SeriesInfo>()
@@ -215,7 +193,7 @@ private class UserMedialistPageViewModel(
 private fun UserMedialistPageContent(
     viewModel: UserMedialistPageViewModel,
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
