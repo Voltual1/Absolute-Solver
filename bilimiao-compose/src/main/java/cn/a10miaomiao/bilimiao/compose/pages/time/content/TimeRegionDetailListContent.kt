@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.time.content
 
-import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -13,10 +12,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -40,20 +37,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class TimeRegionDetailListContentViewModel(
-    override val di: DI,
+internal class TimeRegionDetailListContentViewModel(
     private val rid: Int,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-
-    private val timeSettingStore: TimeSettingStore by instance()
-    private val filterStore: FilterStore by instance()
+    private val pageNavigation: PageNavigation,
+    private val timeSettingStore: TimeSettingStore,
+    private val filterStore: FilterStore,
+) : ViewModel() {
 
     var timeFrom = DateModel()
     var timeTo = DateModel()
@@ -165,14 +158,15 @@ private class TimeRegionDetailListContentViewModel(
 fun TimeRegionDetailListContent(
     rid: Int,
 ) {
-    val viewModel = diViewModel(key = rid.toString()) {
-        TimeRegionDetailListContentViewModel(it, rid)
-    }
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: TimeRegionDetailListContentViewModel = koinViewModel(
+        key = rid.toString(),
+        parameters = { parametersOf(rid) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
-    val timeSettingStore: TimeSettingStore by rememberInstance()
+    val timeSettingStore: TimeSettingStore = koinInject()
     val timeState by timeSettingStore.stateFlow.collectAsState()
     LaunchedEffect(timeState) {
         if (

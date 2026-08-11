@@ -23,12 +23,9 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.flow.stateMap
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -39,15 +36,13 @@ import cn.a10miaomiao.bilimiao.compose.pages.time.content.TimeRegionDetailListCo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
-import com.a10miaomiao.bilimiao.comm.store.FilterStore
 import com.a10miaomiao.bilimiao.comm.store.TimeSettingStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class TimeRegionDetailPage(
@@ -60,30 +55,23 @@ data class TimeRegionDetailPage(
 
     @Composable
     override fun Content() {
-        val viewModel: TimeRegionDetailPageViewModel = diViewModel {
-            TimeRegionDetailPageViewModel(
-                it, tid, name, childIds, childNames, initialIndex
-            )
-        }
-//        LaunchedEffect(initialIndex) {
-//            viewModel.setPageIndex(initialIndex)
-//        }
+        val viewModel: TimeRegionDetailPageViewModel = koinViewModel(
+            parameters = { parametersOf(tid, name, childIds, childNames, initialIndex) }
+        )
         TimeRegionDetailPageContent(viewModel)
     }
 
 }
 
-private class TimeRegionDetailPageViewModel(
-    override val di: DI,
+internal class TimeRegionDetailPageViewModel(
     val tid: Int,
     val name: String,
     val childIds: List<Int>,
     val childNames: List<String>,
     val initialIndex: Int,
-) : ViewModel(), DIAware {
-
-    private val timeSettingStore: TimeSettingStore by instance()
-    private val bottomSheetState by instance<BottomSheetState>()
+    private val timeSettingStore: TimeSettingStore,
+    private val bottomSheetState: BottomSheetState,
+) : ViewModel() {
 
     val timeText = timeSettingStore.stateFlow.stateMap {
         "${it.timeFrom.getValue("-")}\n至\n${it.timeTo.getValue("-")}"
@@ -170,7 +158,7 @@ private fun TimeRegionDetailPageContent(
         onMenuItemClick = viewModel::menuItemClick,
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

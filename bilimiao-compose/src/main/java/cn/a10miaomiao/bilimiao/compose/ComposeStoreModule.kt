@@ -15,6 +15,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterTagListContent
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterUpperListContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.filter.content.FilterWordListContentModel
 import cn.a10miaomiao.bilimiao.compose.pages.web.WebPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.time.TimeRegionDetailPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.time.content.TimeRegionDetailListContentViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.setting.*
 import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.time.TimeSettingViewMode
@@ -53,6 +55,28 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 Time 模块 ViewModel
+    viewModel { (tid: Int, name: String, childIds: List<Int>, childNames: List<String>, initialIndex: Int) ->
+        TimeRegionDetailPageViewModel(
+            tid = tid,
+            name = name,
+            childIds = childIds,
+            childNames = childNames,
+            initialIndex = initialIndex,
+            timeSettingStore = get(),
+            bottomSheetState = get()
+        )
+    }
+
+    viewModel { (rid: Int) ->
+        TimeRegionDetailListContentViewModel(
+            rid = rid,
+            pageNavigation = get(),
+            timeSettingStore = get(),
+            filterStore = get()
+        )
+    }
 
     // 注册 WebPageViewModel
     viewModel { (url: String) ->
