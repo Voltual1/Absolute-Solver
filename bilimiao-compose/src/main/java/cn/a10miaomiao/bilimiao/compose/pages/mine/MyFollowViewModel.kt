@@ -1,7 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.mine
 
-import android.app.Activity
-import androidx.fragment.app.Fragment
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
@@ -22,18 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 
 internal class MyFollowViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val activity by instance<Activity>()
-    private val userStore by instance<UserStore>()
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val count = MutableStateFlow(1)
     val isRefreshing = MutableStateFlow(false)
@@ -154,9 +147,7 @@ internal class MyFollowViewModel(
                 .json<MessageInfo>()
             if (res.isSuccess) {
                 PopTip.show("操作成功")
-                // 刷新分组数量
                 loadData()
-                // 分组列表操作
                 val originTagIds = user.tag ?: listOf(0)
                 val updateItem = user.copy(
                     tag = tagIds

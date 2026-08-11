@@ -1,11 +1,8 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/community/MainReplyViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.community
 
-import android.content.Context
 import android.view.View
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.main.community.reply.v1.ReplyInfo
@@ -19,11 +16,9 @@ import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.community.components.ReplyEditDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpacePage
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
-import com.a10miaomiao.bilimiao.comm.entity.comm.PaginationInfo
 import com.a10miaomiao.bilimiao.comm.entity.video.VideoCommentReplyInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
-import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.UserStore
@@ -35,24 +30,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.comments.CommentsExtractor
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem
 
 class MainReplyViewModel(
-    override val di: DI,
     val oid: String,
     val type: Int,
     val extra: String = "",
     val filterTagName: String = "",
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    private val messageDialog: MessageDialogState by instance()
-    private val userStore: UserStore by instance()
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val editDialogState = ReplyEditDialogState(
         scope = viewModelScope,
@@ -104,7 +94,6 @@ class MainReplyViewModel(
             val isLoadMore = _nextPage != null || list.data.value.isNotEmpty()
 
             val commentsPage = if (!isLoadMore) {
-                // 构建符合 Extractor 查询格式的 WEB 端评论 URL
                 val url = "https://api.bilibili.com/x/v2/reply/wbi/main?oid=$oid&type=$type&mode=${sortOrder.value}"
                 val linkHandler = ServiceList.BiliBili.commentsLHFactory.fromUrl(url)
                 val currentExtractor = ServiceList.BiliBili.getCommentsExtractor(linkHandler)
@@ -128,7 +117,6 @@ class MainReplyViewModel(
             val items = commentsPage?.items?.map { it.toReplyInfo() } ?: emptyList()
             val listData = list.data.value.toMutableList()
 
-            // 过滤重复的评论并追加至列表
             val replies = items.filter { i1 ->
                 listData.indexOfFirst { i2 -> i1.id == i2.id } == -1
             }
@@ -281,7 +269,6 @@ class MainReplyViewModel(
 
     fun isLogin() = userStore.isLogin()
 
-
     fun toUserPage(mid: String) {
         pageNavigation.navigate(UserSpacePage(
             id = mid,
@@ -307,7 +294,6 @@ class MainReplyViewModel(
         }
     }
 
-    // 辅助转换方法：CommentsInfoItem -> ReplyInfo
     private fun CommentsInfoItem.toReplyInfo(): ReplyInfo {
         val rpid = this.commentId.toLongOrNull() ?: 0L
         val memberMid = this.uploaderUrl?.let { url ->
