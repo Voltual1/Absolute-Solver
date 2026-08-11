@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
+import android.content.Context
 import android.content.Intent
 import android.preference.PreferenceManager
 import androidx.compose.animation.AnimatedContentScope
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
@@ -41,10 +41,7 @@ import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
 
 @Serializable
 class FlagsSettingPage : ComposePage() {
@@ -56,25 +53,21 @@ class FlagsSettingPage : ComposePage() {
     }
 }
 
-private class FlagsSettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
+class FlagsSettingPageViewModel(
+    private val context: Context,
+) : ViewModel() {
 
     val isShowRebootAppDialog = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
-            val ctx = fragment.requireContext()
-            val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             SettingPreferences.run {
-                ctx.dataStore.data.map {
+                context.dataStore.data.map {
                     it[FlagSubContentShow] ?: false
                 }.distinctUntilChanged()
             }.drop(1).collect {
                 showRebootAppDialog()
-                // DataStore无法同步读取，故另存一份到SharedPreferences
                 prefs.edit {
                     putBoolean(SettingConstants.FLAGS_SUB_CONTENT_SHOW, it)
                 }
@@ -83,12 +76,11 @@ private class FlagsSettingPageViewModel(
     }
 
     fun rebootApp() {
-        val ctx = fragment.requireContext()
-        val packageManager = ctx.packageManager
-        val intent = packageManager.getLaunchIntentForPackage(ctx.packageName)!!
+        val packageManager = context.packageManager
+        val intent = packageManager.getLaunchIntentForPackage(context.packageName)!!
         val componentName = intent.component
         val mainIntent = Intent.makeRestartActivityTask(componentName)
-        ctx.startActivity(mainIntent)
+        context.startActivity(mainIntent)
         Runtime.getRuntime().exit(0)
     }
 
@@ -101,7 +93,6 @@ private class FlagsSettingPageViewModel(
     }
 }
 
-
 @Composable
 private fun FlagsSettingPageContent(
     viewModel: FlagsSettingPageViewModel
@@ -109,7 +100,7 @@ private fun FlagsSettingPageContent(
     PageConfig(
         title = "实验性功能"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

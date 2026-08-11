@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
@@ -32,10 +31,7 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.listPreference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
 
 @Serializable
 class HomeSettingPage : ComposePage() {
@@ -47,11 +43,7 @@ class HomeSettingPage : ComposePage() {
     }
 }
 
-private class HomeSettingPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
+class HomeSettingPageViewModel : ViewModel() {
 
     val entryViews = mapOf(
         SettingConstants.HOME_ENTRY_VIEW_DEFAULT to "默认",
@@ -61,7 +53,6 @@ private class HomeSettingPageViewModel(
 
 }
 
-
 @Composable
 private fun HomeSettingPageContent(
     viewModel: HomeSettingPageViewModel
@@ -69,7 +60,7 @@ private fun HomeSettingPageContent(
     PageConfig(
         title = "首页设置"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

@@ -29,10 +29,7 @@ import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
 
 @Serializable
 class AutoStopTimerPage : ComposePage() {
@@ -44,11 +41,9 @@ class AutoStopTimerPage : ComposePage() {
     }
 }
 
-private class AutoStopTimerPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val playerStore: PlayerStore by di.instance()
+class AutoStopTimerPageViewModel(
+    private val playerStore: PlayerStore,
+) : ViewModel() {
 
     val autoStopDurationFlow = playerStore.autoStopDurationFlow
 
@@ -56,7 +51,6 @@ private class AutoStopTimerPageViewModel(
         playerStore.setAutoStopDuration(duration)
     }
 }
-
 
 @Composable
 private fun AutoStopTimerPageContent(
@@ -66,7 +60,7 @@ private fun AutoStopTimerPageContent(
         title = "定时关闭"
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -85,7 +79,6 @@ private fun AutoStopTimerPageContent(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        // 当前设置标签
         Text(
             text = "当前设置",
             style = MaterialTheme.typography.bodyMedium,
@@ -94,7 +87,6 @@ private fun AutoStopTimerPageContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 当前值显示
         Text(
             text = formatDuration(autoStopDuration),
             style = MaterialTheme.typography.headlineLarge,
@@ -103,7 +95,6 @@ private fun AutoStopTimerPageContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 滑块
         Slider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
@@ -117,7 +108,6 @@ private fun AutoStopTimerPageContent(
                 .padding(horizontal = 24.dp)
         )
 
-        // 滑块说明
         Text(
             text = "0 - 60 分钟",
             style = MaterialTheme.typography.bodySmall,
@@ -127,7 +117,6 @@ private fun AutoStopTimerPageContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 快捷按钮区域
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -168,7 +157,6 @@ private fun AutoStopTimerPageContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 提示文字
         Text(
             text = "定时关闭会在视频播放达到指定时长后自动暂停",
             style = MaterialTheme.typography.bodySmall,
