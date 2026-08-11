@@ -1,20 +1,13 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserArchiveViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
-import android.net.Uri
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.archive.ArchiveCursorInfo
 import com.a10miaomiao.bilimiao.comm.entity.archive.ArchiveInfo
 import com.a10miaomiao.bilimiao.comm.entity.archive.SeriesInfo
 import com.a10miaomiao.bilimiao.comm.entity.archive.SeriesListInfo
-import com.a10miaomiao.bilimiao.comm.entity.user.SpaceInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliApiService
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.kongzue.dialogx.dialogs.PopTip
@@ -23,19 +16,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliChannelExtractor
 
 class UserArchiveViewModel(
-    override val di: DI,
-    private val vmid: String,
-) : ViewModel(), DIAware {
-
-    val fragment: Fragment by instance()
-    private val pageNavigation by instance<PageNavigation>()
+    val vmid: String,
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     var rankOrder = MutableStateFlow("pubdate")
 
@@ -68,7 +55,6 @@ class UserArchiveViewModel(
             list.loading.value = true
             
             val infoItemsPage = if (!isLoadMore) {
-                // 构建 Extractor 空间投稿流加载器
                 val url = "https://space.bilibili.com/$vmid"
                 val linkHandler = ServiceList.BiliBili.channelLHFactory.fromUrl(url)
                 val currentExtractor = BilibiliChannelExtractor(ServiceList.BiliBili, linkHandler)
@@ -89,9 +75,7 @@ class UserArchiveViewModel(
                 }
             }
 
-            // 将 Extractor 获取的 StreamInfoItem 转换为原本 UI 渲染所需要的 ArchiveInfo
             val items: List<ArchiveInfo> = infoItemsPage?.items?.map { item ->
-                // 解析 param (BV号或AV号)
                 val param = if (item.url.contains("/video/BV", ignoreCase = true)) {
                     item.url.split("/video/").last().split("?").first()
                 } else {
@@ -189,7 +173,6 @@ class UserArchiveViewModel(
         }
     }
 
-
     fun toSeriesList() {
         pageNavigation.navigate(UserMedialistPage(vmid))
     }
@@ -206,5 +189,4 @@ class UserArchiveViewModel(
     fun toVideoDetail(item: ArchiveInfo) {
         pageNavigation.navigateToVideoInfo(item.param)
     }
-
 }

@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpaceViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 import android.content.ClipData
@@ -6,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -17,10 +15,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.bangumi.BangumiDetailPage
 import cn.a10miaomiao.bilimiao.compose.pages.mine.MyBangumiPage
 import cn.a10miaomiao.bilimiao.compose.pages.mine.MyFollowPage
 import cn.a10miaomiao.bilimiao.compose.pages.web.WebPage
-import com.a10miaomiao.bilimiao.comm.apis.UserApi
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
-import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
 import com.a10miaomiao.bilimiao.comm.entity.user.SpaceInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
@@ -35,23 +30,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliChannelExtractor
 
 class UserSpaceViewModel(
-    override val di: DI,
     val vmid: String,
     val archiveViewModel: UserArchiveViewModel,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val messageDialog by instance<MessageDialogState>()
-    val activity: AppCompatActivity by instance()
-    val userStore: UserStore by instance()
-    val filterStore: FilterStore by instance()
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+    val userStore: UserStore,
+    val filterStore: FilterStore,
+) : ViewModel() {
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> get() = _loading
@@ -70,7 +60,6 @@ class UserSpaceViewModel(
 
     val isSelf get() = userStore.isSelf(vmid)
 
-    // 已移除 Index 标签
     val tabs = listOf(
         UserSpacePageTabs.Dynamic(vmid),
         UserSpacePageTabs.Archive(archiveViewModel),
@@ -103,7 +92,6 @@ class UserSpaceViewModel(
             val extractor = BilibiliChannelExtractor(ServiceList.BiliBili, linkHandler)
             extractor.fetchPage()
 
-            // 映射所有字段，确保获赞、关注、等级正确显示
             val card = SpaceInfo.CardInfo(
                 approve = false,
                 article = 0,
@@ -251,9 +239,9 @@ class UserSpaceViewModel(
         when (item.key) {
             1 -> filterUpperDelete()
             2 -> filterUpperAdd()
-            3 -> BiliUrlMatcher.toUrlLink(activity, getUserSpaceUrl())
+            3 -> BiliUrlMatcher.toUrlLink(context, getUserSpaceUrl())
             4 -> {
-                val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("url", getUserSpaceUrl()))
                 PopTip.show("已复制：${getUserSpaceUrl()}")
             }
@@ -263,8 +251,11 @@ class UserSpaceViewModel(
                     action = Intent.ACTION_SEND
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, "${info?.card?.name} ${getUserSpaceUrl()}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                activity.startActivity(Intent.createChooser(shareIntent, "分享"))
+                context.startActivity(Intent.createChooser(shareIntent, "分享").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
             }
             11, 12 -> archiveViewModel.changeRankOrder(item.action ?: "")
             MenuKeys.follow -> attention()
