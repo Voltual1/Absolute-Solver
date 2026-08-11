@@ -26,20 +26,25 @@ import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
-import org.koin.compose.koinInject
+import org.kodein.di.compose.rememberInstance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class ProxySettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: ProxySettingPageViewModel = diViewModel()
+        val pageNavigation by rememberInstance<PageNavigation>()
+        val viewModel = koinViewModel<ProxySettingPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         ProxySettingPageContent(viewModel)
     }
 
 }
 
-private class ProxySettingPageViewModel(
+class ProxySettingPageViewModel(
     private val context: Context,
     private val pageNavigation: PageNavigation,
 ) : ViewModel() {

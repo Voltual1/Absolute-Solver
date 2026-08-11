@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,19 +39,25 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
+import org.kodein.di.compose.rememberInstance
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class SettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: SettingPageViewModel = diViewModel()
+        val pageNavigation by rememberInstance<PageNavigation>()
+        val viewModel = koinViewModel<SettingPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         SettingPageContent(viewModel)
     }
 }
 
-private class SettingPageViewModel(
+class SettingPageViewModel(
     private val context: Context,
     private val pageNavigation: PageNavigation,
 ) : ViewModel() {

@@ -33,20 +33,26 @@ import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.serialization.Serializable
+import org.kodein.di.compose.rememberInstance
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class ThemeSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: ThemeSettingPageViewModel = diViewModel()
+        val pageNavigation by rememberInstance<PageNavigation>()
+        val viewModel = koinViewModel<ThemeSettingPageViewModel>(
+            parameters = { parametersOf(pageNavigation) }
+        )
         ThemeSettingPageContent(viewModel)
     }
 
 }
 
-private class ThemeSettingPageViewModel(
+class ThemeSettingPageViewModel(
     private val appStore: AppStore,
     private val pageNavigation: PageNavigation,
 ) : ViewModel() {

@@ -13,33 +13,27 @@ import org.koin.dsl.module
 val composeStoreModule = module {
     viewModelOf(::SearchInputViewModel)
 
-    // 注册 ProxySettingPageViewModel
-    viewModel {
+    // 声明接收动态 PageNavigation 实例化
+    viewModel { (pageNavigation: PageNavigation) ->
         ProxySettingPageViewModel(
             context = get(),
-            pageNavigation = org.kodein.di.DirectDI(
-                (get() as android.content.Context).let { (it as com.a10miaomiao.bilimiao.MainActivity).di }
-            ).instance()
+            pageNavigation = pageNavigation
         )
     }
 
-    // 注册 SettingPageViewModel
-    viewModel {
+    // 声明接收动态 PageNavigation 实例化
+    viewModel { (pageNavigation: PageNavigation) ->
         SettingPageViewModel(
             context = get(),
-            pageNavigation = org.kodein.di.DirectDI(
-                (get() as android.content.Context).let { (it as com.a10miaomiao.bilimiao.MainActivity).di }
-            ).instance()
+            pageNavigation = pageNavigation
         )
     }
 
-    // 注册 ThemeSettingPageViewModel
-    viewModel {
+    // 声明接收动态 PageNavigation 实例化
+    viewModel { (pageNavigation: PageNavigation) ->
         ThemeSettingPageViewModel(
             appStore = get(),
-            pageNavigation = org.kodein.di.DirectDI(
-                (get() as android.content.Context).let { (it as com.a10miaomiao.bilimiao.MainActivity).di }
-            ).instance()
+            pageNavigation = pageNavigation
         )
     }
     
