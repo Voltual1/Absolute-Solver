@@ -15,6 +15,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouriteViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.user.content.UserFavouriteDetailViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.MyFollowViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.mine.content.TagFollowContentModel
+import cn.a10miaomiao.bilimiao.compose.pages.mine.HistoryPageViewModel
+import cn.a10miaomiao.bilimiao.compose.pages.mine.WatchLaterPageViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.video.*
 import cn.a10miaomiao.bilimiao.compose.pages.bangumi.*
 import cn.a10miaomiao.bilimiao.compose.pages.community.MainReplyViewModel
@@ -134,6 +136,21 @@ val composeStoreModule = module {
             pageNavigation = get(),
             userStore = get(),
             myFollowViewModel = myFollowViewModel
+        )
+    }
+
+    // 注册 HistoryPageViewModel
+    viewModelOf(::HistoryPageViewModel)
+
+    // 注册 WatchLaterPageViewModel
+    viewModel {
+        WatchLaterPageViewModel(
+            pageNavigation = get(),
+            messageDialog = get(),
+            playListStore = get(),
+            playerStore = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            userLibraryStore = get()
         )
     }
 

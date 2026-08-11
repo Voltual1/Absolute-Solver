@@ -59,7 +59,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.Navigation
@@ -70,7 +69,6 @@ import bilibili.app.interfaces.v1.HistoryGRPC
 import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -118,35 +116,31 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class HistoryPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: HistoryPageViewModel = diViewModel()
+        val viewModel: HistoryPageViewModel = koinViewModel()
         BoxWithConstraints {
             HistoryPageContent(viewModel, maxWidth)
         }
     }
 }
 
-private class HistoryPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
+internal class HistoryPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+) : ViewModel() {
 
     @Stable
     class HistoryItem(
         val localDate: LocalDate,
         val item: CursorItem?, // 数据为空时表示为日期分割线
     )
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val messageDialog by instance<MessageDialogState>()
 
     var keyword = ""
 
@@ -365,8 +359,7 @@ private fun HistoryPageContent(
     viewModel: HistoryPageViewModel,
     pageWidth: Dp,
 ) {
-
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

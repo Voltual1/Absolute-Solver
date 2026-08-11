@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -36,9 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.app.interfaces.v1.CursorItem
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -55,12 +55,8 @@ import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.delegate.player.VideoPlayerSource
 import com.a10miaomiao.bilimiao.comm.entity.MessageInfo
 import com.a10miaomiao.bilimiao.comm.entity.ResponseData
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.comm.PaginationInfo
 import com.a10miaomiao.bilimiao.comm.entity.history.ToViewInfo
 import com.a10miaomiao.bilimiao.comm.entity.history.ToViewItemInfo
-import com.a10miaomiao.bilimiao.comm.entity.media.MediasInfo
-import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
@@ -75,33 +71,28 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class WatchLaterPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: WatchLaterPageViewModel = diViewModel()
+        val viewModel: WatchLaterPageViewModel = koinViewModel()
         WatchLaterPageContent(viewModel)
     }
 }
 
-private class WatchLaterPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val messageDialog by instance<MessageDialogState>()
-    private val playListStore by instance<PlayListStore>()
-    private val playerStore by instance<PlayerStore>()
-    private val playerDelegate by instance<BasePlayerDelegate>()
-    private val userLibraryStore by instance<UserLibraryStore>()
+internal class WatchLaterPageViewModel(
+    private val pageNavigation: PageNavigation,
+    private val messageDialog: MessageDialogState,
+    private val playListStore: PlayListStore,
+    private val playerStore: PlayerStore,
+    private val playerDelegate: BasePlayerDelegate,
+    private val userLibraryStore: UserLibraryStore,
+) : ViewModel() {
 
     private var nextKey = ""
 
@@ -446,7 +437,7 @@ private fun WatchLaterPageContent(
         }
     )
 
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
