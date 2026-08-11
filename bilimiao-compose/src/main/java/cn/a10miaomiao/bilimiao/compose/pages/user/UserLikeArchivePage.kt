@@ -148,17 +148,18 @@ private fun UserLikeArchivePageContent(
             columns = GridCells.Adaptive(300.dp),
             contentPadding = windowInsets.toPaddingValues()
         ) {
-            items(list) {
+            items(list.size, key = { list[it].param }) { index ->
+                val item = list[index]
                 VideoItemBox(
                     modifier = Modifier.padding(10.dp),
-                    title = it.title,
-                    pic = it.cover,
-                    playNum = it.play,
-                    damukuNum = it.danmaku,
-                    remark = NumberUtil.converCTime(it.ctime),
-                    duration = NumberUtil.converDuration(it.duration),
+                    title = item.title,
+                    pic = item.cover,
+                    playNum = item.play,
+                    damukuNum = item.danmaku,
+                    remark = NumberUtil.converCTime(item.ctime),
+                    duration = NumberUtil.converDuration(item.duration),
                     onClick = {
-                        viewModel.toVideoDetail(it)
+                        viewModel.toVideoDetail(item)
                     }
                 )
             }

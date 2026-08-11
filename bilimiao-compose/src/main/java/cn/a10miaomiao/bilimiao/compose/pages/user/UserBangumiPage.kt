@@ -155,7 +155,8 @@ private fun UserBangumiPageContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(list) { item ->
+            items(list.size, key = { list[it].param }) { index ->
+                val item = list[index]
                 MiniBangumiItemBox(
                     modifier = Modifier.fillMaxSize(),
                     title = item.title,
