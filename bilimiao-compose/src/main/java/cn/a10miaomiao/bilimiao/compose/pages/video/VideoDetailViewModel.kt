@@ -1,7 +1,5 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/video/VideoDetailViewModel.kt
 package cn.a10miaomiao.bilimiao.compose.pages.video
 
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -38,6 +36,7 @@ import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.store.UserLibraryStore
 import com.a10miaomiao.bilimiao.comm.store.UserStore
+import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,25 +44,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 
 class VideoDetailViewModel(
-    override val di: DI,
-    id: String,
-) : ViewModel(), DIAware {
-
-    private val activity by instance<Activity>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
-
-    private val filterStore: FilterStore by instance()
-    private val playerStore: PlayerStore by instance()
-    private val playListStore: PlayListStore by instance()
-    private val userStore: UserStore by instance()
-    private val userLibraryStore: UserLibraryStore by instance()
-    private val bottomSheetState: BottomSheetState by instance()
+    private var _id: String,
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val basePlayerDelegate: BasePlayerDelegate,
+    private val filterStore: FilterStore,
+    private val playerStore: PlayerStore,
+    private val playListStore: PlayListStore,
+    private val userStore: UserStore,
+    private val userLibraryStore: UserLibraryStore,
+    private val bottomSheetState: BottomSheetState,
+) : ViewModel() {
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> get() = _isRefreshing
@@ -74,11 +67,9 @@ class VideoDetailViewModel(
     private val _detailData = MutableStateFlow<ViewReply?>(null)
     val detailData: StateFlow<ViewReply?> get() = _detailData
 
-    // 自动连播合集
     private val _isAutoPlaySeason = mutableStateOf(true)
     val isAutoPlaySeason get() = _isAutoPlaySeason.value
 
-    // 此ViewModel启动播放的视频Aid
     private var videoAidToPlay = ""
 
     val coinDialogState = VideoCoinDialogState(
@@ -93,8 +84,6 @@ class VideoDetailViewModel(
         scope = viewModelScope,
     )
 
-    private var _id = id
-
     init {
         loadData()
     }
@@ -103,7 +92,7 @@ class VideoDetailViewModel(
         viewModelScope.launch(Dispatchers.Main) {
             if (basePlayerDelegate.isOpened()
                 && basePlayerDelegate.getSourceIds().aid == videoAidToPlay) {
-                val openMode = SettingPreferences.mapData(activity) {
+                val openMode = SettingPreferences.mapData(context) {
                     it[PlayerOpenMode] ?: SettingConstants.PLAYER_OPEN_MODE_DEFAULT
                 }
                 if (openMode and SettingConstants.PLAYER_OPEN_MODE_AUTO_CLOSE != 0) {
@@ -143,7 +132,6 @@ class VideoDetailViewModel(
 
             val url = "https://api.bilibili.com/x/web-interface/view?$paramName=$rawId"
 
-            // 使用 Extractor 下的请求代理拉取核心视频详情数据
             val responseBody = withContext(Dispatchers.IO) {
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
@@ -159,7 +147,6 @@ class VideoDetailViewModel(
             val bvid = data.optString("bvid")
             val aid = data.optLong("aid")
 
-            // 使用 Extractor 请求底层同步并发拉取周边信息（标签、相关推荐、用户状态、播放进度）
             val resultsList = withContext(Dispatchers.IO) {
                 val tags = mutableListOf<bilibili.app.view.v1.Tag>()
                 try {
@@ -267,7 +254,6 @@ class VideoDetailViewModel(
             val reqUser = resultsList[2] as bilibili.app.view.v1.ReqUser
             val history = resultsList[3] as? bilibili.app.view.v1.History
 
-            // 映射 UP主数据
             val owner = data.getJSONObject("owner")
             val author = bilibili.app.archive.v1.Author(
                 mid = owner.optLong("mid"),
@@ -275,7 +261,6 @@ class VideoDetailViewModel(
                 face = owner.optString("face"),
             )
 
-            // 映射视频数据统计
             val statJson = data.getJSONObject("stat")
             val stat = bilibili.app.archive.v1.Stat(
                 view = statJson.optInt("view"),
@@ -287,7 +272,6 @@ class VideoDetailViewModel(
                 like = statJson.optInt("like"),
             )
 
-            // 映射分辨率数据
             val dimensionJson = data.optJSONObject("dimension")
             val dimension = if (dimensionJson != null) {
                 bilibili.app.archive.v1.Dimension(
@@ -297,7 +281,6 @@ class VideoDetailViewModel(
                 )
             } else null
 
-            // 映射 Arc 主类 (移除 constructor 参数中不存在的 bvid)
             val arc = bilibili.app.archive.v1.Arc(
                 aid = aid,
                 title = data.optString("title"),
@@ -310,7 +293,6 @@ class VideoDetailViewModel(
                 dimension = dimension,
             )
 
-            // 映射多分P数据
             val pagesJson = data.optJSONArray("pages")
             val pagesList = mutableListOf<bilibili.app.view.v1.ViewPage>()
             if (pagesJson != null) {
@@ -330,7 +312,6 @@ class VideoDetailViewModel(
                 }
             }
 
-            // 映射 Staff 制作人员列表
             val staffJson = data.optJSONArray("staff")
             val staffList = mutableListOf<bilibili.app.view.v1.Staff>()
             if (staffJson != null) {
@@ -347,7 +328,6 @@ class VideoDetailViewModel(
                 }
             }
 
-            // 映射 UGC 剧集/合集数据
             val ugcSeasonJson = data.optJSONObject("ugc_season")
             val ugcSeason = if (ugcSeasonJson != null) {
                 val sectionsJson = ugcSeasonJson.optJSONArray("sections")
@@ -395,7 +375,6 @@ class VideoDetailViewModel(
                 )
             } else null
 
-            // 重新包装生成完美的 ViewReply 对象
             val res = ViewReply(
                 arc = arc,
                 pages = pagesList,
@@ -423,37 +402,31 @@ class VideoDetailViewModel(
     private fun autoStartPlay() = viewModelScope.launch(Dispatchers.Main) {
         val arcData = detailData.value?.getArcData() ?: return@launch
         if (basePlayerDelegate.getSourceIds().aid == arcData.aid.toString()) {
-            // 同个视频不替换播放
             return@launch
         }
-        val openMode = SettingPreferences.mapData(activity) {
+        val openMode = SettingPreferences.mapData(context) {
             it[PlayerOpenMode] ?: SettingConstants.PLAYER_OPEN_MODE_DEFAULT
         }
         if (basePlayerDelegate.isOpened()) {
             if (basePlayerDelegate.isPlaying()) {
-                // 自动替换正在播放的视频
                 if (openMode and SettingConstants.PLAYER_OPEN_MODE_AUTO_REPLACE != 0) {
                     playVideo()
                 }
             } else if (basePlayerDelegate.isPause()) {
-                // 自动替换暂停的视频
                 if (openMode and SettingConstants.PLAYER_OPEN_MODE_AUTO_REPLACE_PAUSE != 0) {
                     playVideo()
                 }
             } else {
-                // 自动替换完成的视频
                 if (openMode and SettingConstants.PLAYER_OPEN_MODE_AUTO_REPLACE_COMPLETE != 0) {
                     playVideo()
                 }
             }
         } else {
-            // 自动播放新视频
             if (openMode and SettingConstants.PLAYER_OPEN_MODE_AUTO_PLAY != 0) {
                 playVideo()
             }
         }
     }
-
 
     fun playVideo() {
         val detail = detailData.value ?: return
@@ -466,6 +439,7 @@ class VideoDetailViewModel(
             playVideo(page)
         }
     }
+
     fun playVideo(page: Page) {
         val detail = detailData.value ?: return
         val arc = detail.getArcData() ?: return
@@ -481,13 +455,10 @@ class VideoDetailViewModel(
         val cid = page.cid
         val isAutoPlaySeason = this.isAutoPlaySeason
         if (isAutoPlaySeason && ugcSeason != null) {
-            // 将合集加入播放列表
             val playListFromId = (playListStore.state.from as? PlayListFrom.Season)?.seasonId
                 ?: (playListStore.state.from as? PlayListFrom.Section)?.seasonId
             if (playListFromId != ugcSeason.id.toString() ||
                 !playListStore.state.inListForAid(arc.aid.toString())) {
-                // 当前播放列表来源不是当前合集或视频不在播放列表中时，创建新播放列表
-                // 以合集创建播放列表
                 val index = if (ugcSeason.sections.size > 1) {
                     ugcSeason.sections.indexOfFirst { section ->
                         section.episodes.indexOfFirst { it.aid == arc.aid } != -1
@@ -496,10 +467,8 @@ class VideoDetailViewModel(
                 playListStore.setPlayList(ugcSeason, index)
             }
         } else if (!playListStore.state.inListForAid(arc.aid.toString())) {
-            // 当前视频不在播放列表中时，如果未正在播放或播放列表为空则创建新的播放列表，否则将视频加入列表尾部
             if (playListStore.state.items.isEmpty()
                 || playerStore.state.aid.isEmpty()) {
-                // 以当前视频创建新的播放列表
                 val playListItem = playListStore.run {
                     arc.toPlayListItem(viewPages)
                 }
@@ -511,14 +480,12 @@ class VideoDetailViewModel(
                     )
                 )
             } else {
-                // 将视频添加到播放列表末尾
                 playListStore.addItem(playListStore.run {
                     arc.toPlayListItem(viewPages)
                 })
             }
         }
 
-        // 播放视频
         basePlayerDelegate.openPlayer(
             VideoPlayerSource(
                 mainTitle = arc.title,
@@ -529,7 +496,7 @@ class VideoDetailViewModel(
                 ownerId = author.mid.toString(),
                 ownerName = author.name,
             ).apply {
-                pages = viewPages
+                this.pages = viewPages
                     .map {
                         VideoPlayerSource.PageInfo(
                             cid = it.cid.toString(),
@@ -552,9 +519,6 @@ class VideoDetailViewModel(
         )
     }
 
-    /**
-     * 添加至稍后再看
-     */
     fun addVideoHistoryToview() = viewModelScope.launch(Dispatchers.IO) {
         if (!userStore.isLogin()) {
             PopTip.show("请先登录")
@@ -646,7 +610,7 @@ class VideoDetailViewModel(
     }
 
     private fun updateFavoriteState(state: Int) {
-        val videoDetail = detailData.value ?: return
+        val videoDetail = videoDetail = detailData.value ?: return
         var videoArc = videoDetail.getArcData()
         var reqUser = videoDetail.getReqUserData()
         val stat = videoArc?.stat
@@ -699,9 +663,6 @@ class VideoDetailViewModel(
         updateArcAndReqUser(videoArc, reqUser)
     }
 
-    /**
-     * 点赞/取消点赞
-     */
     fun requestLike(
         arc: bilibili.app.archive.v1.Arc,
         reqUser: bilibili.app.view.v1.ReqUser?,
@@ -747,7 +708,7 @@ class VideoDetailViewModel(
 
     fun openCoverActivity() {
         val arc = detailData.value?.getArcData() ?: return
-        CoverActivity.launch(activity, arc.aid.toString())
+        CoverActivity.launch(context as android.app.Activity, arc.aid.toString())
     }
 
     fun toUserPage(mid: String) {
@@ -806,11 +767,13 @@ class VideoDetailViewModel(
                 "$title $url"
             )
         }
-        activity.startActivity(Intent.createChooser(shareIntent, "分享"))
+        context.startActivity(Intent.createChooser(shareIntent, "分享").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
     }
 
     fun copyPlainText(label: String, text: String) {
-        val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
         clipboard.setPrimaryClip(clip)
     }
@@ -822,7 +785,7 @@ class VideoDetailViewModel(
         when (item.key) {
             MenuKeys.download -> {
                 viewModelScope.launch {
-                    val downloadService = DownloadService.getService(activity)
+                    val downloadService = DownloadService.getService(context)
                     downloadDialogState.show(
                         downloadService,
                         videoDetail.getBvid(),
@@ -835,38 +798,31 @@ class VideoDetailViewModel(
                 openAddFavoriteDialog(videoArc.aid.toString())
             }
             1 -> {
-                // 分享
                 openShare(videoDetail.getBvid(), videoArc.title)
             }
             2 -> {
-                // 浏览器打开
                 val url = "http://www.bilibili.com/video/${videoDetail.getBvid()}"
                 pageNavigation.launchWebBrowser(url)
             }
             3 -> {
-                // 复制链接
                 val text = "http://www.bilibili.com/video/${videoDetail.getBvid()}"
                 copyPlainText("URL", text)
                 PopTip.show("已复制：$text")
             }
             4 -> {
-                // 复制AV号
                 val text = "av${videoArc.aid}"
                 copyPlainText("URL", text)
                 PopTip.show("已复制：$text")
             }
             5 -> {
-                // 复制BV号
                 val text = videoDetail.getBvid()
                 copyPlainText("URL", text)
                 PopTip.show("已复制：$text")
             }
             6 -> {
-                // 保存封面
                 openCoverActivity()
             }
             11 -> {
-                // 添加至下一个播放
                 val current = playerStore.getPlayListCurrentPosition()
                 if (current != -1) {
                     playListStore.run {
@@ -881,7 +837,6 @@ class VideoDetailViewModel(
                 }
             }
             12 -> {
-                // 添加至最后一个播放
                 playListStore.run {
                     addItem(
                         videoArc.toPlayListItem(viewPages),
@@ -891,7 +846,6 @@ class VideoDetailViewModel(
                 PopTip.show("已添加至最后一个播放")
             }
             13 -> {
-                // 添加至稍后再看
                 addVideoHistoryToview()
             }
         }

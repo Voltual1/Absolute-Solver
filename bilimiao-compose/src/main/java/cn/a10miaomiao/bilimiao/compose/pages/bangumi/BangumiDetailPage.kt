@@ -17,18 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -44,8 +40,6 @@ import cn.a10miaomiao.bilimiao.compose.pages.download.DownloadBangumiCreatePage
 import com.a10miaomiao.bilimiao.comm.delegate.player.BangumiPlayerSource
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.*
 import com.a10miaomiao.bilimiao.comm.entity.comm.ToastInfo
 import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
@@ -53,16 +47,10 @@ import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.network.ApiHelper
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
-import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
-import com.a10miaomiao.bilimiao.comm.utils.UrlUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,23 +60,25 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class BangumiDetailPage(
-    // 三选其一
     private val id: String = "",
     private val epId: String = "",
     private val mediaId: String = "",
 ) : ComposePage() {
 
-
     @Composable
     override fun Content() {
-        val viewModel: BangumiDetailPageViewModel = diViewModel()
+        val pageNavigation = koinInject<PageNavigation>()
+        val bottomSheetState = koinInject<BottomSheetState>()
+        val viewModel = koinViewModel<BangumiDetailPageViewModel>(
+            parameters = { parametersOf(pageNavigation, bottomSheetState) }
+        )
         BangumiDetailPageContent(
             id = id,
             epid = epId,
@@ -99,14 +89,12 @@ data class BangumiDetailPage(
 
 }
 
-private class BangumiDetailPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val fragment by instance<Fragment>()
-    private val pageNavigation by instance<PageNavigation>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
-    private val bottomSheetState by instance<BottomSheetState>()
+class BangumiDetailPageViewModel(
+    private val context: Context,
+    private val pageNavigation: PageNavigation,
+    private val basePlayerDelegate: BasePlayerDelegate,
+    private val bottomSheetState: BottomSheetState,
+) : ViewModel() {
 
     var seasonId = ""
         set(value) {
@@ -124,9 +112,6 @@ private class BangumiDetailPageViewModel(
     val sectionId = MutableStateFlow("")
     val isRefreshing = MutableStateFlow(false)
 
-    /**
-     * 剧集信息
-     */
     fun loadEpisodeList(
         id: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
@@ -225,7 +210,9 @@ private class BangumiDetailPageViewModel(
             putExtra(Intent.EXTRA_SUBJECT, "bilibili番剧分享")
             putExtra(Intent.EXTRA_TEXT, "$title https://www.bilibili.com/bangumi/play/ep${item.id}")
         }
-        fragment.requireActivity().startActivity(Intent.createChooser(shareIntent, "分享"))
+        context.startActivity(Intent.createChooser(shareIntent, "分享").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
     }
 
     fun startPlayBangumi(episodes: List<EpisodeInfo>, item: EpisodeInfo) {
@@ -269,25 +256,25 @@ private class BangumiDetailPageViewModel(
             1 -> {
                 if (seasonId.isNotBlank()) {
                     val url = "https://www.bilibili.com/bangumi/play/ss$seasonId"
-                    BiliUrlMatcher.toUrlLink(fragment.requireContext(), url)
+                    BiliUrlMatcher.toUrlLink(context, url)
                 }
             }
             2 -> {
                 if (seasonId.isNotBlank()) {
-                    val activity = fragment.requireActivity()
                     val shareIntent = Intent().apply {
                         action = Intent.ACTION_SEND
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, "bilibili番剧分享")
                         putExtra(Intent.EXTRA_TEXT, "分享番剧 https://www.bilibili.com/bangumi/play/ss$seasonId")
                     }
-                    activity.startActivity(Intent.createChooser(shareIntent, "分享"))
+                    context.startActivity(Intent.createChooser(shareIntent, "分享").apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
                 }
             }
             3 -> {
                 if (seasonId.isNotBlank()) {
-                    val activity = fragment.requireActivity()
-                    val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     val text = "https://www.bilibili.com/bangumi/play/ss$seasonId"
                     val clip = ClipData.newPlainText("url", text)
                     clipboard.setPrimaryClip(clip)
@@ -307,7 +294,7 @@ private class BangumiDetailPageViewModel(
 
     fun findSectionEpisodeIndex(id: String): Pair<SeasonSectionInfo.SectionInfo?, Int> {
         val sections = sectionList.value
-        var index: Int = -1
+        var index = -1
         return sections.find {
             index = it.episodes.indexOfFirst { ep ->
                 ep.id == id
@@ -317,7 +304,6 @@ private class BangumiDetailPageViewModel(
     }
 }
 
-
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun BangumiDetailPageContent(
@@ -326,8 +312,8 @@ private fun BangumiDetailPageContent(
     mediaId: String,
     viewModel: BangumiDetailPageViewModel,
 ) {
-    val playerStore: PlayerStore by rememberInstance()
-    val windowStore: WindowStore by rememberInstance()
+    val playerStore = koinInject<PlayerStore>()
+    val windowStore = koinInject<WindowStore>()
     val playerState = playerStore.stateFlow.collectAsState().value
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
@@ -344,7 +330,6 @@ private fun BangumiDetailPageContent(
     val chainScrollableLayoutState = rememberChainScrollableLayoutState(
         maxScrollPosition = 340.dp,
     )
-    val seasonsListState = rememberLazyListState()
     val episodesListState = rememberLazyListState()
 
     var seasonId = rememberSaveable() {
@@ -422,7 +407,6 @@ private fun BangumiDetailPageContent(
                 }
             }
         }
-
     )
     PageListener(
         pageConfigId,
@@ -446,7 +430,6 @@ private fun BangumiDetailPageContent(
             leftMaxWidth = 600.dp,
             leftMaxHeight = 0.dp,
             leftContent = { _, _ ->
-                // 简介和头部信息UI已完全砍掉，不再渲染任何简介以及其统计卡片
             }
         ) { _, innerPadding ->
             LazyColumn(

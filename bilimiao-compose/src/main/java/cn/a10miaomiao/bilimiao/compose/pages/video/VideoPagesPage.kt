@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
@@ -32,19 +31,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.archive.v1.Page
 import bilibili.app.view.v1.ViewGRPC
-import bilibili.app.view.v1.ViewPage
 import bilibili.app.view.v1.ViewReq
-import bilibili.polymer.app.search.v1.Item.CardItem
-import bilibili.polymer.app.search.v1.SearchGRPC
-import bilibili.polymer.app.search.v1.Space
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
-import cn.a10miaomiao.bilimiao.compose.common.flow.stateMap
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -53,22 +46,18 @@ import cn.a10miaomiao.bilimiao.compose.components.status.BiliFailBox
 import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.delegate.player.VideoPlayerSource
-import com.a10miaomiao.bilimiao.comm.entity.bangumi.EpisodeInfo
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class VideoPagesPage(
@@ -77,23 +66,21 @@ class VideoPagesPage(
 
     @Composable
     override fun Content() {
-        val viewModel: VideoPagesPageViewModel = diViewModel(
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<VideoPagesPageViewModel>(
             key = aid,
-        ) {
-            VideoPagesPageViewModel(it, aid)
-        }
+            parameters = { parametersOf(aid, pageNavigation) }
+        )
         VideoPagesPageContent(viewModel)
     }
 }
 
-private class VideoPagesPageViewModel(
-    override val di: DI,
+class VideoPagesPageViewModel(
     val aid: String,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val playerStore by instance<PlayerStore>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
+    private val pageNavigation: PageNavigation,
+    private val playerStore: PlayerStore,
+    private val basePlayerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     val loading = MutableStateFlow(false)
     val fail = MutableStateFlow<String?>(null)
@@ -156,7 +143,7 @@ private fun VideoPagesPageContent(
     PageConfig(
         title = "视频分P"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -291,7 +278,5 @@ private fun VideoPagesPageContent(
                 }
             }
         }
-
     }
-
 }

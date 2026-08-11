@@ -8,33 +8,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
+import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import cn.a10miaomiao.bilimiao.compose.components.community.ReplyItemBox
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicModuleBox
 import cn.a10miaomiao.bilimiao.compose.components.layout.DataDrivenNavigator
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
+import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.community.content.ReplyListContent
 import com.a10miaomiao.bilimiao.store.WindowStore
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class MainReplyListPage(
@@ -45,11 +42,14 @@ class MainReplyListPage(
 
     @Composable
     override fun Content() {
-        val viewModel: MainReplyViewModel = diViewModel(
+        val pageNavigation = koinInject<PageNavigation>()
+        val messageDialog = koinInject<MessageDialogState>()
+
+        // 动态传递至 Koin
+        val viewModel = koinViewModel<MainReplyViewModel>(
             key = oid,
-        ) {
-            MainReplyViewModel(it, oid, type)
-        }
+            parameters = { parametersOf(oid, type, "", "", pageNavigation, messageDialog) }
+        )
         MainReplyListPageContent(
             headerContent = {
 
@@ -67,7 +67,7 @@ fun MainReplyListPageContent(
     pageTitle: String,
     viewModel: MainReplyViewModel,
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

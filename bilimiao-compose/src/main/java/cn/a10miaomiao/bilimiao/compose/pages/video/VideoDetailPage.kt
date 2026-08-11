@@ -12,38 +12,30 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Badge
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,18 +43,13 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.archive.v1.Arc
-import bilibili.app.dynamic.v2.DynamicItem
-import bilibili.app.view.v1.ViewGRPC
-import bilibili.app.view.v1.ViewPage
 import bilibili.app.view.v1.ViewReply
-import bilibili.app.view.v1.ViewReq
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
@@ -86,23 +73,14 @@ import cn.a10miaomiao.bilimiao.compose.pages.video.components.VideoReplyTitleBar
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoDetailContent
 import cn.a10miaomiao.bilimiao.compose.pages.video.content.VideoReplyContent
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
-import com.a10miaomiao.bilimiao.comm.delegate.player.VideoPlayerSource
-import com.a10miaomiao.bilimiao.comm.entity.player.PlayListFrom
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.store.FilterStore
-import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
-import com.a10miaomiao.bilimiao.comm.utils.MiaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.a10miaomiao.bilimiao.store.WindowStore.Insets
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 class VideoDetailPage(
@@ -111,10 +89,12 @@ class VideoDetailPage(
 
     @Composable
     override fun Content() {
-        val viewModel: VideoDetailViewModel = diViewModel(key = id) {
-            VideoDetailViewModel(it, id)
-        }
-        val windowStore: WindowStore by rememberInstance()
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<VideoDetailViewModel>(
+            key = id,
+            parameters = { parametersOf(id, pageNavigation) }
+        )
+        val windowStore = koinInject<WindowStore>()
         val windowState = windowStore.stateFlow.collectAsState().value
         val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -128,10 +108,7 @@ class VideoDetailPage(
             targetState = detailData == null,
             label = "VideoDetailPage",
             transitionSpec = {
-                // Follow M3 Clean fades
-                val fadeIn = fadeIn(
-                    tween(),
-                )
+                val fadeIn = fadeIn(tween())
                 val fadeOut = fadeOut()
                 fadeIn.togetherWith(fadeOut)
             }
@@ -167,18 +144,18 @@ private fun VideoDetailPageContent(
     detailData: ViewReply,
     arcData: Arc,
 ) {
-    val playerStore by rememberInstance<PlayerStore>()
+    val playerStore = koinInject<PlayerStore>()
     val playerState by playerStore.stateFlow.collectAsState()
+    val windowStore = koinInject<WindowStore>()
 
-    val mainReplyViewModel = diViewModel(
-        key = "main-reply-${arcData.aid}"
-    ) {
-        MainReplyViewModel(
-            it,
-            type = 1,
-            oid = arcData.aid.toString(),
-        )
-    }
+    val pageNavigation = koinInject<PageNavigation>()
+    val messageDialog = koinInject<MessageDialogState>()
+
+    // 使用 koinViewModel 获取 MainReplyViewModel，解决编译报错
+    val mainReplyViewModel = koinViewModel<MainReplyViewModel>(
+        key = "main-reply-${arcData.aid}",
+        parameters = { parametersOf(arcData.aid.toString(), 1, "", "", pageNavigation, messageDialog) }
+    )
 
     val videoPages = detailData.pages
 
@@ -197,7 +174,6 @@ private fun VideoDetailPageContent(
         maxScrollPosition = headerHeight,
         minScrollPosition = windowInsets.topDp.dp,
     )
-//    val saveableStateHolder = rememberSaveableStateHolder()
 
     val replyListState = rememberLazyListState()
     val currentReply by mainReplyViewModel.currentReply.collectAsState()

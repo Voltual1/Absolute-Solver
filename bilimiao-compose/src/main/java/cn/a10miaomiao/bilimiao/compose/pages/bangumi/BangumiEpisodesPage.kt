@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -23,9 +21,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -49,9 +44,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import bilibili.app.archive.v1.Page
+import bilibili.app.view.v1.ViewGRPC
+import bilibili.app.view.v1.ViewReq
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
-import cn.a10miaomiao.bilimiao.compose.common.flow.stateMap
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -61,28 +58,21 @@ import cn.a10miaomiao.bilimiao.compose.components.status.BiliLoadingBox
 import com.a10miaomiao.bilimiao.comm.delegate.player.BangumiPlayerSource
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.entity.ResponseResult
-import com.a10miaomiao.bilimiao.comm.entity.ResultInfo2
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.EpisodeInfo
-import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonInfo
 import com.a10miaomiao.bilimiao.comm.entity.bangumi.SeasonSectionInfo
 import com.a10miaomiao.bilimiao.comm.miao.MiaoJson
-import com.a10miaomiao.bilimiao.comm.network.BiliApiService
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
-import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
-import com.a10miaomiao.bilimiao.comm.utils.MiaoLogger
+import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Serializable
 data class BangumiEpisodesPage(
@@ -92,20 +82,22 @@ data class BangumiEpisodesPage(
 
     @Composable
     override fun Content() {
-        val viewModel: BangumiEpisodesPageViewModel = diViewModel(
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel = koinViewModel<BangumiEpisodesPageViewModel>(
             key = sid,
-        ) {
-            BangumiEpisodesPageViewModel(it, sid, title)
-        }
+            parameters = { parametersOf(sid, title, pageNavigation) }
+        )
         BangumiEpisodesPageContent(viewModel)
     }
 }
 
-private class BangumiEpisodesPageViewModel(
-    override val di: DI,
+class BangumiEpisodesPageViewModel(
     val sid: String,
     val title: String,
-) : ViewModel(), DIAware {
+    private val pageNavigation: PageNavigation,
+    private val playerStore: PlayerStore,
+    private val basePlayerDelegate: BasePlayerDelegate,
+) : ViewModel() {
 
     @Stable
     class SectionState(
@@ -113,10 +105,6 @@ private class BangumiEpisodesPageViewModel(
         val hasLongTitle: Boolean = true,
         val episodes: List<EpisodeInfo> = listOf()
     )
-
-    private val pageNavigation by instance<PageNavigation>()
-    private val playerStore by instance<PlayerStore>()
-    private val basePlayerDelegate by instance<BasePlayerDelegate>()
 
     val loading = MutableStateFlow(false)
     val fail = MutableStateFlow<String?>(null)
@@ -128,10 +116,6 @@ private class BangumiEpisodesPageViewModel(
         loadEpisodeList()
     }
 
-
-    /**
-     * 剧集信息
-     */
     fun loadEpisodeList() = viewModelScope.launch(Dispatchers.IO) {
         try {
             loading.value = true
@@ -139,7 +123,7 @@ private class BangumiEpisodesPageViewModel(
             sectionList.value = emptyList()
             currentSection.value = SectionState()
 
-            val url = "https://api.bilibili.com/pgc/web/season/section?season_id=$sid"
+            val url = "https://api.bilibili.com/pgc/season/section?season_id=$sid"
             val responseBody = withContext(Dispatchers.IO) {
                 val headers = org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders(url)
                 org.schabi.newpipe.extractor.NewPipe.getDownloader().get(url, headers).responseBody()
@@ -219,7 +203,6 @@ private class BangumiEpisodesPageViewModel(
         }
         basePlayerDelegate.openPlayer(playerSource)
     }
-
 }
 
 @Composable
@@ -355,7 +338,7 @@ private fun BangumiEpisodesPageContent(
     PageConfig(
         title = "番剧剧集"
     )
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore = koinInject<WindowStore>()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -467,7 +450,6 @@ private fun BangumiEpisodesPageContent(
                     Spacer(modifier = Modifier.height(100.dp))
                 }
             }
-
         }
 
         Box(
@@ -506,7 +488,5 @@ private fun BangumiEpisodesPageContent(
                 }
             }
         }
-
     }
-
 }
