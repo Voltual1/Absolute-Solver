@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -39,7 +38,6 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preference
 import me.zhanghai.compose.preference.preferenceCategory
 import me.zhanghai.compose.preference.switchPreference
-import org.kodein.di.compose.rememberInstance
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -49,7 +47,7 @@ class SettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val pageNavigation by rememberInstance<PageNavigation>()
+        val pageNavigation = koinInject<PageNavigation>()
         val viewModel = koinViewModel<SettingPageViewModel>(
             parameters = { parametersOf(pageNavigation) }
         )

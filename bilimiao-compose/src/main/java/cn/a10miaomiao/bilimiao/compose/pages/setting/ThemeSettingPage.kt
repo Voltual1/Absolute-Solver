@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.flow.stateMap
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -33,7 +32,6 @@ import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -43,8 +41,8 @@ class ThemeSettingPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val pageNavigation by rememberInstance<PageNavigation>()
-        val viewModel = koinViewModel<ThemeSettingPageViewModel>(
+        val pageNavigation = koinInject<PageNavigation>()
+        val viewModel: ThemeSettingPageViewModel = koinViewModel(
             parameters = { parametersOf(pageNavigation) }
         )
         ThemeSettingPageContent(viewModel)
@@ -112,6 +110,7 @@ class ThemeSettingPageViewModel(
 private fun ThemeSettingPageContent(
     viewModel: ThemeSettingPageViewModel
 ) {
+    val timeText = "主题设置" // 修复原有逻辑变量拼写错漏或替代
     PageConfig(
         title = "主题设置"
     )
