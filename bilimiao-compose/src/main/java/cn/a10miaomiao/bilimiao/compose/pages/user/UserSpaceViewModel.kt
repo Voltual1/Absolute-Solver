@@ -95,7 +95,6 @@ class UserSpaceViewModel(
             val card = SpaceInfo.CardInfo(
                 approve = false,
                 article = 0,
-                author = null, // 补充以防编译缺失
                 attention = extractor.attentionCount,
                 birthday = "",
                 description = extractor.description ?: "",
