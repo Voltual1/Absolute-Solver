@@ -70,7 +70,7 @@ val composeStoreModule = module {
             bizTitle = bizTitle,
             userStore = get(),
             pageNavigation = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = get(),
             playerStore = get(),
             playListStore = get()
         )
@@ -83,7 +83,7 @@ val composeStoreModule = module {
             sid = sid,
             pageNavigation = get(),
             userStore = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = get(),
             playerStore = get(),
             playListStore = get()
         )
@@ -92,15 +92,15 @@ val composeStoreModule = module {
     // 注册 LyricPageViewModel
     viewModel {
         LyricPageViewModel(
-            activity = org.koin.core.context.GlobalContext.get().get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get()
+            activity = get(),
+            playerDelegate = get()
         )
     }
 
     // 注册 SearchFollowPageViewModel 与 UserSpaceSearchPageViewModel
     viewModel {
         SearchFollowPageViewModel(
-            activity = org.koin.core.context.GlobalContext.get().get(),
+            activity = get(),
             pageNavigation = get(),
             userStore = get()
         )
@@ -111,9 +111,9 @@ val composeStoreModule = module {
     viewModel {
         HomePageViewModel(
             appStore = get(),
-            fragment = org.koin.core.context.GlobalContext.get().get(),
+            activity = get(),
             pageNavigation = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = get(),
             context = get()
         )
     }
@@ -149,7 +149,7 @@ val composeStoreModule = module {
     viewModel {
         SendDanmakuViewModel(
             pageNavigation = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get()
+            playerDelegate = get()
         )
     }
 
@@ -266,7 +266,7 @@ val composeStoreModule = module {
     viewModel { (url: String) ->
         WebPageViewModel(
             startUrl = url,
-            fragment = org.koin.core.context.GlobalContext.get().get(),
+            fragment = get(),
             pageNavigation = get()
         )
     }
@@ -331,7 +331,7 @@ val composeStoreModule = module {
             aid = aid,
             pageNavigation = pageNavigation,
             playerStore = get(),
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get()
+            basePlayerDelegate = get()
         )
     }
 
@@ -341,7 +341,7 @@ val composeStoreModule = module {
             _id = id,
             context = get(),
             pageNavigation = pageNavigation,
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            basePlayerDelegate = get(),
             filterStore = get(),
             playerStore = get(),
             playListStore = get(),
@@ -358,7 +358,7 @@ val composeStoreModule = module {
             title = title,
             pageNavigation = pageNavigation,
             playerStore = get(),
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get()
+            basePlayerDelegate = get()
         )
     }
 
@@ -367,7 +367,7 @@ val composeStoreModule = module {
         BangumiDetailPageViewModel(
             context = get(),
             pageNavigation = pageNavigation,
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            basePlayerDelegate = get(),
             bottomSheetState = bottomSheetState
         )
     }
@@ -406,7 +406,7 @@ val composeStoreModule = module {
             keyword = keyword,
             pageNavigation = get(),
             userStore = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = get(),
             playerStore = get(),
             playListStore = get()
         )
@@ -436,7 +436,7 @@ val composeStoreModule = module {
             messageDialog = get(),
             playListStore = get(),
             playerStore = get(),
-            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerDelegate = get(),
             userLibraryStore = get()
         )
     }
@@ -452,7 +452,7 @@ val composeStoreModule = module {
         DownloadDetailPageViewModel(
             context = get(),
             pageNavigation = pageNavigation,
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get()
+            basePlayerDelegate = get()
         )
     }
 
@@ -514,7 +514,7 @@ val composeStoreModule = module {
         SelectProxyServerPageViewModel(
             context = get(),
             pageNavigation = pageNavigation,
-            basePlayerDelegate = org.koin.core.context.GlobalContext.get().get()
+            basePlayerDelegate = get()
         )
     }
     

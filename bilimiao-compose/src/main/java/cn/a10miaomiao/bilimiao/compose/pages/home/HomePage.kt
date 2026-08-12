@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.home
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -28,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -124,7 +124,7 @@ internal sealed class HomePageTab(
 
 internal class HomePageViewModel(
     private val appStore: AppStore,
-    private val fragment: Fragment,
+    private val activity: Activity,
     private val pageNavigation: PageNavigation,
     private val playerDelegate: BasePlayerDelegate,
     private val context: Context,
@@ -248,7 +248,7 @@ internal class HomePageViewModel(
             PopTip.show("再按一次退出bilimiao")
             lastBackPressedTime = now
         } else {
-            fragment.requireActivity().finish()
+            activity.finish()
         }
     }
 
