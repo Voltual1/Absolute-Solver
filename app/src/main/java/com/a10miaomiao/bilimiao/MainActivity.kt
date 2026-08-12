@@ -84,39 +84,15 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.bindSingleton
+import org.koin.core.context.loadKoinModules
+import org.koin.core.context.unloadKoinModules
+import org.koin.dsl.module
 import splitties.views.backgroundColor
 
-class MainActivity
-    : AppCompatActivity(),
-    DIAware {
+class MainActivity : AppCompatActivity() {
 
     private var mainUi: MainUi? = null
     private val ui get() = mainUi!!
-
-    override val di: DI = DI.lazy {
-        bindSingleton { this@MainActivity }
-        
-        bindSingleton<AppStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<WindowStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<PlayListStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<PlayerStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<UserStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<UserLibraryStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<MessageStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<TimeSettingStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<FilterStore> { org.koin.core.context.GlobalContext.get().get() }
-        bindSingleton<RegionStore> { org.koin.core.context.GlobalContext.get().get() }
-
-        bindSingleton { startViewWrapper }
-        bindSingleton { basePlayerDelegate }
-        bindSingleton { themeDelegate }
-        bindSingleton { statusBarHelper }
-        bindSingleton { supportHelper }
-        bindSingleton { biliGeetestUtil }
-    }
 
     private val store by lazy { Store(this) }
     val startViewWrapper by lazy {
@@ -130,10 +106,35 @@ class MainActivity
     }
     
     val themeDelegate by lazy { ThemeDelegate(this) }
-    private val basePlayerDelegate: BasePlayerDelegate by lazy { PlayerDelegate2(this, di) }
     private val statusBarHelper by lazy { StatusBarHelper(this) }
     private val supportHelper by lazy { SupportHelper(this) }
     private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
+    private val basePlayerDelegate: BasePlayerDelegate by lazy {
+        PlayerDelegate2(
+            activity = this,
+            userStore = org.koin.core.context.GlobalContext.get().get(),
+            playerStore = org.koin.core.context.GlobalContext.get().get(),
+            userLibraryStore = org.koin.core.context.GlobalContext.get().get(),
+            windowStore = org.koin.core.context.GlobalContext.get().get(),
+            themeDelegate = themeDelegate,
+            statusBarHelper = statusBarHelper,
+            appStore = org.koin.core.context.GlobalContext.get().get(),
+            playListStore = org.koin.core.context.GlobalContext.get().get(),
+        )
+    }
+
+    private val activityModule = module {
+        single<MainActivity> { this@MainActivity }
+        single<AppCompatActivity> { this@MainActivity }
+        single<Activity> { this@MainActivity }
+        single<BasePlayerDelegate> { basePlayerDelegate }
+        single<PlayerDelegate2> { basePlayerDelegate as PlayerDelegate2 }
+        single<ThemeDelegate> { themeDelegate }
+        single<StatusBarHelper> { statusBarHelper }
+        single<SupportHelper> { supportHelper }
+        single<BiliGeetestUtil> { biliGeetestUtil }
+        single<StartViewWrapper> { startViewWrapper }
+    }
 
     private lateinit var navHostFragment: ComposeFragment
     private var subNavHostFragment: ComposeFragment? = null
@@ -159,6 +160,7 @@ class MainActivity
         private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        loadKoinModules(activityModule)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         }
@@ -326,8 +328,8 @@ class MainActivity
                 val playerHoldShowArea = it[PlayerSmallShowArea] ?: 130
                 val contentDefaultSplit = (it[FlagContentSplit] ?: 35) / 100f
                 if (playerSmallShowArea != rootView.playerSmallShowArea
-                    || playerHoldShowArea != rootView.playerHoldShowArea
-                    || contentDefaultSplit != rootView.contentDefaultSplit) {
+| playerHoldShowArea != rootView.playerHoldShowArea
+| contentDefaultSplit != rootView.contentDefaultSplit) {
                     rootView.playerSmallShowArea = playerSmallShowArea
                     rootView.playerHoldShowArea = playerHoldShowArea
                     rootView.contentDefaultSplit = contentDefaultSplit
@@ -603,6 +605,7 @@ class MainActivity
     override fun onDestroy() {
         basePlayerDelegate.onDestroy()
         store.onDestroy()
+        unloadKoinModules(activityModule)
         super.onDestroy()
     }
 

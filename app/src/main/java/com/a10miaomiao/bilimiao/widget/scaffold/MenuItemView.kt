@@ -13,7 +13,6 @@ import androidx.annotation.DrawableRes
 import androidx.core.view.marginTop
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.config.config
-import org.kodein.di.android.di
 import splitties.dimensions.dip
 import splitties.views.dsl.core.*
 import splitties.views.rightPadding

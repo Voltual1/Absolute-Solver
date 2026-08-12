@@ -9,14 +9,11 @@ import androidx.annotation.ColorInt
 import androidx.appcompat.app.AppCompatActivity
 import com.a10miaomiao.bilimiao.R
 import com.google.android.material.button.MaterialButton
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 
 class CompletionBoxController(
     private var activity: AppCompatActivity,
     private val delegate: PlayerDelegate2,
-    override val di: DI,
-) : DIAware {
+) {
 
     val completionLayout = activity.findViewById<RelativeLayout>(R.id.completion_layout)
     val completionText = activity.findViewById<TextView>(R.id.completion_text)

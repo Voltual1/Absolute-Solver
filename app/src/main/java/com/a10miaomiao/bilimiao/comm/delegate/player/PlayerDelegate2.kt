@@ -43,6 +43,7 @@ import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.delegate.helper.PicInPicHelper
+import com.a10miaomiao.bilimiao.comm.delegate.helper.StatusBarHelper
 import com.a10miaomiao.bilimiao.comm.delegate.player.entity.PlayerSourceIds
 import com.a10miaomiao.bilimiao.comm.delegate.player.entity.PlayerSourceInfo
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
@@ -55,6 +56,8 @@ import com.a10miaomiao.bilimiao.comm.network.MiaoHttp
 import com.a10miaomiao.bilimiao.comm.network.MiaoHttp.Companion.json
 import com.a10miaomiao.bilimiao.comm.player.BilimiaoPlayerManager
 import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
+import com.a10miaomiao.bilimiao.comm.store.AppStore
+import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.store.UserLibraryStore
 import com.a10miaomiao.bilimiao.comm.store.UserStore
@@ -75,33 +78,45 @@ import com.shuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
 import java.io.File
 import java.net.UnknownHostException
 
-
 class PlayerDelegate2(
     private var activity: AppCompatActivity,
-    override val di: DI,
-) : BasePlayerDelegate, DIAware, ExoMediaSourceInterceptListener {
+    private val userStore: UserStore,
+    private val playerStore: PlayerStore,
+    private val userLibraryStore: UserLibraryStore,
+    private val windowStore: WindowStore,
+    private val themeDelegate: ThemeDelegate,
+    private val statusBarHelper: StatusBarHelper,
+    private val appStore: AppStore,
+    private val playListStore: PlayListStore,
+) : BasePlayerDelegate, ExoMediaSourceInterceptListener {
 
     val DEFAULT_REFERER = "https://www.bilibili.com/"
     val DEFAULT_USER_AGENT = "Bilibili Freedoooooom/MarkII"
 
     val views by lazy { PlayerViews(activity) }
     val controller by lazy {
-        PlayerController(activity, this, playerCoroutineScope, di)
+        PlayerController(
+            activity = activity,
+            delegate = this,
+            scope = playerCoroutineScope,
+            userStore = userStore,
+            appStore = appStore,
+            playerStore = playerStore,
+            playListStore = playListStore,
+            statusBarHelper = statusBarHelper,
+        )
     }
     val errorMessageBoxController by lazy {
-        ErrorMessageBoxController(activity, this, di)
+        ErrorMessageBoxController(activity, this)
     }
     val areaLimitBoxController by lazy {
-        AreaLimitBoxController(activity, this, di)
+        AreaLimitBoxController(activity, this)
     }
     val completionBoxController by lazy {
-        CompletionBoxController(activity, this, di)
+        CompletionBoxController(activity, this)
     }
     val loadingBoxController by lazy {
         LoadingBoxController(activity, this)
@@ -110,12 +125,6 @@ class PlayerDelegate2(
 
     var picInPicHelper: PicInPicHelper? = null
         private set
-
-    private val userStore by instance<UserStore>()
-    private val playerStore by instance<PlayerStore>()
-    private val userLibraryStore by instance<UserLibraryStore>()
-    private val windowStore by instance<WindowStore>()
-    private val themeDelegate by instance<ThemeDelegate>()
 
     var playerSourceInfo: PlayerSourceInfo? = null
 

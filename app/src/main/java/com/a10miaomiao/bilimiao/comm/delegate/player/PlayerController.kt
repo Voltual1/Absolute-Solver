@@ -41,23 +41,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import master.flame.danmaku.danmaku.model.BaseDanmaku
 import master.flame.danmaku.danmaku.model.android.DanmakuContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.instance
-
 
 class PlayerController(
     private var activity: AppCompatActivity,
     private val delegate: PlayerDelegate2,
     private val scope: CoroutineScope,
-    override val di: DI,
-) : DIAware, VideoPlayerCallBack, GSYVideoProgressListener {
+    private val userStore: UserStore,
+    private val appStore: AppStore,
+    private val playerStore: PlayerStore,
+    private val playListStore: PlayListStore,
+    private val statusBarHelper: StatusBarHelper,
+) : VideoPlayerCallBack, GSYVideoProgressListener {
 
-    private val userStore by instance<UserStore>()
-    private val appStore by instance<AppStore>()
-    private val playerStore by instance<PlayerStore>()
-    private val playListStore by instance<PlayListStore>()
-    private val statusBarHelper by instance<StatusBarHelper>()
     private val scaffoldApp get() = delegate.scaffoldApp
     private val views get() = delegate.views
     private val playerSourceInfo get() = delegate.playerSourceInfo

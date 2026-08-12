@@ -9,14 +9,11 @@ import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.SelectProxyServerPage
 import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
 import com.google.android.material.button.MaterialButton
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 
 class AreaLimitBoxController(
     private var activity: AppCompatActivity,
     private val delegate: PlayerDelegate2,
-    override val di: DI,
-) : DIAware {
+) {
 
     val areaLimitLayout = activity.findViewById<RelativeLayout>(R.id.area_limit_layout)
     val areaLimitOkBtn = activity.findViewById<MaterialButton>(R.id.area_limit_ok_btn)

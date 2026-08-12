@@ -12,14 +12,11 @@ import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
 import com.a10miaomiao.bilimiao.widget.player.VideoPlayerCallBack
 import com.google.android.material.button.MaterialButton
 import com.shuyu.gsyvideoplayer.listener.GSYVideoProgressListener
-import org.kodein.di.DI
-import org.kodein.di.DIAware
 
 class ErrorMessageBoxController(
     private var activity: AppCompatActivity,
     private val delegate: PlayerDelegate2,
-    override val di: DI,
-) : DIAware {
+) {
 
     val errorMessageLayout = activity.findViewById<RelativeLayout>(R.id.error_message_layout)
     val errorMessageText = activity.findViewById<TextView>(R.id.error_message_text)
