@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouriteViewModel
-import org.kodein.di.compose.rememberInstance
 
 internal sealed class FavouriteEditDialogState {
     data object Add : FavouriteEditDialogState()
@@ -106,9 +105,9 @@ internal fun FavouriteEditForm(
 }
 
 @Composable
-internal fun FavouriteEditDialog() {
-    val viewModel: UserFavouriteViewModel by rememberInstance()
-
+internal fun FavouriteEditDialog(
+    viewModel: UserFavouriteViewModel,
+) {
     val loading by remember {
         mutableStateOf(false)
     }

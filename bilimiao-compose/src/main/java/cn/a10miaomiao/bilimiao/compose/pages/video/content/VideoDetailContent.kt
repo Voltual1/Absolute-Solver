@@ -70,7 +70,7 @@ import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -82,8 +82,8 @@ fun VideoDetailContent(
     arcData: Arc,
     isActive: Boolean,
 ) {
-    val playerStore by rememberInstance<PlayerStore>()
-    val playListStore by rememberInstance<PlayListStore>()
+    val playerStore: PlayerStore = koinInject()
+    val playListStore: PlayListStore = koinInject()
     val playListState by playListStore.stateFlow.collectAsState()
     val listPosition by playerStore.listPositionFlow.collectAsState()
     var isExpandPlayList by remember {

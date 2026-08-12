@@ -33,7 +33,7 @@ import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import okhttp3.internal.toLongOrDefault
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @Composable
 fun VideoPlayListBox(
@@ -45,7 +45,7 @@ fun VideoPlayListBox(
     isExpand: Boolean = false,
     onChangeExpand: (Boolean) -> Unit = {},
 ) {
-    val playerStore by rememberInstance<PlayerStore>()
+    val playerStore: PlayerStore = koinInject()
     val playerState by playerStore.stateFlow.collectAsState()
     val position by remember {
         derivedStateOf {
