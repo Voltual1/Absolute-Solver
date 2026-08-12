@@ -1,7 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages
 
 import android.webkit.CookieManager
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,37 +10,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.toPaddingValues
 import com.a10miaomiao.bilimiao.comm.BilimiaoCommApp
 import com.a10miaomiao.bilimiao.comm.store.UserStore
 import com.a10miaomiao.bilimiao.store.WindowStore
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberDI
-import org.kodein.di.instance
 import kotlinx.serialization.Serializable
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 class TestPage : ComposePage() {
 
     @Composable
     override fun Content() {
-        val viewModel: TestPageViewModel = diViewModel()
+        val viewModel: TestPageViewModel = koinViewModel()
         TestPageContent(viewModel)
     }
 
 }
 
-private class TestPageViewModel(
-    override val di: DI,
-) : ViewModel(), DIAware {
-
-    private val userStore by instance<UserStore>()
+internal class TestPageViewModel(
+    private val userStore: UserStore,
+) : ViewModel() {
 
     val userName: String
         get() {
@@ -82,7 +76,7 @@ private fun ColorBox(
 private fun TestPageContent(
     viewModel: TestPageViewModel,
 ) {
-    val windowStore: WindowStore by rememberDI { instance() }
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.windowInsets
 

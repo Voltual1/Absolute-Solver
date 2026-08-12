@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -16,14 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.dynamic.v2.DynamicGRPC
+import bilibili.app.dynamic.v2.DynamicItem
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -32,27 +29,21 @@ import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dyanmic.DynamicItemCard
 import cn.a10miaomiao.bilimiao.compose.components.list.ListStateBox
 import com.a10miaomiao.bilimiao.comm.network.BiliGRPCHttp
-import com.a10miaomiao.bilimiao.comm.utils.UrlUtil
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class UserDynamicListContentViewModel(
-    override val di: DI,
+internal class UserDynamicListContentViewModel(
     private val vmid: String,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
-    val list = FlowPaginationInfo<bilibili.app.dynamic.v2.DynamicItem>()
+    val list = FlowPaginationInfo<DynamicItem>()
     var listHistoryOffset = ""
 
     init {
@@ -126,10 +117,11 @@ private class UserDynamicListContentViewModel(
 fun UserDynamicListContent(
     vmid: String,
 ) {
-    val viewModel = diViewModel(key = "dynamic-$vmid") {
-        UserDynamicListContentViewModel(it, vmid)
-    }
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: UserDynamicListContentViewModel = koinViewModel(
+        key = "dynamic-$vmid",
+        parameters = { parametersOf(vmid) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

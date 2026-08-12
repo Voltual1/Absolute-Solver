@@ -1,6 +1,5 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user.content
 
-import android.net.Uri
 import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,15 +26,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bilibili.app.view.v1.Episode
 import cn.a10miaomiao.bilimiao.compose.assets.BilimiaoIcons
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.Common
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menufold
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menuunfold
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -67,24 +63,20 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class UserMedialistDetailViewMode(
-    override val di: DI,
+internal class UserMedialistDetailViewMode(
     private val bizId: String,
     private val bizType: String,
     private val bizTitle: String,
-) : ViewModel(), DIAware {
-
-    val userStore: UserStore by instance()
-    private val pageNavigation: PageNavigation by instance()
-    private val playerDelegate: BasePlayerDelegate by instance()
-    private val playerStore by instance<PlayerStore>()
-    private val playListStore by instance<PlayListStore>()
+    val userStore: UserStore,
+    private val pageNavigation: PageNavigation,
+    private val playerDelegate: BasePlayerDelegate,
+    private val playerStore: PlayerStore,
+    private val playListStore: PlayListStore,
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
     val list = FlowPaginationInfo<MediaListV2Info>()
@@ -230,17 +222,11 @@ fun UserMedialistDetailContent(
     hideFirstPane: Boolean,
     onChangeHideFirstPane: (hidden: Boolean) -> Unit,
 ) {
-    val viewModel = diViewModel(
+    val viewModel: UserMedialistDetailViewMode = koinViewModel(
         key = bizType + bizId,
-    ) {
-        UserMedialistDetailViewMode(
-            it,
-            bizId = bizId,
-            bizType = bizType,
-            bizTitle = bizTitle,
-        )
-    }
-    val windowStore: WindowStore by rememberInstance()
+        parameters = { parametersOf(bizId, bizType, bizTitle) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

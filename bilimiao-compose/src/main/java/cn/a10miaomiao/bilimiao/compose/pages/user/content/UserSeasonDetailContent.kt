@@ -30,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.view.v1.ViewGRPC
@@ -38,8 +37,6 @@ import cn.a10miaomiao.bilimiao.compose.assets.BilimiaoIcons
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.Common
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menufold
 import cn.a10miaomiao.bilimiao.compose.assets.bilimiaoicons.common.Menuunfold
-import cn.a10miaomiao.bilimiao.compose.common.defaultNavOptions
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -71,21 +68,18 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-private class UserSeasonDetailViewModel(
-    override val di: DI,
+internal class UserSeasonDetailViewModel(
     private val sid: String,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
-    val userStore: UserStore by instance()
-    private val playerDelegate: BasePlayerDelegate by instance()
-    private val playerStore by instance<PlayerStore>()
-    private val playListStore by instance<PlayListStore>()
+    private val pageNavigation: PageNavigation,
+    val userStore: UserStore,
+    private val playerDelegate: BasePlayerDelegate,
+    private val playerStore: PlayerStore,
+    private val playListStore: PlayListStore,
+) : ViewModel() {
 
     var seasonInfo = MutableStateFlow<bilibili.app.view.v1.UgcSeason?>(null)
     val isRefreshing = MutableStateFlow(false)
@@ -118,7 +112,6 @@ private class UserSeasonDetailViewModel(
             list.finished.value = true
             list.pageNum = pageNum
             if (favState.value == -1 && userStore.isLogin()) {
-                // 获取订阅状态
                 val firstEp = sections.value.firstOrNull()
                     ?.episodes
                     ?.firstOrNull()
@@ -137,9 +130,6 @@ private class UserSeasonDetailViewModel(
         }
     }
 
-    /**
-     * 获取订阅状态
-     */
     private suspend fun getFavState(aid: String) {
         try {
             val res = BiliApiService.archiveApi.relation(
@@ -279,12 +269,11 @@ internal fun UserSeasonDetailContent(
     hideFirstPane: Boolean,
     onChangeHideFirstPane: (hidden: Boolean) -> Unit,
 ) {
-    val viewModel = diViewModel(
+    val viewModel: UserSeasonDetailViewModel = koinViewModel(
         key = seasonId,
-    ) {
-        UserSeasonDetailViewModel(it, seasonId)
-    }
-    val windowStore: WindowStore by rememberInstance()
+        parameters = { parametersOf(seasonId) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

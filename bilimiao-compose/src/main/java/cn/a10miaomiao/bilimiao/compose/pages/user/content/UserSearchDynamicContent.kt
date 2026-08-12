@@ -18,12 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bilibili.app.dynamic.v2.DynamicItem
-import bilibili.app.interfaces.v1.SearchArchiveReq
 import bilibili.app.interfaces.v1.SearchDynamicReq
 import bilibili.app.interfaces.v1.SpaceGRPC
 import cn.a10miaomiao.bilimiao.compose.common.addPaddingValues
 import cn.a10miaomiao.bilimiao.compose.common.constant.PageTabIds
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.emitter.EmitterAction
 import cn.a10miaomiao.bilimiao.compose.common.entity.FlowPaginationInfo
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
@@ -36,19 +34,15 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-
-private class UserSearchDynamicContentViewModel(
-    override val di: DI,
+internal class UserSearchDynamicContentViewModel(
     private val mid: Long,
     private val keyword: String,
-) : ViewModel(), DIAware {
-
-    private val pageNavigation: PageNavigation by instance()
+    private val pageNavigation: PageNavigation,
+) : ViewModel() {
 
     val isRefreshing = MutableStateFlow(false)
     val list = FlowPaginationInfo<DynamicItem>()
@@ -125,12 +119,11 @@ fun UserSearchDynamicContent(
     mid: Long,
     keyword: String,
 ) {
-    val viewModel = diViewModel(
-        key = "${PageTabIds.UserSearchDynamic}:$mid:$keyword"
-    ) {
-        UserSearchDynamicContentViewModel(it, mid, keyword)
-    }
-    val windowStore: WindowStore by rememberInstance()
+    val viewModel: UserSearchDynamicContentViewModel = koinViewModel(
+        key = "${PageTabIds.UserSearchDynamic}:$mid:$keyword",
+        parameters = { parametersOf(mid, keyword) }
+    )
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

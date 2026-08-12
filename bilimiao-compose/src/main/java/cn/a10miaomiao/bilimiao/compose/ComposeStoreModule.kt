@@ -1,5 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose
 
+import ReplyDetailListPageViewModel
 import androidx.fragment.app.Fragment
 import bilibili.app.dynamic.v2.UpListItem
 import bilibili.main.community.reply.v1.ReplyInfo
@@ -37,6 +38,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.setting.proxy.*
 import cn.a10miaomiao.bilimiao.compose.pages.home.*
 import cn.a10miaomiao.bilimiao.compose.pages.home.content.*
 import cn.a10miaomiao.bilimiao.compose.pages.lyric.*
+import cn.a10miaomiao.bilimiao.compose.pages.*
 
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -50,6 +52,43 @@ val composeStoreModule = module {
     viewModelOf(::HomeSettingPageViewModel)
     viewModelOf(::DanmakuDisplaySettingPageViewModel)
     viewModelOf(::DownloadBangumiCreatePageViewModel)
+
+    // 注册 TestPage, BlankPage
+    viewModelOf(::TestPageViewModel)
+    viewModelOf(::BlankPageViewModel)
+
+    // 注册 User 模块二级子内容 Content ViewModels
+    viewModel { (mid: Long, keyword: String) ->
+        UserSearchDynamicContentViewModel(mid = mid, keyword = keyword, pageNavigation = get())
+    }
+    viewModel { (mid: Long, keyword: String) ->
+        UserSearchArchiveContentViewModel(mid = mid, keyword = keyword, pageNavigation = get())
+    }
+    viewModel { (bizId: String, bizType: String, bizTitle: String) ->
+        UserMedialistDetailViewMode(
+            bizId = bizId,
+            bizType = bizType,
+            bizTitle = bizTitle,
+            userStore = get(),
+            pageNavigation = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerStore = get(),
+            playListStore = get()
+        )
+    }
+    viewModel { (vmid: String) ->
+        UserDynamicListContentViewModel(vmid = vmid, pageNavigation = get())
+    }
+    viewModel { (sid: String) ->
+        UserSeasonDetailViewModel(
+            sid = sid,
+            pageNavigation = get(),
+            userStore = get(),
+            playerDelegate = org.koin.core.context.GlobalContext.get().get(),
+            playerStore = get(),
+            playListStore = get()
+        )
+    }
 
     // 注册 LyricPageViewModel
     viewModel {
