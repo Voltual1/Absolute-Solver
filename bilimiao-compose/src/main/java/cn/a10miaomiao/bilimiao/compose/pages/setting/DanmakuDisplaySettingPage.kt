@@ -1,8 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.setting
 
 import android.os.Build
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,14 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.foundation.pagerTabIndicatorOffset
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
@@ -35,9 +32,8 @@ import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
-import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Serializable
 data class DanmakuDisplaySettingPage(
@@ -46,7 +42,7 @@ data class DanmakuDisplaySettingPage(
 
     @Composable
     override fun Content() {
-        val viewModel = koinViewModel<DanmakuDisplaySettingPageViewModel>()
+        val viewModel: DanmakuDisplaySettingPageViewModel = koinViewModel()
         val initialMode = name
         DanmakuDisplaySettingPageContent(
             viewModel,
@@ -94,7 +90,7 @@ class DanmakuDisplaySettingPageViewModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DanmakuDisplaySettingPageContent(
     viewModel: DanmakuDisplaySettingPageViewModel,
@@ -103,7 +99,7 @@ private fun DanmakuDisplaySettingPageContent(
     PageConfig(
         title = "弹幕显示设置"
     )
-    val windowStore = koinInject<WindowStore>()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

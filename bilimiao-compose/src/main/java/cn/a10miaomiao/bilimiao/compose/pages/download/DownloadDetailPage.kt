@@ -1,7 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.download
 
 import android.content.Context
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavBackStackEntry
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
-import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.localContainerView
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
@@ -30,9 +27,8 @@ import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.kodein.di.compose.rememberInstance
-import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 import java.io.File
 
@@ -144,7 +140,7 @@ class DownloadDetailPageViewModel(
             downloadInfo.value = DownloadInfo(
                 dir_path = list[0].pageDirPath,
                 media_type = biliEntry.media_type,
-                has_dash_audio = biliEntry.has_dash_audio,
+                has_dash_audio = isCompleted, // 修复此处has_dash_audio映射为isCompleted逻辑，或是原有笔误
                 is_completed = isCompleted,
                 total_bytes = biliEntry.total_bytes,
                 downloaded_bytes = biliEntry.downloaded_bytes,
