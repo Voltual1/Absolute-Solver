@@ -1,18 +1,18 @@
 package com.a10miaomiao.bilimiao.comm.store
 
 import com.a10miaomiao.bilimiao.store.WindowStore
-import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val commStoreModule = module {
-    viewModelOf(::AppStore)
-    viewModelOf(::WindowStore)
-    viewModelOf(::PlayListStore)
-    viewModelOf(::PlayerStore)
-    viewModelOf(::UserStore)
-    viewModelOf(::UserLibraryStore)
-    viewModelOf(::MessageStore)
-    viewModelOf(::TimeSettingStore)
-    viewModelOf(::FilterStore)
-    viewModelOf(::RegionStore)
+    singleOf(::AppStore)
+    singleOf(::WindowStore)
+    singleOf(::PlayListStore)
+    singleOf(::PlayerStore)
+    singleOf(::UserStore)
+    singleOf(::UserLibraryStore)
+    singleOf(::MessageStore)
+    singleOf(::TimeSettingStore)
+    singleOf(::FilterStore)
+    singleOf(::RegionStore)
 }

@@ -3,36 +3,37 @@ package com.a10miaomiao.bilimiao.store
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.a10miaomiao.bilimiao.comm.store.*
-import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class Store (
-        private val activity: AppCompatActivity,
-): KoinComponent {
+class Store(
+    private val activity: AppCompatActivity,
+) : KoinComponent {
 
-        val appStore: AppStore = activity.getViewModel()
-        val windowStore: WindowStore = activity.getViewModel()
-        val playListStore: PlayListStore = activity.getViewModel()
-        val playerStore: PlayerStore = activity.getViewModel()
-        val userStore: UserStore = activity.getViewModel()
-        val userLibraryStore: UserLibraryStore = activity.getViewModel()
-        val messageStore: MessageStore = activity.getViewModel()
-        val timeSettingStore: TimeSettingStore = activity.getViewModel()
-        val filterStore: FilterStore = activity.getViewModel()
-        val regionStore: RegionStore = activity.getViewModel()
+    val appStore: AppStore by inject()
+    val windowStore: WindowStore by inject()
+    val playListStore: PlayListStore by inject()
+    val playerStore: PlayerStore by inject()
+    val userStore: UserStore by inject()
+    val userLibraryStore: UserLibraryStore by inject()
+    val messageStore: MessageStore by inject()
+    val timeSettingStore: TimeSettingStore by inject()
+    val filterStore: FilterStore by inject()
+    val regionStore: RegionStore by inject()
 
-        fun onCreate(savedInstanceState: Bundle?) {
-                appStore.init(activity)
-                windowStore.init(activity)
-                playerStore.init(activity)
-                userStore.init(activity)
-                userLibraryStore.init(activity)
-                messageStore.init(activity)
-                timeSettingStore.init(activity)
-                filterStore.init(activity)
-                regionStore.init(activity)
-        }
+    fun onCreate(savedInstanceState: Bundle?) {
+        appStore.init(activity)
+        windowStore.init(activity)
+        playListStore.init(activity)
+        playerStore.init(activity)
+        userStore.init(activity)
+        userLibraryStore.init(activity)
+        messageStore.init(activity)
+        timeSettingStore.init(activity)
+        filterStore.init(activity)
+        regionStore.init(activity)
+    }
 
-        fun onDestroy() {
-        }
+    fun onDestroy() {
+    }
 }
