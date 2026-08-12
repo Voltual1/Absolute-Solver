@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,6 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +45,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.UserSpaceViewModel
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @Composable
 private fun IndexTitle(
@@ -106,7 +105,7 @@ private fun IndexTitle(
 fun UserSpaceIndexContent(
     viewModel: UserSpaceViewModel
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -118,9 +117,7 @@ fun UserSpaceIndexContent(
     LaunchedEffect(Unit) {
         emitter.collectAction<EmitterAction.DoubleClickTab> {
             if (it.tab == PageTabIds.UserIndex) {
-                if (listState.firstVisibleItemIndex == 0) {
-//                    viewModel.refresh()
-                } else {
+                if (listState.firstVisibleItemIndex != 0) {
                     listState.animateScrollToItem(0)
                 }
             }
@@ -152,7 +149,8 @@ fun UserSpaceIndexContent(
                 contentPadding = PaddingValues(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(archiveData.item, { it.param }) {
+                items(archiveData.item.size, { archiveData.item[it].param }) { index ->
+                    val it = archiveData.item[index]
                     Box(
                         modifier = Modifier.width(180.dp)
                     ) {
@@ -186,7 +184,8 @@ fun UserSpaceIndexContent(
                     contentPadding = PaddingValues(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(favouriteData.item, { it.id }) {
+                    items(favouriteData.item.size, { favouriteData.item[it].id }) { index ->
+                        val it = favouriteData.item[index]
                         MiniFavouriteItemBox(
                             modifier = Modifier.width(120.dp),
                             title = it.title,
@@ -247,7 +246,8 @@ fun UserSpaceIndexContent(
                     contentPadding = PaddingValues(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(seasonData.item, { it.param }) {
+                    items(seasonData.item.size, { seasonData.item[it].param }) { index ->
+                        val it = seasonData.item[index]
                         MiniBangumiItemBox(
                             modifier = Modifier.width(120.dp),
                             title = it.title,
@@ -282,7 +282,8 @@ fun UserSpaceIndexContent(
                     contentPadding = PaddingValues(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(coinArchiveData.item, { it.param }) {
+                    items(coinArchiveData.item.size, { coinArchiveData.item[it].param }) { index ->
+                        val it = coinArchiveData.item[index]
                         Box(
                             modifier = Modifier.width(180.dp)
                         ) {
@@ -319,7 +320,8 @@ fun UserSpaceIndexContent(
                     contentPadding = PaddingValues(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(likeArchiveData.item, { it.param }) {
+                    items(likeArchiveData.item.size, { likeArchiveData.item[it].param }) { index ->
+                        val it = likeArchiveData.item[index]
                         Box(
                             modifier = Modifier.width(180.dp)
                         ) {

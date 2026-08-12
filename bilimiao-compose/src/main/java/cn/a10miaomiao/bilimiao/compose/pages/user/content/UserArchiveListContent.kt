@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,13 +22,13 @@ import cn.a10miaomiao.bilimiao.compose.components.video.VideoItemBox
 import cn.a10miaomiao.bilimiao.compose.pages.user.UserArchiveViewModel
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import com.a10miaomiao.bilimiao.store.WindowStore
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @Composable
 fun UserArchiveListContent(
     viewModel: UserArchiveViewModel,
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 
@@ -64,17 +63,18 @@ fun UserArchiveListContent(
             top = 0.dp,
         )
     ) {
-        items(list) {
+        items(list.size, key = { list[it].param }) { index ->
+            val item = list[index]
             VideoItemBox(
                 modifier = Modifier.padding(10.dp),
-                title = it.title,
-                pic = it.cover,
-                playNum = it.play,
-                damukuNum = it.danmaku,
-                remark = NumberUtil.converCTime(it.ctime),
-                duration = NumberUtil.converDuration(it.duration),
+                title = item.title,
+                pic = item.cover,
+                playNum = item.play,
+                damukuNum = item.danmaku,
+                remark = NumberUtil.converCTime(item.ctime),
+                duration = NumberUtil.converDuration(item.duration),
                 onClick = {
-                    viewModel.toVideoDetail(it)
+                    viewModel.toVideoDetail(item)
                 }
             )
         }

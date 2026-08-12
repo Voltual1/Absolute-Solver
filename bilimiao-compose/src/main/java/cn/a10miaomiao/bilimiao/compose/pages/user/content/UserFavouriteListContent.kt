@@ -1,8 +1,6 @@
 package cn.a10miaomiao.bilimiao.compose.pages.user.content
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,9 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.R
@@ -40,7 +36,7 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -49,7 +45,7 @@ internal fun UserFavouriteListContent(
     showTowPane: Boolean,
     folderType: UserFavouriteFolderType,
 ) {
-    val windowStore: WindowStore by rememberInstance()
+    val windowStore: WindowStore = koinInject()
     val windowState = windowStore.stateFlow.collectAsState().value
     val windowInsets = windowState.getContentInsets(localContainerView())
 

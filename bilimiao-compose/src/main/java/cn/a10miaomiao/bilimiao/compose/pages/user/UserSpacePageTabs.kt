@@ -1,4 +1,3 @@
-// File: bilimiao-compose/src/main/java/cn/a10miaomiao/bilimiao/compose/pages/user/UserSpacePageTabs.kt
 package cn.a10miaomiao.bilimiao.compose.pages.user
 
 import androidx.compose.runtime.Composable
