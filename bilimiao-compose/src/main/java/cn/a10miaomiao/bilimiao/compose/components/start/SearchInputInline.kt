@@ -20,9 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,13 +31,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -52,7 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,14 +61,13 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import cn.a10miaomiao.bilimiao.compose.base.PageSearchMethod
 import cn.a10miaomiao.bilimiao.compose.common.diViewModel
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
-import cn.a10miaomiao.bilimiao.compose.components.miao.MiaoCard
 import cn.a10miaomiao.bilimiao.compose.components.miao.MiaoOutlinedCard
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel.SuggestInfo
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.delay
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -91,8 +84,8 @@ fun SearchInputInline(
     val isCompact = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
 
     val viewModel: SearchInputViewModel = diViewModel()
-    val pageNavigation: PageNavigation by rememberInstance()
-    val activity: Activity by rememberInstance()
+    val pageNavigation: PageNavigation = koinInject()
+    val activity: Activity = koinInject()
 
     var text by remember { mutableStateOf(initKeyword) }
     var mode by remember { mutableStateOf(initMode) }
@@ -260,7 +253,6 @@ fun SearchInputInline(
                 }
             }
 
-            // Suggestions list displayed as flow chips
             Box(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -372,7 +364,6 @@ private fun SearchTextField(
     onModeChange: (Int) -> Unit,
     pageSearchMethod: PageSearchMethod?,
 ) {
-    // Bottom input and actions bar
     Surface(
         modifier = modifier,
         tonalElevation = 3.dp,

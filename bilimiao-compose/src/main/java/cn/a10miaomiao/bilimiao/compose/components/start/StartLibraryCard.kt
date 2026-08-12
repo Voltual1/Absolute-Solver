@@ -43,15 +43,14 @@ import cn.a10miaomiao.bilimiao.compose.pages.user.UserFavouritePage
 import cn.a10miaomiao.bilimiao.compose.pages.video.VideoDetailPage
 import com.a10miaomiao.bilimiao.comm.store.UserLibraryStore
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.compose.rememberInstance
-
+import org.koin.compose.koinInject
 
 @Composable
 fun StartLibraryCard(
     userId: Long?,
     navigateTo: (ComposePage) -> Unit,
 ) {
-    val userLibraryStore by rememberInstance<UserLibraryStore>()
+    val userLibraryStore: UserLibraryStore = koinInject()
     val userLibraryState by userLibraryStore.stateFlow.collectAsState()
     val isLogin = userId != null
     BoxWithConstraints {
@@ -208,7 +207,6 @@ fun StartLibraryCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )
-                    // 占位
                     Text(
                         modifier = Modifier
                             .padding(vertical = 4.dp, horizontal = 8.dp),
@@ -258,7 +256,6 @@ fun StartLibraryCard(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline,
                         )
-                        // 占位
                         Text(
                             modifier = Modifier
                                 .padding(vertical = 4.dp, horizontal = 8.dp),
@@ -321,4 +318,3 @@ private fun LibraryItemCard(
         )
     }
 }
-

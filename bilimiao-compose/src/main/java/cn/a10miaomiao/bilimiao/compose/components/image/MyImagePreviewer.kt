@@ -1,59 +1,50 @@
 package cn.a10miaomiao.bilimiao.compose.components.image
 
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.View
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.FragmentActivity
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageConfig
 import cn.a10miaomiao.bilimiao.compose.common.mypage.PageListener
 import cn.a10miaomiao.bilimiao.compose.common.mypage.rememberMyMenu
 import cn.a10miaomiao.bilimiao.compose.components.image.previewer.ImagePreviewer
 import cn.a10miaomiao.bilimiao.compose.components.image.provider.ImagePreviewerState
-import cn.a10miaomiao.bilimiao.compose.components.image.provider.PreviewImageModel
-import cn.a10miaomiao.bilimiao.compose.components.image.viewer.AnyComposable
-import cn.a10miaomiao.bilimiao.compose.components.zoomable.previewer.PreviewerState
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
-import com.a10miaomiao.bilimiao.comm.mypage.MyPageMenu
 import com.a10miaomiao.bilimiao.comm.mypage.myMenu
 import com.a10miaomiao.bilimiao.comm.utils.ImageSaveUtil
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestManager
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.GlideSubcomposition
 import com.bumptech.glide.integration.compose.RequestState
-import com.bumptech.glide.integration.compose.placeholder
-import com.bumptech.glide.load.resource.gif.GifDrawable
 import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 import java.io.File
 
 private class MyImagePreviewerController(
@@ -107,7 +98,6 @@ private class MyImagePreviewerController(
                 transition: Transition<in File>?
             ) {
                 if (isDownloading.value) {
-
                     isDownloading.value = false
                 }
             }
@@ -151,7 +141,7 @@ fun MyImagePreviewer(
     imagePreviewerState: ImagePreviewerState,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    val activity: FragmentActivity by rememberInstance()
+    val activity: FragmentActivity = koinInject()
     val controller = remember(imagePreviewerState) {
         MyImagePreviewerController(activity, imagePreviewerState)
     }
@@ -167,10 +157,6 @@ fun MyImagePreviewer(
                         key = 1
                         title = "复制图片链接"
                     }
-//                    myItem {
-//                        key = 2
-//                        title = "分享图片"
-//                    }
                 }
             }
             myItem {
@@ -194,7 +180,6 @@ fun MyImagePreviewer(
             GlideSubcomposition(imageUrl) {
                 if (state is RequestState.Success) {
                     painterState.value = painter
-                    // 设置原图已下载标志
                     imagePreviewerState.onImageLoaded(page)
                 }
             }
@@ -221,4 +206,3 @@ fun MyImagePreviewer(
         )
     }
 }
-

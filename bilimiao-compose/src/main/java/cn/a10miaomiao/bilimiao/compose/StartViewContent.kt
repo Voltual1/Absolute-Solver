@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -38,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -132,7 +130,6 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.launch
-import org.kodein.di.compose.rememberInstance
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import android.app.Activity
 import android.net.Uri
@@ -173,6 +170,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel.SuggestInfo
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel.SuggestType
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -198,7 +196,6 @@ fun StartViewContent(
         AnimatedContent(
             isSearchVisible,
             transitionSpec = {
-                // 从下往上进入，从上往下退出，并带有透明过渡
                 if (searchAnimation) {
                     (
                         slideInHorizontally(
@@ -212,7 +209,6 @@ fun StartViewContent(
                         ) + fadeOut(animationSpec = tween(durationMillis = 250))
                     )
                 } else {
-                    // 无动画
                     fadeIn(animationSpec = tween(0)) togetherWith
                             fadeOut(animationSpec = tween(0))
                 }
@@ -259,11 +255,11 @@ private fun StartIndexList(
     navigateTo: (ComposePage) -> Unit,
     navigateUrl: (String) -> Unit,
 ) {
-    val userStore by rememberInstance<UserStore>()
+    val userStore: UserStore = koinInject()
     val userState by userStore.stateFlow.collectAsState()
-    val playerStore by rememberInstance<PlayerStore>()
+    val playerStore: PlayerStore = koinInject()
     val playerState by playerStore.stateFlow.collectAsState()
-    val playerDelegate by rememberInstance<BasePlayerDelegate>()
+    val playerDelegate: BasePlayerDelegate = koinInject()
 
     var showScannerDownloadDialog by remember { mutableStateOf(false) }
     var showScannerResultTips by remember { mutableStateOf("") }
@@ -392,7 +388,6 @@ private fun StartIndexList(
                         }
                     }.let {
                         if (!it) {
-                            // 打开失败
                             showScannerDownloadDialog = true
                         }
                     }

@@ -30,16 +30,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.R
-import cn.a10miaomiao.bilimiao.compose.components.miao.MiaoCard
 import cn.a10miaomiao.bilimiao.compose.components.miao.MiaoOutlinedCard
-import cn.a10miaomiao.bilimiao.compose.pages.message.MessagePage
 import com.a10miaomiao.bilimiao.comm.entity.user.UserInfo
 import com.a10miaomiao.bilimiao.comm.store.MessageStore
 import com.a10miaomiao.bilimiao.comm.utils.NumberUtil
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import org.kodein.di.compose.rememberInstance
-
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -219,7 +216,7 @@ private fun StartUserMessageBox(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val messageStore by rememberInstance<MessageStore>()
+    val messageStore: MessageStore = koinInject()
     val messageState by messageStore.stateFlow.collectAsState()
     Box(
         modifier = modifier,

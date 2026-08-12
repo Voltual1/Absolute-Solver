@@ -3,30 +3,24 @@ package cn.a10miaomiao.bilimiao.compose.pages.video.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,11 +29,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cn.a10miaomiao.bilimiao.compose.pages.video.VideoDetailViewModel
-import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.store.PlayerStore
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import okhttp3.internal.toLongOrDefault
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @Composable
 fun VideoUgcSeasonBox(
@@ -50,7 +42,7 @@ fun VideoUgcSeasonBox(
     isExpand: Boolean = false,
     onChangeExpand: (Boolean) -> Unit = {},
 ) {
-    val playerStore by rememberInstance<PlayerStore>()
+    val playerStore: PlayerStore = koinInject()
     val playerState by playerStore.stateFlow.collectAsState()
     val listState = rememberLazyGridState()
     Box(modifier) {
@@ -99,26 +91,6 @@ fun VideoUgcSeasonBox(
                     onCheckedChange = viewModel::updateIsAutoPlaySeason,
                 )
             }
-
-//            if (ugcSeason.sections.size > 1) {
-//                LazyRow(
-//                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-//                    contentPadding = PaddingValues(horizontal = 5.dp),
-//                ) {
-//                    items(ugcSeason.sections.size) {
-//                        val s = ugcSeason.sections[it]
-//                        FilterChip(
-//                            selected = false,
-//                            onClick = {
-//
-//                            },
-//                            label = {
-//                                Text(text = s.title)
-//                            }
-//                        )
-//                    }
-//                }
-//            }
 
             Box(
                 modifier = Modifier.animateContentSize()

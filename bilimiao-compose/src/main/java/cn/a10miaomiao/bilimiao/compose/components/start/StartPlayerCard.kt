@@ -35,7 +35,7 @@ import com.a10miaomiao.bilimiao.comm.store.PlayListStore
 import com.a10miaomiao.bilimiao.comm.utils.UrlUtil
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -49,7 +49,7 @@ fun StartPlayerCard(
     onPlayListClick: () -> Unit = {},
     onCloseClick: () -> Unit = {},
 ) {
-    val playListStore by rememberInstance<PlayListStore>()
+    val playListStore: PlayListStore = koinInject()
     val playListState by playListStore.stateFlow.collectAsState()
 
     MiaoOutlinedCard(
@@ -103,7 +103,7 @@ fun StartPlayerCard(
                     IconButton(
                         onClick = onCloseClick,
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.2f), // 使用主题错误色
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {

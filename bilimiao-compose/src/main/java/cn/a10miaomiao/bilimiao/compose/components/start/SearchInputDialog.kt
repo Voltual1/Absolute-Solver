@@ -52,9 +52,8 @@ import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel.SuggestInfo
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchInputViewModel.SuggestType
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.compose.rememberInstance
+import org.koin.compose.koinInject
 
 @Composable
 fun SearchInputDialog(
@@ -64,8 +63,8 @@ fun SearchInputDialog(
     onDismissRequest: () -> Unit,
 ) {
     val viewModel: SearchInputViewModel = cn.a10miaomiao.bilimiao.compose.common.diViewModel()
-    val pageNavigation: PageNavigation by rememberInstance()
-    val activity: Activity by rememberInstance()
+    val pageNavigation: PageNavigation = koinInject()
+    val activity: Activity = koinInject()
 
     var text by remember { mutableStateOf(initKeyword) }
     var mode by remember { mutableStateOf(initMode) }
@@ -89,7 +88,6 @@ fun SearchInputDialog(
         if (mode == 0) {
             pageNavigation.navigate(SearchResultPage(keyword))
         } else {
-//            activity.searchSelfPage(keyword)
         }
         onDismissRequest()
     }
@@ -99,7 +97,6 @@ fun SearchInputDialog(
         onDismiss = onDismissRequest,
     ) {
         LaunchedEffect(Unit) {
-            // Slight delay to wait for sheet animation/start of composition
             kotlinx.coroutines.delay(100)
             focusRequester.requestFocus()
         }
@@ -108,7 +105,6 @@ fun SearchInputDialog(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         ) {
-            // Suggestions list
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -149,7 +145,6 @@ fun SearchInputDialog(
                 }
             }
 
-            // Bottom input and actions bar
             Surface(
                 tonalElevation = 3.dp,
                 shadowElevation = 1.dp,
@@ -216,9 +211,6 @@ fun SearchInputDialog(
                                 unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                             )
                         )
-//                        IconButton(onClick = { startSearch(text) }) {
-//                            Icon(Icons.Default.Search, contentDescription = "搜索")
-//                        }
                     }
                 }
             }
