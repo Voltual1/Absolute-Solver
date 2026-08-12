@@ -328,8 +328,8 @@ class MainActivity : AppCompatActivity() {
                 val playerHoldShowArea = it[PlayerSmallShowArea] ?: 130
                 val contentDefaultSplit = (it[FlagContentSplit] ?: 35) / 100f
                 if (playerSmallShowArea != rootView.playerSmallShowArea
-| playerHoldShowArea != rootView.playerHoldShowArea
-| contentDefaultSplit != rootView.contentDefaultSplit) {
+                    || playerHoldShowArea != rootView.playerHoldShowArea
+                    || contentDefaultSplit != rootView.contentDefaultSplit) {
                     rootView.playerSmallShowArea = playerSmallShowArea
                     rootView.playerHoldShowArea = playerHoldShowArea
                     rootView.contentDefaultSplit = contentDefaultSplit
