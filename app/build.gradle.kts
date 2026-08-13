@@ -138,13 +138,6 @@ dependencies {
     }
     implementation(libs.materialkolor)
 
-    implementation(libs.splitties.android.base)
-    implementation(libs.splitties.android.base.with.views.dsl)
-    implementation(libs.splitties.android.appcompat)
-    implementation(libs.splitties.android.appcompat.with.views.dsl)
-    implementation(libs.splitties.android.material.components)
-    implementation(libs.splitties.android.material.components.with.views.dsl)
-
     implementation(libs.mojito)
     implementation(libs.mojito.sketch)
     implementation(libs.mojito.glide)
