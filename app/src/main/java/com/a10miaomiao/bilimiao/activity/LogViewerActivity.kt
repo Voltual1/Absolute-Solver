@@ -4,105 +4,96 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.setPadding
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material3.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import cn.a10miaomiao.bilimiao.compose.BilimiaoTheme
 import com.a10miaomiao.bilimiao.R
-import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
-import com.a10miaomiao.bilimiao.config.config
-import com.google.android.material.appbar.MaterialToolbar
-import splitties.dimensions.dip
-import splitties.experimental.InternalSplittiesApi
-import splitties.views.backgroundColor
-import splitties.views.dsl.core.Ui
-import splitties.views.dsl.core.lParams
-import splitties.views.dsl.core.matchParent
-import splitties.views.dsl.core.setContentView
-import splitties.views.dsl.core.textView
-import splitties.views.dsl.core.verticalLayout
-import splitties.views.dsl.core.view
-import splitties.views.dsl.core.wrapContent
-import splitties.views.dsl.core.wrapInScrollView
+import com.a10miaomiao.bilimiao.comm.store.AppStore
+import org.koin.android.ext.android.inject
 
-class LogViewerActivity : AppCompatActivity() {
+class LogViewerActivity : ComponentActivity() {
 
-    // 修正 ThemeDelegate 初始化
-    private val themeDelegate by lazy {
-        ThemeDelegate(this@LogViewerActivity)
-    }
+    private val appStore by inject<AppStore>()
 
     private var mLogSummary = ""
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        themeDelegate.onCreate(savedInstanceState)
-        val ui = LogViewerUi(this)
-        setContentView(ui)
+        
+        mLogSummary = intent.getStringExtra("log_summary") ?: ""
 
-        val logSummary = intent.getStringExtra("log_summary")
-        if (!logSummary.isNullOrEmpty()) {
-            mLogSummary = logSummary
-            ui.logText.text = logSummary
+        setContent {
+            val appState by appStore.stateFlow.collectAsState()
+            BilimiaoTheme(appState = appState) {
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(text = getString(R.string.log_viewer)) },
+                            navigationIcon = {
+                                IconButton(onClick = { onBackPressedDispatcher.onBackPressed() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = { copyLogText() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = "Copy"
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                                actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .background(MaterialTheme.colorScheme.background)
+                            .verticalScroll(rememberScrollState())
+                            .padding(10.dp)
+                    ) {
+                        SelectionContainer {
+                            Text(
+                                text = mLogSummary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
     private fun copyLogText() {
-        val logSummary = mLogSummary
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("log", logSummary)
+        val clip = ClipData.newPlainText("log", mLogSummary)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, "复制成功(●'◡'●)", Toast.LENGTH_SHORT).show()
-    }
-
-    @OptIn(InternalSplittiesApi::class)
-    class LogViewerUi(
-        val activity: LogViewerActivity
-    ) : Ui {
-        override val ctx = activity
-
-        val toolBar = view<MaterialToolbar>(View.generateViewId()) {
-            clipToPadding = true
-            fitsSystemWindows = true
-            setTitle(R.string.log_viewer)
-            setNavigationOnClickListener {
-                activity.onBackPressed()
-            }
-            menu.add(Menu.FIRST, 1, 0, "复制日志").also {
-                it.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            }
-            setOnMenuItemClickListener {
-                when(it.itemId) {
-                    1 -> {
-                        activity.copyLogText()
-                    }
-                }
-                true
-            }
-        }
-
-        val logText = textView {
-            setPadding(dip(10))
-            setTextIsSelectable(true)
-        }
-
-        override val root: View = verticalLayout {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            fitsSystemWindows = true
-
-            addView(toolBar, lParams(matchParent, wrapContent))
-
-            addView(verticalLayout {
-                addView(logText, lParams(matchParent, wrapContent))
-            }.wrapInScrollView {
-                backgroundColor = config.windowBackgroundColor
-            }, lParams(matchParent, matchParent))
-        }
     }
 }
