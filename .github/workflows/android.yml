@@ -56,13 +56,6 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Find mapping.txt
-        if: github.event_name != 'pull_request'
-        run: |
-          echo "=== Searching for mapping.txt ==="
-          find app/build/outputs -name "mapping.txt" -type f || true
-          echo "=== Listing mapping directory ==="
-          find app/build/outputs/mapping -type f 2>/dev/null || echo "No mapping directory found"
 #      - name: Build Debug APK
 #        if: github.event_name != 'pull_request'
 #        run: ./gradlew assembleFossDebug
@@ -81,7 +74,7 @@ jobs:
             app/build/outputs/apk/foss/debug/*.apk            
             app/build/outputs/apk/full/debug/*.apk            
             app/build/outputs/apk/full/release/*.apk
-            app/build/outputs/mapping/foss/release/mapping.txt
+            app/build/outputs/mapping/fossRelease/mapping.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
