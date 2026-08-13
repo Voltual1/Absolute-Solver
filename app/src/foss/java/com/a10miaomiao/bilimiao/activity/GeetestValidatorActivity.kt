@@ -17,7 +17,6 @@ import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import org.kodein.di.DI
 
 class GeetestValidatorActivity : AppCompatActivity() {
 
@@ -31,10 +30,9 @@ class GeetestValidatorActivity : AppCompatActivity() {
         }
     }
 
-    private val di: DI = DI.lazy {}
     private var mCallback: CallBack? = null
     private val themeDelegate by lazy {
-        ThemeDelegate(this@GeetestValidatorActivity, di)
+        ThemeDelegate(this@GeetestValidatorActivity)
     }
     private lateinit var webView: WebView
 

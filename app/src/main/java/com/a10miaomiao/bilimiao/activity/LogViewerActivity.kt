@@ -17,14 +17,11 @@ import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.config.config
 import com.google.android.material.appbar.MaterialToolbar
-import org.kodein.di.DI
 
 class LogViewerActivity : AppCompatActivity() {
 
-    private val di: DI = DI.lazy {}
-
     private val themeDelegate by lazy {
-        ThemeDelegate(this@LogViewerActivity, di)
+        ThemeDelegate(this@LogViewerActivity)
     }
 
     private var mLogSummary = ""

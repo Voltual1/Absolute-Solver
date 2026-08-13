@@ -19,14 +19,11 @@ import com.a10miaomiao.bilimiao.config.config
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.kongzue.dialogx.dialogs.PopTip
-import org.kodein.di.DI
 
 class DensitySettingActivity : AppCompatActivity() {
 
-    private val di: DI = DI.lazy {}
-
     private val themeDelegate by lazy {
-        ThemeDelegate(this@DensitySettingActivity, di)
+        ThemeDelegate(this@DensitySettingActivity)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

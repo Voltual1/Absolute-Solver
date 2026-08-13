@@ -63,10 +63,10 @@ class AppBarVerticalUi(
         val layoutTransition = LayoutTransition()
 
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
         layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
         layoutTransition.setDuration(400)
-        layoutTransition.setInterpolator(LayoutTransition.DISARING, DecelerateInterpolator())
+        layoutTransition.setInterpolator(LayoutTransition.DISAPPEARING, DecelerateInterpolator())
         setLayoutTransition(layoutTransition)
 
         setPadding(paddingLeft, mTitleHeight, paddingRight, paddingBottom)

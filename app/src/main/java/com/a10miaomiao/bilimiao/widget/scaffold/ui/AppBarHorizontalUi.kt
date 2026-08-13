@@ -91,7 +91,7 @@ class AppBarHorizontalUi(
 
         val layoutTransition = LayoutTransition()
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
         setLayoutTransition(layoutTransition)
     }
 
@@ -99,7 +99,7 @@ class AppBarHorizontalUi(
         orientation = LinearLayout.VERTICAL
         val layoutTransition = LayoutTransition()
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
         setLayoutTransition(layoutTransition)
 
         addView(mNavigationIconLayout, LinearLayout.LayoutParams(
