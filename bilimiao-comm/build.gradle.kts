@@ -6,8 +6,6 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.protobuf") // proto
     kotlin("plugin.serialization")
-    // 引入 Koin 编译器插件
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -95,11 +93,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     
-    // 双 DI 容器共存
-    implementation(libs.kodein.di)
+    // kodein已迁移为koin
     implementation(libs.koin.core)
-    implementation(libs.koin.android)
-    implementation(libs.koin.annotations) // 补充 Koin Annotations 依赖以配合 Compiler Plugin 
+    implementation(libs.koin.android)    
 
     implementation(libs.glide)
     implementation(libs.kongzue.dialogx) {
@@ -120,8 +116,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-}
-
-koinCompiler {
-    compileSafety = false
 }

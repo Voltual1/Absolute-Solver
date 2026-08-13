@@ -33,8 +33,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.compose) apply false
     alias(libs.plugins.jetbrains.kotlin.serialization) apply false
     alias(libs.plugins.google.protobuf) apply false
-    // 根目录引入 Koin Compiler 插件并设置为不立即应用到根模块
-    alias(libs.plugins.koin.compiler) apply false
 }
 
 allprojects {

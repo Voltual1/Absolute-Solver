@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.serialization)
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -130,8 +129,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
 
     implementation(libs.kotlinx.coroutines.android)
-    
-    implementation(libs.kodein.di)
+    //kodein已迁移为koin
     implementation(libs.koin.core)
     implementation(libs.koin.android)
 
@@ -181,8 +179,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-}
-
-koinCompiler {
-    compileSafety = false // 渐进式迁移期间关闭静态依赖检查，防止因桥接依赖导致编译失败
 }

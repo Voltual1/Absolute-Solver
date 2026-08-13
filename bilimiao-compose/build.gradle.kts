@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.library)
     kotlin("plugin.serialization")
     kotlin("plugin.compose")
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -54,10 +53,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 
-    // 双 DI 容器支持
-    implementation(libs.kodein.di.core)
-    implementation(libs.kodein.di)
-    implementation(libs.kodein.di.compose)
+    // kodein已经迁移为koin
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.android.compose)
@@ -109,6 +105,3 @@ dependencies {
     implementation(project(":extractor"))
 }
 
-koinCompiler {
-    compileSafety = false
-}
