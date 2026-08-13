@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -303,7 +304,7 @@ private fun HomePageContent(
     )
     val emitter = localEmitter()
     val combinedTabClick = combinedTabDoubleClick(
-        pagerState = pagerState,
+        pattern = pagerState,
         onDoubleClick = {
             scope.launch {
                 emitter.emit(EmitterAction.DoubleClickTab(

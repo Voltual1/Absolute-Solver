@@ -90,68 +90,21 @@ val composeStoreModule = module {
     }
 
     // 注册 LyricPageViewModel
-    viewModel {
-        LyricPageViewModel(
-            activity = get(),
-            playerDelegate = get()
-        )
-    }
+    viewModelOf(::LyricPageViewModel)
 
     // 注册 SearchFollowPageViewModel 与 UserSpaceSearchPageViewModel
-    viewModel {
-        SearchFollowPageViewModel(
-            activity = get(),
-            pageNavigation = get(),
-            userStore = get()
-        )
-    }
+    viewModelOf(::SearchFollowPageViewModel)
     viewModelOf(::UserSpaceSearchPageViewModel)
 
     // 注册 Home 模块 ViewModels
-    viewModel {
-        HomePageViewModel(
-            appStore = get(),
-            activity = get(),
-            pageNavigation = get(),
-            playerDelegate = get(),
-            context = get()
-        )
-    }
-
-    viewModel {
-        HomePopularContentViewModel(
-            context = get(),
-            pageNavigation = get(),
-            filterStore = get()
-        )
-    }
-
-    viewModel {
-        HomeRecommendContentViewModel(
-            context = get(),
-            pageNavigation = get(),
-            filterStore = get()
-        )
-    }
-
-    viewModel {
-        HomeTimeMachineContentViewModel(
-            pageNavigation = get(),
-            bottomSheetState = get(),
-            timeSettingStore = get(),
-            regionStore = get(),
-            userStore = get()
-        )
-    }
+    viewModelOf(::HomePageViewModel)
+    viewModelOf(::HomePopularContentViewModel)
+    viewModelOf(::HomeRecommendContentViewModel)
+    viewModelOf(::HomeTimeMachineContentViewModel)
 
     // 注册 PlayList 与 SendDanmaku
     viewModelOf(::PlayListPageViewModel)
-    viewModel {
-        SendDanmakuViewModel(
-            pageNavigation = get(),
-            playerDelegate = get()
-        )
-    }
+    viewModelOf(::SendDanmakuViewModel)
 
     // 注册 MyBangumi 模块 ViewModel
     viewModelOf(::MyBangumiPageViewModel)
