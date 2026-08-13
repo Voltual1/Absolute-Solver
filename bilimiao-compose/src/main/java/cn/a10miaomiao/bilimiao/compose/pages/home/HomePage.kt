@@ -304,7 +304,7 @@ private fun HomePageContent(
     )
     val emitter = localEmitter()
     val combinedTabClick = combinedTabDoubleClick(
-        pattern = pagerState,
+        pagerState = pagerState,
         onDoubleClick = {
             scope.launch {
                 emitter.emit(EmitterAction.DoubleClickTab(
