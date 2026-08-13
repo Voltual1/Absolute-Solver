@@ -78,13 +78,10 @@ import com.a10miaomiao.bilimiao.store.WindowStore
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
-import org.koin.core.context.loadKoinModules
-import org.koin.core.context.unloadKoinModules
-import org.koin.dsl.module
 
 class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
 
-    private val pageNavigation = PageNavigation(
+    val pageNavigation = PageNavigation(
         navHostController = { composeNav },
         launchUrl = ::launchWebBrowser,
     )
@@ -120,27 +117,10 @@ class ComposeFragment : Fragment(), MyPage, OnBackPressedDispatcherOwner {
         pageConfigState.onSearchSelfPage(context, keyword)
     }
 
-    private val messageDialogState = MessageDialogState()
-    private val bottomSheetState = BottomSheetState()
-
-    private val fragmentModule = module {
-        single<PageNavigation> { pageNavigation }
-        single<BottomSheetState> { bottomSheetState }
-        single<MessageDialogState> { messageDialogState }
-        single<Fragment> { this@ComposeFragment }
-    }
+    val messageDialogState = MessageDialogState()
+    val bottomSheetState = BottomSheetState()
 
     lateinit var composeNav: NavHostController
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        loadKoinModules(fragmentModule)
-    }
-
-    override fun onDestroy() {
-        unloadKoinModules(fragmentModule)
-        super.onDestroy()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
