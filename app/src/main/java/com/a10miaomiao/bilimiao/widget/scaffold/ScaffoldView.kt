@@ -2,12 +2,10 @@ package com.a10miaomiao.bilimiao.widget.scaffold
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.preference.PreferenceManager
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.fragment.app.Fragment
 import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.delegate.player.PlayerDelegate2
 import com.a10miaomiao.bilimiao.config.config
@@ -17,39 +15,28 @@ import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.MaskBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import splitties.dimensions.dip
-import splitties.views.dsl.core.wrapContent
 
 class ScaffoldView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : CoordinatorLayout(context, attrs, defStyleAttr) {
 
     companion object {
-        const val HORIZONTAL = 2 // 横屏
-        const val VERTICAL = 1 // 竖屏
+        const val HORIZONTAL = 2
+        const val VERTICAL = 1
     }
+
+    private fun dip(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     var onPlayerChanged: ((show: Boolean) -> Unit)? = null
     var onDrawerStateChanged: ((state: Int) -> Unit)? = null
     var playerDelegate: PlayerDelegate2? = null
 
-    /**
-     * 横盘时小窗大小
-     */
     var playerSmallShowArea: Int = 480
     var playerHoldShowArea: Int = 130
 
-    /**
-     * 播放器比例
-     */
     val playerVideoRatio: Float
-        get() {
-            return playerDelegate?.getVideoRatio() ?: (16f / 9f)
-        }
+        get() = playerDelegate?.getVideoRatio() ?: (16f / 9f)
 
-    /**
-     * 播放器视图尺寸状态
-     */
     var playerViewSizeStatus: PlayerViewSizeStatus = PlayerViewSizeStatus.NORMAL
         set(value) {
             if (field != value) {
@@ -59,9 +46,6 @@ class ScaffoldView @JvmOverloads constructor(
             }
         }
 
-    /**
-     * 播放器视图位置状态
-     */
     var playerViewPlaceStatus: PlayerViewPlaceStatus = PlayerViewPlaceStatus.RT
         set(value) {
             if (field != value) {
@@ -107,32 +91,32 @@ class ScaffoldView @JvmOverloads constructor(
             }
         }
 
-    var showSubContent = true //设置值
+    var showSubContent = true
         set(value) {
             field = value
             updateLayout(true)
         }
-    var subContentShown = true //实际是否显示
-    var contentDefaultSplit = 0f //默认情况下左右内容分割比
-    var contentExchanged = false // 主副区域交换位置
+    var subContentShown = true
+    var contentDefaultSplit = 0f
+    var contentExchanged = false
         set(value) {
             field = value
             updateLayout(true)
         }
-    var focusOnMain = true //焦点在主/副内容上
-    var pointerExchanged = true //false左true右
-    var pointerAutoChange = true //指示器跟随焦点变化 可反向
+    var focusOnMain = true
+    var pointerExchanged = true
+    var pointerAutoChange = true
 
-    var fullScreenDraggable = true //小屏时全屏可拖拽
+    var fullScreenDraggable = true
 
     var appBarHeight = config.appBarHeight
     var appBarWidth = config.appBarMenuWidth
 
-    val contentMinWidth = dip(300) //内容区域每列最小宽度
-    val contentMinHeight = dip(200) // 内容区域每列最小高度
+    val contentMinWidth by lazy { dip(300) }
+    val contentMinHeight by lazy { dip(200) }
 
-    val smallModePlayerMinHeight = dip(200) // 竖屏模式下的播放器最小高度
-    var smallModePlayerMaxHeight = smallModePlayerMinHeight // 竖屏模式下的播放器最大高度
+    val smallModePlayerMinHeight by lazy { dip(200) }
+    var smallModePlayerMaxHeight = 0
         set(value) {
             if (field != value) {
                 field = value
@@ -141,12 +125,12 @@ class ScaffoldView @JvmOverloads constructor(
                 }
             }
         }
-    var smallModePlayerCurrentHeight = smallModePlayerMinHeight // 竖屏模式播放器实际高度
+    var smallModePlayerCurrentHeight = 0
     var statusBarHeight = 0
 
     var contentAnimationDuration = 0
     var playerSpaceHeight = 0
-    var playerSpaceWidth = 0 // 窗口所占大小，也算上了窗口与边缘的距离
+    var playerSpaceWidth = 0
 
     var appBar: AppBarView? = null
     var appBarBehavior: AppBarBehavior? = null
@@ -178,6 +162,11 @@ class ScaffoldView @JvmOverloads constructor(
 
     var maskView: View? = null
     var maskBehavior: MaskBehavior? = null
+
+    init {
+        smallModePlayerMaxHeight = smallModePlayerMinHeight
+        smallModePlayerCurrentHeight = smallModePlayerMinHeight
+    }
 
     fun updateLayout(contentAnimation: Boolean = true) {
         playerBehavior?.updateLayout()
@@ -313,30 +302,21 @@ class ScaffoldView @JvmOverloads constructor(
     }
 
     inline fun lParams(
-        width: Int = wrapContent,
-        height: Int = wrapContent,
+        width: Int = ViewGroup.LayoutParams.WRAP_CONTENT,
+        height: Int = ViewGroup.LayoutParams.WRAP_CONTENT,
         initParams: LayoutParams.() -> Unit = {}
     ): LayoutParams {
-//        contract { callsInPlace(initParams, InvocationKind.EXACTLY_ONCE) }
         return LayoutParams(width, height).apply(initParams)
     }
 
-    class LayoutParams(width: Int, height: Int) : CoordinatorLayout.LayoutParams(width, height) {
+    class LayoutParams(width: Int, height: Int) : CoordinatorLayout.LayoutParams(width, height)
 
-    }
-
-    /**
-     * 播放器视图尺寸状态
-     */
     enum class PlayerViewSizeStatus {
-        NORMAL, // 正常
-        FOLD, // 折叠，以展示内容区域为主
-        HOLD_UP, // 挂起，横屏状态挂在屏幕边缘
+        NORMAL,
+        FOLD,
+        HOLD_UP,
     }
 
-    /**
-     * 播放器位置状态
-     */
     enum class PlayerViewPlaceStatus {
         LT,
         RT,

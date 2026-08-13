@@ -12,10 +12,8 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
-import splitties.dimensions.dip
 import kotlin.math.max
 import kotlin.math.min
-
 
 class PlayerBehavior : CoordinatorLayout.Behavior<View> {
 
@@ -44,11 +42,11 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
     var viewRef: View? = null
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        playerHeight = context.dip(200)
-        playertWidth = context.dip(300)
-
-        minPadding = context.dip(10)
-        dragAreaHeight = context.dip(30)
+        val density = context.resources.displayMetrics.density
+        playerHeight = (200 * density).toInt()
+        playertWidth = (300 * density).toInt()
+        minPadding = (10 * density).toInt()
+        dragAreaHeight = (30 * density).toInt()
         init()
     }
 
@@ -88,7 +86,6 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
 
             behaviorDelegate?.onLayoutChild()
 
-            // 显示隐藏动画控制
             if (parent.showPlayer && !isShowChild) {
                 isShowChild = true
                 child.translationX = 0f
@@ -133,9 +130,6 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
                 && nestedScrollAxes == ViewCompat.SCROLL_AXIS_VERTICAL
     }
 
-    /***
-     * 主要处理竖屏滚动时，收缩播放器
-     */
     override fun onNestedPreScroll(
         coordinatorLayout: CoordinatorLayout,
         child: View,
@@ -147,10 +141,9 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
     ) {
         val parent = parentRef ?: return
         val contentView = parentRef?.focusContent ?: return
-        // 滚动上拉 且 正在播放 且 不显示遮罩 且 竖屏模式
         if (dy > 0 && parent.showPlayer
             && !parent.showMaskView
-            && parent.orientation== ScaffoldView.VERTICAL
+            && parent.orientation == ScaffoldView.VERTICAL
         ) {
             val playerMinHeight = parent.smallModePlayerMinHeight
             if (parent.smallModePlayerCurrentHeight > playerMinHeight) {
@@ -185,11 +178,9 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
         if (!parent.showPlayer
             || parent.showMaskView
             || parent.orientation != ScaffoldView.VERTICAL) {
-            // 非正在播放 或 显示遮罩 或 非竖屏模式 时候不处理
             return
         }
         if (dyConsumed > 0) {
-            // 已消费的滚动上拉
             val playerMinHeight = parent.smallModePlayerMinHeight
             if (parent.smallModePlayerCurrentHeight > playerMinHeight) {
                 val playerHeight = max(
@@ -205,7 +196,6 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
             }
         }
         if (dyUnconsumed < 0) {
-            // 未消费的滚动下拉
             val playerMaxHeight = parent.smallModePlayerMaxHeight
             if (parent.smallModePlayerCurrentHeight < playerMaxHeight) {
                 consumed[1] = dyUnconsumed
@@ -249,16 +239,10 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
         }
     }
 
-    /**
-     * 显示播放器动画
-     */
     private fun startShowAnimation(child: View) {
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 200
             interpolator = AccelerateInterpolator()
-            val contentView = parentRef?.takeIf {
-                it.orientation == ScaffoldView.VERTICAL
-            }?.content
             child.pivotY = 0f
             child.pivotX = child.width / 2f
             addUpdateListener { animation ->
@@ -270,9 +254,6 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
         }.start()
     }
 
-    /**
-     * 隐藏播放器动画
-     */
     private fun startHideAnimation(child: View) {
         ValueAnimator.ofFloat(1f, 0f).apply {
             duration = 200
@@ -293,5 +274,3 @@ class PlayerBehavior : CoordinatorLayout.Behavior<View> {
         }.start()
     }
 }
-
-

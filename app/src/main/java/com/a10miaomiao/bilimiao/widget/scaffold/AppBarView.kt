@@ -6,17 +6,12 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
-import bilibili.app.mine.v1.Color
 import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
-import com.a10miaomiao.bilimiao.comm.mypage.MyPageMenu
-import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.widget.scaffold.ui.AppBarHorizontalUi
 import com.a10miaomiao.bilimiao.widget.scaffold.ui.AppBarUi
 import com.a10miaomiao.bilimiao.widget.scaffold.ui.AppBarVerticalUi
-import splitties.views.backgroundColor
-import splitties.views.dsl.core.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -144,16 +139,16 @@ class AppBarView @JvmOverloads constructor(
         if (childCount > 0) {
             removeAllViews()
         }
-        addView(view, 0, lParams {
-            width = matchParent
-            height = matchParent
-        })
+        addView(view, 0, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
     }
 
     fun updateTheme(color: Int, bgColor: Int) {
         themeColor = color
         mUi.updateTheme(color, bgColor)
-        backgroundColor = bgColor
+        setBackgroundColor(bgColor)
     }
 
     fun setWindowInsets(left: Int, top: Int, right: Int, bottom: Int) {
@@ -188,7 +183,6 @@ class AppBarView @JvmOverloads constructor(
         val prop = PropInfo()
         val theme = context.theme
         if (canBack && !prop.isNavigationMenu) {
-//            prop.onNavigationClick = onBackClick
             prop.navigationButtonIcon = resources.getDrawable(R.drawable.ic_back_24dp, theme)
             prop.navigationButtonKey = MenuKeys.back
         } else {

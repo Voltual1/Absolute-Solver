@@ -8,7 +8,11 @@ import android.content.Context
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import com.a10miaomiao.bilimiao.comm.attr
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
@@ -16,9 +20,6 @@ import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.widget.scaffold.AppBarView
 import com.a10miaomiao.bilimiao.widget.scaffold.MenuCheckableItemView
 import com.a10miaomiao.bilimiao.widget.scaffold.MenuItemView
-import splitties.dimensions.dip
-import splitties.views.*
-import splitties.views.dsl.core.*
 
 class AppBarHorizontalUi(
     override val ctx: Context,
@@ -34,120 +35,120 @@ class AppBarHorizontalUi(
     val exchangeLongClick: View.OnLongClickListener,
 ) : AppBarUi {
 
-    val mNavigationIcon = imageView {
+    private fun dip(value: Int): Int = (value * ctx.resources.displayMetrics.density).toInt()
+
+    val mNavigationIcon = ImageView(ctx).apply {
         setBackgroundResource(ctx.attr(android.R.attr.selectableItemBackgroundBorderless))
     }
-    val mNavigationPointerIcon = imageView {
+    val mNavigationPointerIcon = ImageView(ctx).apply {
         setBackgroundResource(ctx.attr(android.R.attr.selectableItemBackgroundBorderless))
     }
-    val mNavigationExchangeIcon = imageView {
+    val mNavigationExchangeIcon = ImageView(ctx).apply {
         setBackgroundResource(ctx.attr(android.R.attr.selectableItemBackgroundBorderless))
     }
 
-    val mNavigationIconLayout = frameLayout {
-        padding = dip(10)
-        bottomPadding = 0
+    val mNavigationIconLayout = FrameLayout(ctx).apply {
+        setPadding(dip(10), dip(10), dip(10), 0)
         setOnClickListener(navigationClick)
         setOnLongClickListener(navigationLongClick)
-        addView(mNavigationIcon, lParams {
+        addView(mNavigationIcon, FrameLayout.LayoutParams(dip(24), dip(24)).apply {
             gravity = Gravity.CENTER
-            width = dip(24)
-            height = dip(24)
         })
     }
-    val mNavigationPointerIconLayout = frameLayout {
-        padding = dip(10)
-        bottomPadding = 0
+    val mNavigationPointerIconLayout = FrameLayout(ctx).apply {
+        setPadding(dip(10), dip(10), dip(10), 0)
         setOnClickListener(pointerClick)
         setOnLongClickListener(pointerLongClick)
-        addView(mNavigationPointerIcon, lParams {
+        addView(mNavigationPointerIcon, FrameLayout.LayoutParams(dip(24), dip(24)).apply {
             gravity = Gravity.CENTER
-            width = dip(24)
-            height = dip(24)
         })
     }
-    val mNavigationExchangeIconLayout = frameLayout {
-        padding = dip(10)
-        bottomPadding = 0
+    val mNavigationExchangeIconLayout = FrameLayout(ctx).apply {
+        setPadding(dip(10), dip(10), dip(10), 0)
         setOnClickListener(exchangeClick)
         setOnLongClickListener(exchangeLongClick)
-        addView(mNavigationExchangeIcon, lParams {
+        addView(mNavigationExchangeIcon, FrameLayout.LayoutParams(dip(24), dip(24)).apply {
             gravity = Gravity.CENTER
-            width = dip(24)
-            height = dip(24)
         })
     }
 
-    val mTitle = textView {
+    val mTitle = TextView(ctx).apply {
         gravity = Gravity.CENTER
-        setTextColor(config.foregroundAlpha45Color)
+        setTextColor(ctx.config.foregroundAlpha45Color)
     }
 
-    val mTitleLayout = frameLayout {
-        padding = dip(10)
-        addView(mTitle, lParams {
-            width = matchParent
-            height = wrapContent
-        })
+    val mTitleLayout = FrameLayout(ctx).apply {
+        setPadding(dip(10), dip(10), dip(10), dip(10))
+        addView(mTitle, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ))
     }
 
-    val mNavigationMemuLayout = verticalLayout {
+    val mNavigationMemuLayout = LinearLayout(ctx).apply {
+        orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
 
         val layoutTransition = LayoutTransition()
-        //View出現的動畫
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-        //元素在容器中消失時需要動畫顯示
-        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
         setLayoutTransition(layoutTransition)
     }
 
-    val mNavigationLayout = verticalLayout {
+    val mNavigationLayout = LinearLayout(ctx).apply {
+        orientation = LinearLayout.VERTICAL
         val layoutTransition = LayoutTransition()
-        //View出現的動畫
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-        //元素在容器中消失時需要動畫顯示
-        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
         setLayoutTransition(layoutTransition)
 
-        addView(mNavigationIconLayout, lParams {
-            width = matchParent
-            height = wrapContent
-        })
+        addView(mNavigationIconLayout, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
         if (enableSubContent) {
-            addView(mNavigationPointerIconLayout, lParams {
-                width = matchParent
-                height = wrapContent
-            })
-            addView(mNavigationExchangeIconLayout, lParams {
-                width = matchParent
-                height = wrapContent
-            })
+            addView(mNavigationPointerIconLayout, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+            addView(mNavigationExchangeIconLayout, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
         }
-        addView(mTitleLayout, lParams {
-            width = matchParent
-            height = wrapContent
-        })
-        addView(mNavigationMemuLayout, lParams {
-            width = matchParent
-            height = matchParent
+        addView(mTitleLayout, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+        addView(mNavigationMemuLayout, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        ).apply {
             weight = 1f
         })
     }
 
-    private val lineView = textView {
-//        backgroundColor = ctx.config.colorSurfaceVariant
-    }
+    private val lineView = View(ctx)
 
-    override val root = frameLayout {
-        addView(mNavigationLayout.wrapInScrollView {
+    override val root = FrameLayout(ctx).apply {
+        val scrollView = ScrollView(ctx).apply {
             scrollBarSize = 0
-        }, lParams {
-            width = config.appBarMenuWidth
-            height = matchParent
+            isVerticalScrollBarEnabled = false
+            addView(mNavigationLayout, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        addView(scrollView, FrameLayout.LayoutParams(
+            ctx.config.appBarMenuWidth,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ).apply {
             gravity = Gravity.RIGHT
         })
-        addView(lineView, lParams(dip(1), matchParent) {
+        addView(lineView, FrameLayout.LayoutParams(
+            dip(1),
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ).apply {
             gravity = Gravity.RIGHT
         })
     }
@@ -156,19 +157,19 @@ class AppBarHorizontalUi(
         if (prop != null) {
             if (prop.navigationButtonIcon != null) {
                 mNavigationIconLayout.visibility = View.VISIBLE
-                mNavigationIcon.imageDrawable = prop.navigationButtonIcon
+                mNavigationIcon.setImageDrawable(prop.navigationButtonIcon)
             } else {
                 mNavigationIconLayout.visibility = View.GONE
             }
             if (prop.navigationPointerIcon != null) {
-                mNavigationPointerIcon.imageDrawable = prop.navigationPointerIcon
+                mNavigationPointerIcon.setImageDrawable(prop.navigationPointerIcon)
                 mNavigationPointerIconLayout.visibility = View.VISIBLE
                 mNavigationPointerIcon.rotation = if(prop.pointerIconOrientation) 0F else 180F
             } else {
                 mNavigationPointerIconLayout.visibility = View.GONE
             }
             if(prop.navigationExchangeIcon != null){
-                mNavigationExchangeIcon.imageDrawable = prop.navigationExchangeIcon
+                mNavigationExchangeIcon.setImageDrawable(prop.navigationExchangeIcon)
                 mNavigationExchangeIconLayout.visibility = View.VISIBLE
             } else {
                 mNavigationExchangeIconLayout.visibility = View.VISIBLE
@@ -184,7 +185,6 @@ class AppBarHorizontalUi(
             if (menus == null) {
                 mNavigationMemuLayout.removeAllViews()
             } else if (prop.isNavigationMenu) {
-                // 导航栏
                 mNavigationMemuLayout.apply {
                     var menuViewIndex = 0
                     menus.forEachIndexed { index, itemProp ->
@@ -197,11 +197,14 @@ class AppBarHorizontalUi(
                             addView(
                                 view,
                                 menuViewIndex,
-                                lParams(wrapContent, wrapContent) {
-                                    verticalMargin = dip(10)
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    topMargin = dip(10)
+                                    bottomMargin = dip(10)
                                 }
                             )
-//                            view.startAnimation(translateMenuItemAniShow)
                             menuViewIndex++
                         } else {
                             menuItemView.prop = itemProp
@@ -213,10 +216,7 @@ class AppBarHorizontalUi(
                         }
                     }
                     if (childCount > menuViewIndex) {
-                        removeViews(
-                            menuViewIndex,
-                            childCount - menuViewIndex
-                        )
+                        removeViews(menuViewIndex, childCount - menuViewIndex)
                     }
                 }
             } else {
@@ -230,9 +230,11 @@ class AppBarHorizontalUi(
                             addView(
                                 view,
                                 menuViewIndex,
-                                lParams(matchParent, wrapContent)
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
                             )
-//                            view.startAnimation(translateMenuItemAniShow)
                             menuViewIndex++
                         } else {
                             menuItemView.prop = itemProp
@@ -243,10 +245,7 @@ class AppBarHorizontalUi(
                         }
                     }
                     if (childCount > menuViewIndex) {
-                        removeViews(
-                            menuViewIndex,
-                            childCount - menuViewIndex
-                        )
+                        removeViews(menuViewIndex, childCount - menuViewIndex)
                     }
                 }
             }
@@ -295,7 +294,7 @@ class AppBarHorizontalUi(
 
 
     override fun updateTheme(color: Int, bgColor: Int) {
-        lineView.backgroundColor = bgColor
+        lineView.setBackgroundColor(bgColor)
         for (i in 0 until mNavigationMemuLayout.childCount) {
             val view = mNavigationMemuLayout.getChildAt(i)
             if (view is MenuCheckableItemView) {

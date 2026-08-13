@@ -4,12 +4,11 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.preference.PreferenceManager
-import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
-import androidx.fragment.app.FragmentContainerView
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
 import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.widget.scaffold.AppBarView
@@ -21,41 +20,28 @@ import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.MaskBehavior
 import com.a10miaomiao.bilimiao.widget.player.DanmakuVideoPlayer
-import com.a10miaomiao.bilimiao.widget.scaffold.behavior.MyBottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import splitties.dimensions.dip
-import splitties.experimental.InternalSplittiesApi
-import splitties.views.backgroundColor
-import splitties.views.dsl.core.*
 
-
-@OptIn(InternalSplittiesApi::class)
 class MainUi(
-    override val ctx: Context,
+    val ctx: Context,
     private val startViewWrapper: StartViewWrapper,
-) : Ui {
+) {
 
     companion object {
-        // 重启activiry时保持播放
+        // 重启activity时保持播放
         private var keepPlayerView: DanmakuVideoPlayer? = null
     }
 
-//    val mLeftContainerView = inflate<FragmentContainerView>(R.layout.left_fragment) {
-//        backgroundColor = config.windowBackgroundColor
-//        elevation = dip(20).toFloat()
-//        visibility = View.INVISIBLE
-//    }
     val mLeftContainerView = startViewWrapper.getView()
 
-    val mContainerView = inflate<View>(R.layout.container_fragment) {
-        backgroundColor = Color.TRANSPARENT
+    val mContainerView = LayoutInflater.from(ctx).inflate(R.layout.container_fragment, null).apply {
+        setBackgroundColor(Color.TRANSPARENT)
     }
 
-    val mSubContainerView = inflate<View>(R.layout.container_fragment_sub) {
-        backgroundColor = Color.TRANSPARENT
+    val mSubContainerView = LayoutInflater.from(ctx).inflate(R.layout.container_fragment_sub, null).apply {
+        setBackgroundColor(Color.TRANSPARENT)
     }
 
-    val mAppBar = view<AppBarView>{
+    val mAppBar = AppBarView(ctx).apply {
         setOnClickListener {  }
     }
 
@@ -72,88 +58,101 @@ class MainUi(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    } ?: inflate<DanmakuVideoPlayer>(R.layout.include_palyer2) {
+    } ?: (LayoutInflater.from(ctx).inflate(R.layout.include_palyer2, null) as DanmakuVideoPlayer).apply {
         keepPlayerView = this
     }
 
-    val mPlayerLayout = frameLayout {
-        backgroundColor = 0xFF000000.toInt()
-//        elevation = dip(19).toFloat()
+    val mPlayerLayout = FrameLayout(ctx).apply {
+        setBackgroundColor(0xFF000000.toInt())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            outlineSpotShadowColor = config.shadowColor
+            outlineSpotShadowColor = ctx.config.shadowColor
         }
 
-        val completionView = inflate<RelativeLayout>(R.layout.include_completion_box)
-        val errorMessageView = inflate<RelativeLayout>(R.layout.include_error_message_box)
-        val areaLimitView = inflate<RelativeLayout>(R.layout.include_area_limit_box)
-        val loadingView = inflate<FrameLayout>(R.layout.include_player_loading)
+        val completionView = LayoutInflater.from(ctx).inflate(R.layout.include_completion_box, null)
+        val errorMessageView = LayoutInflater.from(ctx).inflate(R.layout.include_error_message_box, null)
+        val areaLimitView = LayoutInflater.from(ctx).inflate(R.layout.include_area_limit_box, null)
+        val loadingView = LayoutInflater.from(ctx).inflate(R.layout.include_player_loading, null)
 
-        addView(mVideoPlayerView, lParams(matchParent, matchParent))
-        addView(completionView, lParams(matchParent, matchParent))
-        addView(errorMessageView, lParams(matchParent, matchParent))
-        addView(areaLimitView, lParams(matchParent, matchParent))
-        addView(loadingView, lParams(matchParent, matchParent))
+        addView(mVideoPlayerView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        addView(completionView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        addView(errorMessageView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        addView(areaLimitView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        addView(loadingView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
     }
 
-    var mMaskView = view<View> {
+    var mMaskView = View(ctx).apply {
         setBackgroundResource(R.color.black)
         setOnClickListener {  }
         alpha = 0f
         visibility = View.GONE
     }
 
-    override val root = view<ScaffoldView>() {
+    val root = ScaffoldView(ctx).apply {
         orientation = resources.configuration.orientation
-        backgroundColor = config.blockBackgroundColor
+        setBackgroundColor(ctx.config.blockBackgroundColor)
 
-        addView(mContainerView, lParams {
+        addView(mContainerView, ScaffoldView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
             behavior = ContentBehavior(ctx, null)
-            width = matchParent
-            height = matchParent
         })
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
         val enableSubContent = prefs.getBoolean(SettingConstants.FLAGS_SUB_CONTENT_SHOW, false)
         mAppBar.enableSubContent = enableSubContent
         if (enableSubContent) {
-            addView(mSubContainerView, lParams {
+            addView(mSubContainerView, ScaffoldView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ).apply {
                 behavior = ContentBehavior(ctx, null).let {
                     it.isSub = true
                     it
                 }
-                width = matchParent
-                height = matchParent
             })
         }
 
-        addView(mAppBar, lParams {
+        addView(mAppBar, ScaffoldView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
             behavior = AppBarBehavior(ctx, null)
-            width = matchParent
-            height = matchParent
         })
 
-        addView(mMaskView, lParams {
+        addView(mMaskView, ScaffoldView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
             behavior = MaskBehavior(ctx, null)
-            height = matchParent
-            width = matchParent
         })
 
-        addView(mPlayerLayout, lParams {
+        addView(mPlayerLayout, ScaffoldView.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
             behavior = PlayerBehavior(ctx, null)
-            width = wrapContent
-            height = wrapContent
         })
 
-//        addView(frameLayout {
-//            backgroundColor = config.blockBackgroundColor
-//            elevation = dip(20).toFloat()
-//        }, lParams {
-//            behavior = PlayerDraggableBehavior(ctx, null)
-//        })
-
-        addView(mLeftContainerView, lParams {
-            height = matchParent
-            width = matchParent
+        addView(mLeftContainerView, ScaffoldView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
             behavior = DrawerBehavior(ctx, null)
         })
     }

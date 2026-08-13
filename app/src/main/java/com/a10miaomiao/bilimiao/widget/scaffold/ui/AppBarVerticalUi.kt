@@ -14,43 +14,40 @@ import android.view.animation.Animation
 import android.view.animation.AnimationSet
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.TranslateAnimation
+import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.TextView
 import com.a10miaomiao.bilimiao.comm.mypage.MenuItemPropInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MenuKeys
 import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.widget.scaffold.AppBarView
 import com.a10miaomiao.bilimiao.widget.scaffold.MenuCheckableItemView
 import com.a10miaomiao.bilimiao.widget.scaffold.MenuItemView
-import splitties.dimensions.dip
-import splitties.experimental.InternalSplittiesApi
-import splitties.views.backgroundColor
-import splitties.views.dsl.core.*
-import splitties.views.topPadding
 
 class AppBarVerticalUi(
     override val ctx: Context,
     val appBarView: AppBarView,
     val menuItemClick: View.OnClickListener,
     val menuItemLongClick: View.OnLongClickListener,
-//    val backClick: View.OnClickListener,
-//    val backLongClick: View.OnLongClickListener,
 ) : AppBarUi {
+
+    private fun dip(value: Int): Int = (value * ctx.resources.displayMetrics.density).toInt()
 
     val mTitleHeight = ctx.config.appBarTitleHeight
     val mMenuHeight = ctx.config.appBarMenuHeight
 
-    val mTitle = textView {
+    val mTitle = TextView(ctx).apply {
         gravity = Gravity.CENTER
         textSize = 12f
-        setTextColor(config.foregroundAlpha45Color)
+        setTextColor(ctx.config.foregroundAlpha45Color)
     }
 
     private fun View.getInAnim(): Animator {
-        val trX = PropertyValuesHolder.ofFloat("translationX", 0f, 0f);
-        val trY = PropertyValuesHolder.ofFloat("translationY", 100f, 0f);
-        val trAlpha = PropertyValuesHolder.ofFloat("alpha", 0f, 1f);
-        return ObjectAnimator.ofPropertyValuesHolder(this, trY, trAlpha, trX);
+        val trX = PropertyValuesHolder.ofFloat("translationX", 0f, 0f)
+        val trY = PropertyValuesHolder.ofFloat("translationY", 100f, 0f)
+        val trAlpha = PropertyValuesHolder.ofFloat("alpha", 0f, 1f)
+        return ObjectAnimator.ofPropertyValuesHolder(this, trY, trAlpha, trX)
     }
 
     private fun View.getOutAnim(): Animator {
@@ -60,56 +57,53 @@ class AppBarVerticalUi(
         return ObjectAnimator.ofPropertyValuesHolder(this, trY, trAlpha, trX)
     }
 
-    val mNavigationMenuLayout = horizontalLayout {
+    val mNavigationMenuLayout = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_HORIZONTAL
         val layoutTransition = LayoutTransition()
 
-        //View出現的動畫
-        //出现动画对LinearLayout.addView(View child, int index, LayoutParams params)方法无效
         layoutTransition.setAnimator(LayoutTransition.APPEARING, getInAnim())
-//        layoutTransition.setAnimator(LayoutTransition.CHANGE_APPEARING, getInAnim())
-        //元素在容器中消失時需要動畫顯示
-        layoutTransition.setAnimator(LayoutTransition.DISAPPEARING, getOutAnim())
-//        layoutTransition.setAnimator(LayoutTransition.CHANGE_DISAPPEARING, getOutAnim())
+        layoutTransition.setAnimator(LayoutTransition.DISARING, getOutAnim())
         layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
         layoutTransition.setDuration(400)
-        layoutTransition.setInterpolator(LayoutTransition.DISAPPEARING, DecelerateInterpolator())
+        layoutTransition.setInterpolator(LayoutTransition.DISARING, DecelerateInterpolator())
         setLayoutTransition(layoutTransition)
 
-        topPadding = mTitleHeight
+        setPadding(paddingLeft, mTitleHeight, paddingRight, paddingBottom)
     }
 
-    private val lineView = textView {
-//        backgroundColor = ctx.config.colorSurfaceVariant
-    }
+    private val lineView = View(ctx)
 
-    @OptIn(InternalSplittiesApi::class)
-    private val mNavigationScroller = view<HorizontalScrollView> {
+    private val mNavigationScroller = HorizontalScrollView(ctx).apply {
         scrollBarSize = 0
+        isHorizontalScrollBarEnabled = false
         addView(
-            mNavigationMenuLayout, lParams {
-                width = matchParent
-                height = mMenuHeight + mTitleHeight
-            }
+            mNavigationMenuLayout, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                mMenuHeight + mTitleHeight
+            )
         )
     }
 
-    override val root = frameLayout {
-        addView(mTitle, lParams {
-            width = matchParent
-            height = mTitleHeight
-        })
+    override val root = FrameLayout(ctx).apply {
+        addView(mTitle, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            mTitleHeight
+        ))
         addView(
             mNavigationScroller,
-            lParams {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
-                width = wrapContent
-                height = wrapContent
             }
         )
-        addView(lineView, lParams(matchParent, dip(1)))
+        addView(lineView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            dip(1)
+        ))
     }
-
 
     override fun setProp(prop: AppBarView.PropInfo?) {
         if (prop != null) {
@@ -136,7 +130,6 @@ class AppBarVerticalUi(
             if (menus.isEmpty()) {
                 mNavigationMenuLayout.removeAllViews()
             } else if (prop.isNavigationMenu) {
-                // 导航栏
                 mNavigationMenuLayout.apply {
                     var menuViewIndex = 0
                     menus.forEachIndexed { index, itemProp ->
@@ -149,11 +142,14 @@ class AppBarVerticalUi(
                             addView(
                                 view,
                                 menuViewIndex,
-                                lParams(wrapContent, matchParent) {
-                                    horizontalMargin = dip(10)
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT
+                                ).apply {
+                                    leftMargin = dip(10)
+                                    rightMargin = dip(10)
                                 }
                             )
-//                            view.startAnimation(translateMenuItemAniShow)
                             menuViewIndex++
                         } else {
                             menuItemView.prop = itemProp
@@ -165,14 +161,10 @@ class AppBarVerticalUi(
                         }
                     }
                     if (childCount > menuViewIndex) {
-                        removeViews(
-                            menuViewIndex,
-                            childCount - menuViewIndex
-                        )
+                        removeViews(menuViewIndex, childCount - menuViewIndex)
                     }
                 }
             } else {
-                // 正常栏
                 mNavigationMenuLayout.apply {
                     var menuViewIndex = 0
                     menus.forEachIndexed { index, prop ->
@@ -183,7 +175,10 @@ class AppBarVerticalUi(
                             addView(
                                 view,
                                 menuViewIndex,
-                                lParams(wrapContent, matchParent)
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT
+                                )
                             )
                             view.startAnimation(translateMenuItemAniShow)
                             menuViewIndex++
@@ -196,10 +191,7 @@ class AppBarVerticalUi(
                         }
                     }
                     if (childCount > menuViewIndex) {
-                        removeViews(
-                            menuViewIndex,
-                            childCount - menuViewIndex
-                        )
+                        removeViews(menuViewIndex, childCount - menuViewIndex)
                     }
                 }
             }
@@ -223,7 +215,7 @@ class AppBarVerticalUi(
     ) = MenuItemView(context).apply {
         orientation = LinearLayout.VERTICAL
         minimumWidth = dip(60)
-        setBackgroundResource(config.selectableItemBackgroundBorderless)
+        setBackgroundResource(context.config.selectableItemBackgroundBorderless)
         setOnClickListener(menuItemClick)
         if (data.key == MenuKeys.back) {
             setOnLongClickListener(menuItemLongClick)
@@ -246,7 +238,7 @@ class AppBarVerticalUi(
     }
 
     override fun updateTheme(color: Int, bgColor: Int) {
-        lineView.backgroundColor = bgColor
+        lineView.setBackgroundColor(bgColor)
         for (i in 0 until mNavigationMenuLayout.childCount) {
             val view = mNavigationMenuLayout.getChildAt(i)
             if (view is MenuCheckableItemView) {
@@ -266,32 +258,22 @@ class AppBarVerticalUi(
         interpolator = DecelerateInterpolator()
     }
 
-    //向上位移显示动画  从自身位置的最下端向上滑动了自身的高度
     private val translateAniShow = TranslateAnimation(
-        /* fromXType = */ Animation.RELATIVE_TO_SELF,
-        /* fromXValue = */ 0f,
-        /* toXType = */ Animation.RELATIVE_TO_SELF,
-        /* toXValue = */ 0f,
-        /* fromYType = */ Animation.RELATIVE_TO_SELF,
-        /* fromYValue = */ 1f,
-        /* toYType = */ Animation.RELATIVE_TO_SELF,
-        /* toYValue = */ 0f
+        Animation.RELATIVE_TO_SELF, 0f,
+        Animation.RELATIVE_TO_SELF, 0f,
+        Animation.RELATIVE_TO_SELF, 1f,
+        Animation.RELATIVE_TO_SELF, 0f
     ).apply {
         repeatMode = Animation.REVERSE
         duration = 400
         interpolator = DecelerateInterpolator()
     }
 
-    //向下位移隐藏动画  从自身位置的最上端向下滑动了自身的高度
     private val translateAniHide = TranslateAnimation(
-        /* fromXType = */ Animation.RELATIVE_TO_SELF,
-        /* fromXValue = */ 0f,
-        /* toXType = */ Animation.RELATIVE_TO_SELF,
-        /* toXValue = */ 0f,
-        /* fromYType = */ Animation.RELATIVE_TO_SELF,
-        /* fromYValue = */ 0f,
-        /* toYType = */ Animation.RELATIVE_TO_SELF,
-        /* toYValue = */ 1f
+        Animation.RELATIVE_TO_SELF, 0f,
+        Animation.RELATIVE_TO_SELF, 0f,
+        Animation.RELATIVE_TO_SELF, 0f,
+        Animation.RELATIVE_TO_SELF, 1f
     ).apply {
         repeatMode = Animation.REVERSE
         duration = 400

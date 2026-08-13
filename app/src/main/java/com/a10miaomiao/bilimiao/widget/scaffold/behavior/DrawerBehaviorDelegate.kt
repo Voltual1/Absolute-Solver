@@ -11,7 +11,6 @@ import androidx.customview.widget.ViewDragHelper
 import com.a10miaomiao.bilimiao.config.config
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import splitties.dimensions.dip
 import java.lang.ref.WeakReference
 
 class DrawerBehaviorDelegate(
@@ -19,11 +18,12 @@ class DrawerBehaviorDelegate(
     private val drawerView: View,
 ) : ViewDragHelper.Callback() {
 
-    //    private var initialY = 0f
+    private fun dip(value: Int): Int = (value * parent.resources.displayMetrics.density).toInt()
+
     private var initialX = 0f
     private var initialY = 0f
     private var touchOnAppBar = false
-    private val minLeft = parent.dip(40)
+    private val minLeft = dip(40)
 
     private val appBarHeight = parent.context.config.appBarHeight
     private val appBarWidth = parent.context.config.appBarMenuWidth
@@ -95,7 +95,6 @@ class DrawerBehaviorDelegate(
 
     fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (dragState == STATE_COLLAPSED && !parent.fullScreenPlayer) {
-            // 折叠状态
             if (
                 ev.action == MotionEvent.ACTION_DOWN
                 && parent.bottomSheetState() == BottomSheetBehavior.STATE_HIDDEN
@@ -123,7 +122,6 @@ class DrawerBehaviorDelegate(
                 this.touchOnAppBar = false
             }
         } else if (dragState == STATE_EXPANDED) {
-            // 展开状态
             if (ev.action == MotionEvent.ACTION_DOWN) {
                 this.initialX = ev.x
             } else if (
@@ -224,15 +222,10 @@ class DrawerBehaviorDelegate(
 
     companion object {
         const val STATE_DRAGGING = 1
-
         const val STATE_SETTLING = 2
-
         const val STATE_EXPANDED = 3
-
         const val STATE_COLLAPSED = 4
 
-        /** @hide
-         */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @IntDef(
             STATE_EXPANDED,

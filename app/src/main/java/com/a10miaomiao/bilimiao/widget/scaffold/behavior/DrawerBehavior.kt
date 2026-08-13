@@ -6,13 +6,12 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
-import splitties.dimensions.dip
 import kotlin.math.min
 
 class DrawerBehavior(context: Context, attrs: AttributeSet?) :
     CoordinatorLayout.Behavior<View>(context, attrs) {
 
-    private val maxWidth = context.dip(400)
+    private val maxWidth = (400 * context.resources.displayMetrics.density).toInt()
     private var parentRef: ScaffoldView? = null
     private var viewRef: View? = null
     private var behaviorDelegate: DrawerBehaviorDelegate? = null
@@ -25,7 +24,6 @@ class DrawerBehavior(context: Context, attrs: AttributeSet?) :
         child: View,
         layoutDirection: Int
     ): Boolean {
-//        child.layout(0, 0, parent.measuredWidth, parent.measuredHeight)
         this.viewRef = child
         if (parent is ScaffoldView) {
             this.parentRef = parent
