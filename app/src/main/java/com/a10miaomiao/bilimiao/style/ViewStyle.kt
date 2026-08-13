@@ -3,15 +3,14 @@ package com.a10miaomiao.bilimiao.config
 import android.graphics.Outline
 import android.view.View
 import android.view.ViewOutlineProvider
-import splitties.views.backgroundColor
-import splitties.views.padding
 
 object ViewStyle {
     val block
         get() = { v: View ->
             v.run {
-                backgroundColor = config.blockBackgroundColor
-                padding = config.dividerSize
+                setBackgroundColor(config.blockBackgroundColor)
+                val pad = config.dividerSize
+                setPadding(pad, pad, pad, pad)
             }
         }
 
