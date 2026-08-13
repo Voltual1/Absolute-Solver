@@ -149,8 +149,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navHostFragment: ComposeFragment
     private var subNavHostFragment: ComposeFragment? = null
 
-    val currentNav: ComposeFragment
-        get() = if (ui.root.focusOnMain) navHostFragment else subNavHostFragment ?: navHostFragment
+    val currentNav: ComposeFragment get() {
+        if (!::navHostFragment.isInitialized) {
+            val fragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? ComposeFragment
+            if (fragment != null) {
+                navHostFragment = fragment
+            } else {
+                throw IllegalStateException("navHostFragment is not initialized and not found in FragmentManager")
+            }
+        }
+        return if (mainUi != null && ui.root.focusOnMain) {
+            navHostFragment
+        } else {
+            subNavHostFragment ?: navHostFragment
+        }
+    }
+    
     val anotherNav: ComposeFragment
         get() = if (!ui.root.focusOnMain) navHostFragment else subNavHostFragment ?: navHostFragment
 
