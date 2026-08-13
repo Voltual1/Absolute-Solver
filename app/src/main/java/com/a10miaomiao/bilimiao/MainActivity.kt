@@ -39,8 +39,11 @@ import androidx.media3.session.SessionToken
 import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.ComposeFragment
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
+import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
 import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.base.PageSearchMethod
+import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
+import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import com.a10miaomiao.bilimiao.comm.BiliGeetestUtilImpl
 import com.a10miaomiao.bilimiao.comm.BilimiaoStatService
@@ -127,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         single<MainActivity> { this@MainActivity }
         single<AppCompatActivity> { this@MainActivity }
         single<Activity> { this@MainActivity }
+        single<Context> { this@MainActivity }
         single<BasePlayerDelegate> { basePlayerDelegate }
         single<PlayerDelegate2> { basePlayerDelegate as PlayerDelegate2 }
         single<ThemeDelegate> { themeDelegate }
@@ -134,6 +138,12 @@ class MainActivity : AppCompatActivity() {
         single<SupportHelper> { supportHelper }
         single<BiliGeetestUtil> { biliGeetestUtil }
         single<StartViewWrapper> { startViewWrapper }
+
+        // 使用 factory 动态绑定：每次获取 PageNavigation 等对象时，都实时从当前 active 的 ComposeFragment 中获取
+        factory<PageNavigation> { this@MainActivity.currentNav.pageNavigation }
+        factory<BottomSheetState> { this@MainActivity.currentNav.bottomSheetState }
+        factory<MessageDialogState> { this@MainActivity.currentNav.messageDialogState }
+        factory<Fragment> { this@MainActivity.currentNav }
     }
 
     private lateinit var navHostFragment: ComposeFragment

@@ -3,7 +3,6 @@ package cn.a10miaomiao.bilimiao.compose
 import androidx.fragment.app.Fragment
 import bilibili.app.dynamic.v2.UpListItem
 import bilibili.main.community.reply.v1.ReplyInfo
-import cn.a10miaomiao.bilimiao.MainActivity
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
@@ -45,12 +44,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val composeStoreModule = module {
-    // 动态代理委派，始终安全获取当前处于焦点的 UI 容器和对应状态，解决覆盖和 lateinit 问题
-    single<PageNavigation> { get<MainActivity>().currentNav.pageNavigation }
-    single<BottomSheetState> { get<MainActivity>().currentNav.bottomSheetState }
-    single<MessageDialogState> { get<MainActivity>().currentNav.messageDialogState }
-    single<Fragment> { get<MainActivity>().currentNav }
-
+    
     viewModelOf(::SearchInputViewModel)
     viewModelOf(::SearchPageViewModel)
     viewModelOf(::AutoStopTimerPageViewModel)
