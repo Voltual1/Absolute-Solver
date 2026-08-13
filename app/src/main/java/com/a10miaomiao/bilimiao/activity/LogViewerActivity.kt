@@ -4,95 +4,113 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material3.*
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import cn.a10miaomiao.bilimiao.compose.BilimiaoTheme
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.NestedScrollView
 import com.a10miaomiao.bilimiao.R
-import com.a10miaomiao.bilimiao.comm.store.AppStore
-import org.koin.android.ext.android.inject
+import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
+import com.a10miaomiao.bilimiao.config.config
+import com.google.android.material.appbar.MaterialToolbar
+import org.kodein.di.DI
 
-class LogViewerActivity : ComponentActivity() {
+class LogViewerActivity : AppCompatActivity() {
 
-    private val appStore by inject<AppStore>()
+    private val di: DI = DI.lazy {}
+
+    private val themeDelegate by lazy {
+        ThemeDelegate(this@LogViewerActivity, di)
+    }
 
     private var mLogSummary = ""
+    private lateinit var logText: TextView
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        mLogSummary = intent.getStringExtra("log_summary") ?: ""
+        themeDelegate.onCreate(savedInstanceState)
 
-        setContent {
-            val appState by appStore.stateFlow.collectAsState()
-            BilimiaoTheme(appState = appState) {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(text = getString(R.string.log_viewer)) },
-                            navigationIcon = {
-                                IconButton(onClick = { onBackPressedDispatcher.onBackPressed() }) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowBack,
-                                        contentDescription = "Back"
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { copyLogText() }) {
-                                    Icon(
-                                        imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "Copy"
-                                    )
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                                actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        )
-                    }
-                ) { innerPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .background(MaterialTheme.colorScheme.background)
-                            .verticalScroll(rememberScrollState())
-                            .padding(10.dp)
-                    ) {
-                        SelectionContainer {
-                            Text(
-                                text = mLogSummary,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
+        val density = resources.displayMetrics.density
+        val dip10 = (10 * density).toInt()
+
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            fitsSystemWindows = true
+        }
+
+        val toolBar = MaterialToolbar(this).apply {
+            id = View.generateViewId()
+            clipToPadding = true
+            fitsSystemWindows = true
+            setTitle(R.string.log_viewer)
+            setNavigationIcon(R.drawable.ic_back_24dp)
+            setNavigationOnClickListener {
+                onBackPressed()
+            }
+            menu.add(Menu.FIRST, 1, 0, "复制日志").also {
+                it.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            }
+            setOnMenuItemClickListener {
+                when(it.itemId) {
+                    1 -> {
+                        copyLogText()
                     }
                 }
+                true
             }
+        }
+        rootLayout.addView(toolBar, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        logText = TextView(this).apply {
+            setPadding(dip10, dip10, dip10, dip10)
+            setTextIsSelectable(true)
+        }
+
+        val scrollContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(logText, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+
+        val scrollView = NestedScrollView(this).apply {
+            setBackgroundColor(config.windowBackgroundColor)
+            addView(scrollContent, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+        }
+
+        rootLayout.addView(scrollView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        ))
+
+        setContentView(rootLayout)
+
+        val logSummary = intent.getStringExtra("log_summary")
+        if (!logSummary.isNullOrEmpty()) {
+            mLogSummary = logSummary
+            logText.text = logSummary
         }
     }
 
     private fun copyLogText() {
+        val logSummary = mLogSummary
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("log", mLogSummary)
+        val clip = ClipData.newPlainText("log", logSummary)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, "复制成功(●'◡'●)", Toast.LENGTH_SHORT).show()
     }
