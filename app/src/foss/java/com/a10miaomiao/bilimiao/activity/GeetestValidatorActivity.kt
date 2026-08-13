@@ -1,5 +1,6 @@
 package com.a10miaomiao.bilimiao.activity
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.a10miaomiao.bilimiao.R
@@ -15,16 +17,7 @@ import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import splitties.dimensions.dip
-import splitties.experimental.InternalSplittiesApi
-import splitties.views.backgroundColor
-import splitties.views.dsl.core.Ui
-import splitties.views.dsl.core.lParams
-import splitties.views.dsl.core.matchParent
-import splitties.views.dsl.core.setContentView
-import splitties.views.dsl.core.verticalLayout
-import splitties.views.dsl.core.view
-import splitties.views.dsl.core.wrapContent
+import org.kodein.di.DI
 
 class GeetestValidatorActivity : AppCompatActivity() {
 
@@ -38,26 +31,59 @@ class GeetestValidatorActivity : AppCompatActivity() {
         }
     }
 
+    private val di: DI = DI.lazy {}
     private var mCallback: CallBack? = null
-
-    // 修正 ThemeDelegate 初始化
     private val themeDelegate by lazy {
-        ThemeDelegate(this@GeetestValidatorActivity)
+        ThemeDelegate(this@GeetestValidatorActivity, di)
     }
+    private lateinit var webView: WebView
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         mCallback = tempCallback
         themeDelegate.onCreate(savedInstanceState)
         super.onCreate(savedInstanceState)
+
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            fitsSystemWindows = true
+        }
+
+        val toolBar = MaterialToolbar(this).apply {
+            id = View.generateViewId()
+            clipToPadding = true
+            fitsSystemWindows = true
+            setTitle(R.string.geetest_validator)
+            setNavigationOnClickListener {
+                onBackPressed()
+            }
+        }
+        rootLayout.addView(toolBar, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
         val jsBridge = JsBridge(this)
-        val ui = GeetestValidatorUi(this, jsBridge)
-        setContentView(ui)
-        getGTApi(ui.webView)
+        webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            addJavascriptInterface(jsBridge, "JsBridge")
+        }
+        rootLayout.addView(webView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        ).apply {
+            weight = 1f
+        })
+
+        setContentView(rootLayout)
+        getGTApi(webView)
     }
 
-    private fun getGTApi(
-        webView: WebView
-    ) = lifecycleScope.launch {
+    private fun getGTApi(webView: WebView) = lifecycleScope.launch {
         mCallback?.getGTApiJson()?.let {
             val gt = it.getString("gt")
             val challenge = it.getString("challenge")
@@ -66,16 +92,12 @@ class GeetestValidatorActivity : AppCompatActivity() {
         }
     }
 
-    fun onGTResult(
-        gt3Result: BiliGeetestUtil.GT3ResultBean
-    ) {
+    fun onGTResult(gt3Result: BiliGeetestUtil.GT3ResultBean) {
         mCallback?.onGTResult(gt3Result)
         finish()
     }
 
-    private class JsBridge(
-        val activity: GeetestValidatorActivity
-    ) {
+    private class JsBridge(val activity: GeetestValidatorActivity) {
         @JavascriptInterface
         fun postMessage(challenge: String, validate: String, seccode: String) {
             activity.onGTResult(
@@ -92,48 +114,8 @@ class GeetestValidatorActivity : AppCompatActivity() {
         }
     }
 
-    @OptIn(InternalSplittiesApi::class)
-    private class GeetestValidatorUi(
-        val activity: GeetestValidatorActivity,
-        val jsBridge: JsBridge,
-    ) : Ui {
-        override val ctx = activity
-
-        val toolBar = view<MaterialToolbar>(View.generateViewId()) {
-            clipToPadding = true
-            fitsSystemWindows = true
-            setTitle(R.string.geetest_validator)
-            setNavigationOnClickListener {
-                activity.onBackPressed()
-            }
-        }
-
-        val webView = view<WebView> {
-            settings.apply {
-                javaScriptEnabled = true
-            }
-            addJavascriptInterface(jsBridge, "JsBridge")
-        }
-
-        override val root: View = verticalLayout {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            fitsSystemWindows = true
-
-            addView(toolBar, lParams(matchParent, wrapContent))
-
-            addView(webView, lParams(matchParent, matchParent) {
-                weight = 1f
-            })
-        }
-    }
-
     interface CallBack {
-        fun onGTResult(
-            result: BiliGeetestUtil.GT3ResultBean,
-        )
+        fun onGTResult(result: BiliGeetestUtil.GT3ResultBean)
         suspend fun getGTApiJson(): JSONObject?
     }
 }
