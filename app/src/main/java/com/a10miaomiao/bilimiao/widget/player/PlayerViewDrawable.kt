@@ -8,7 +8,6 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.view.Gravity
 import android.view.ViewGroup
-import splitties.dimensions.dip
 
 object PlayerViewDrawable {
 
@@ -16,17 +15,18 @@ object PlayerViewDrawable {
         context: Context,
         themeColor: Int
     ): Drawable {
+        val density = context.resources.displayMetrics.density
         // 背景层
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(3f)
+            cornerRadius = 3f * density
             setColor(Color.parseColor("#ECF0F1")) // 背景颜色
         }
 
         // 次要进度层
         val secondaryProgressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(3f)
+            cornerRadius = 3f * density
             setColor(Color.parseColor("#C6CACE")) // 次要进度颜色
         }
         val secondaryProgressClip = ClipDrawable(secondaryProgressDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
@@ -34,7 +34,7 @@ object PlayerViewDrawable {
         // 主要进度层
         val progressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(3f)
+            cornerRadius = 3f * density
             setColor(themeColor) // 主要进度颜色
         }
         val progressClip = ClipDrawable(progressDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
@@ -52,29 +52,30 @@ object PlayerViewDrawable {
         context: Context,
         themeColor: Int
     ): Drawable {
+        val density = context.resources.displayMetrics.density
         // 背景层
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(1f)
+            cornerRadius = 1f * density
             setColor(Color.parseColor("#4c000000")) // 背景颜色（半透明黑色）
-            setSize(ViewGroup.LayoutParams.MATCH_PARENT, context.dip(4))
+            setSize(ViewGroup.LayoutParams.MATCH_PARENT, (4 * density).toInt())
         }
 
         // 次要进度层
         val secondaryProgressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(1f)
+            cornerRadius = 1f * density
             setColor(Color.parseColor("#ffe0e0e0")) // 次要进度颜色
-            setSize(ViewGroup.LayoutParams.MATCH_PARENT, context.dip(4))
+            setSize(ViewGroup.LayoutParams.MATCH_PARENT, (4 * density).toInt())
         }
         val secondaryProgressClip = ClipDrawable(secondaryProgressDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
 
         // 主要进度层
         val progressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = context.dip(1f)
+            cornerRadius = 1f * density
             setColor(themeColor) // 主要进度颜色（从主题中获取 colorAccent）
-            setSize(ViewGroup.LayoutParams.MATCH_PARENT, context.dip(4))
+            setSize(ViewGroup.LayoutParams.MATCH_PARENT, (4 * density).toInt())
         }
         val progressClip = ClipDrawable(progressDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
 
@@ -90,18 +91,19 @@ object PlayerViewDrawable {
         context: Context,
         themeColor: Int
     ): Drawable {
+        val density = context.resources.displayMetrics.density
         // 背景 shape
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(Color.WHITE) // #ffffffff
-            cornerRadius = context.resources.displayMetrics.density * 2f // 2dp
+            cornerRadius = density * 2f // 2dp
         }
 
         // 前景 progress shape
         val progressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(themeColor)
-            cornerRadius = context.resources.displayMetrics.density * 2f // 2dp
+            cornerRadius = density * 2f // 2dp
         }
 
         // Clip 包裹 progress
@@ -124,18 +126,19 @@ object PlayerViewDrawable {
         context: Context,
         themeColor: Int
     ): Drawable {
+        val density = context.resources.displayMetrics.density
         // 背景 shape
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(Color.WHITE) // #ffffffff
-            cornerRadius = context.resources.displayMetrics.density * 2f // 2dp
+            cornerRadius = density * 2f // 2dp
         }
 
         // 前景 progress shape
         val progressDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(themeColor)
-            cornerRadius = context.resources.displayMetrics.density * 2f // 2dp
+            cornerRadius = density * 2f // 2dp
         }
 
         // Clip 包裹 progress

@@ -90,7 +90,6 @@ import kotlinx.coroutines.runBlocking
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
 import org.koin.dsl.module
-import splitties.views.backgroundColor
 
 class MainActivity : AppCompatActivity() {
 
@@ -139,7 +138,6 @@ class MainActivity : AppCompatActivity() {
         single<BiliGeetestUtil> { biliGeetestUtil }
         single<StartViewWrapper> { startViewWrapper }
 
-        // 使用 factory 动态绑定：每次获取 PageNavigation 等对象时，都实时从当前 active 的 ComposeFragment 中获取
         factory<PageNavigation> { this@MainActivity.currentNav.pageNavigation }
         factory<BottomSheetState> { this@MainActivity.currentNav.bottomSheetState }
         factory<MessageDialogState> { this@MainActivity.currentNav.messageDialogState }

@@ -112,10 +112,10 @@ class ScaffoldView @JvmOverloads constructor(
     var appBarHeight = config.appBarHeight
     var appBarWidth = config.appBarMenuWidth
 
-    val contentMinWidth by lazy { dip(300) }
-    val contentMinHeight by lazy { dip(200) }
+    val contentMinWidth: Int get() = dip(300)
+    val contentMinHeight: Int get() = dip(200)
 
-    val smallModePlayerMinHeight by lazy { dip(200) }
+    val smallModePlayerMinHeight: Int get() = dip(200)
     var smallModePlayerMaxHeight = 0
         set(value) {
             if (field != value) {

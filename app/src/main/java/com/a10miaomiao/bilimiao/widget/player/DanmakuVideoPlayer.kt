@@ -53,27 +53,23 @@ import master.flame.danmaku.danmaku.model.DanmakuTimer
 import master.flame.danmaku.danmaku.model.android.DanmakuContext
 import master.flame.danmaku.danmaku.parser.BaseDanmakuParser
 import master.flame.danmaku.ui.widget.DanmakuView
-import splitties.dimensions.dip
-import splitties.views.backgroundColor
 import kotlin.math.min
-
 
 class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
-    // 缩放手势支持
+    private fun dip(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
     private var mScaleDetector: ScaleGestureDetector? = null
     private var mScaleFactor = 1.0f
     private val mMaxScale = 4.0f
     private val mMinScale = 1.0f
 
-    // 缩放后平移控制
     private var mPosX = 0f
     private var mPosY = 0f
     private var mLastTouchX = 0f
     private var mLastTouchY = 0f
     private var mActivePointerId = -1
 
-    // 缩放提示条 (SnackBar样式)
     private val mZoomTipLayout: LinearLayout by lazy { findViewById(R.id.zoom_tip_layout) }
     private val mZoomResetTextBtn: TextView by lazy { findViewById(R.id.zoom_reset_text_btn) }
 
@@ -82,98 +78,68 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         SMALL_FLOAT,
         FULL,
     }
-    // 主题颜色
     private var mThemeColor = Color.BLUE
-    // 弹幕组件
     private val mDanmakuView: DanmakuView by lazy { findViewById(R.id.danmaku_view) }
 
-    // 根布局组件
     private val mRootLayout: RelativeLayout by lazy { findViewById(R.id.root_layout) }
 
-    // 小窗顶部拖动横条
     private val mDragBarLayout: FrameLayout by lazy { findViewById(R.id.layout_drag_bar) }
     private val mDragBar: View by lazy { findViewById(R.id.drag_bar) }
     private val mHoldUpBtn: View by lazy { findViewById(R.id.hold_up) }
 
-    // 顶栏更多按钮
     private val mMoreBtn: View by lazy { findViewById(R.id.more) }
 
-    // 底栏布局
     private val mBottomLayout: LinearLayout by lazy { findViewById(R.id.layout_bottom) }
 
-    // 全屏时底栏布局
     private val mFullModeBottomContainer: ViewGroup by lazy { findViewById(R.id.layout_full_mode_bottom) }
 
-    // 底栏播放按钮
     private val mButtomPlay: ImageView by lazy { findViewById(R.id.buttom_play) }
 
-    // 底部字幕
     private val mBottomSubtitleTV: TextView by lazy { findViewById(R.id.bottom_subtitle) }
 
-    // 字幕开关
     private val mSubtitleSwitch: ViewGroup by lazy { findViewById(R.id.subtitle_switch) }
 
-    // 字幕开关图标
     private val mSubtitleSwitchIV: ImageView by lazy { findViewById(R.id.subtitle_switch_icon) }
 
-    // 字幕开关文字
     private val mSubtitleSwitchTV: TextView by lazy { findViewById(R.id.subtitle_switch_text) }
 
-    // 弹幕开关
     private val mDanmakuSwitch: ViewGroup by lazy { findViewById(R.id.danmaku_switch) }
 
-    // 弹幕开关图标
     private val mDanmakuSwitchIV: ImageView by lazy { findViewById(R.id.danmaku_switch_icon) }
 
-    // 弹幕开关文字
     private val mDanmakuSwitchTV: TextView by lazy { findViewById(R.id.danmaku_switch_text) }
 
     private val mMiniSendDanmakuIV: ImageView by lazy { findViewById(R.id.send_danmaku_mini) }
     private val mSendDanmakuTV: TextView by lazy { findViewById(R.id.send_danmaku) }
 
-    // 清晰度
     private val mQuality: ViewGroup by lazy { findViewById(R.id.quality) }
 
-    // 清晰度文字
     private val mQualityTV: TextView by lazy { findViewById(R.id.quality_text) }
 
-    // 倍速
     private val mPlaySpeed: ViewGroup by lazy { findViewById(R.id.play_speed) }
 
-    // 倍速文字名称
     private val mPlaySpeedName: TextView by lazy { findViewById(R.id.play_speed_name) }
 
-    // 倍速文字值
     private val mPlaySpeedValue: TextView by lazy { findViewById(R.id.play_speed_value) }
 
-    // 锁定按钮
     private val mLock: ViewGroup by lazy { findViewById(R.id.lock) }
 
-    // 锁定时控制容器
     private val mLockContainer: ViewGroup by lazy { findViewById(R.id.layout_lock_screen) }
 
-    // 左边解锁按钮
     private val mUnlockLeftIV: ImageView by lazy { findViewById(R.id.unlock_left) }
 
-    // 右边解锁按钮
     private val mUnlockRightIV: ImageView by lazy { findViewById(R.id.unlock_right) }
 
-    // 倍数播放提示
     private val mSpeedTips: LinearLayout by lazy { findViewById(R.id.speed_tips) }
 
-    // 倍数播放提示图标
     private val mSpeedTipsIV: ImageView by lazy { findViewById(R.id.speed_tips_icon) }
 
-    // 拓展按钮布局
     private val mExpandBtnLayout: LinearLayout by lazy { findViewById(R.id.expand_btn_layout) }
 
-    // 拓展按钮文本
     private val mExpandBtnTV: TextView by lazy { findViewById(R.id.expand_btn_text) }
 
-    // 定时关闭倒计时显示
     private val mAutoStopTimerTV: TextView by lazy { findViewById(R.id.auto_stop_timer) }
 
-    // 弹幕时间与播放器时间同步
     private val mDanmakuTime = object : DanmakuTimer() {
         private var lastTime = 0L
         override fun currMillisecond(): Long {
@@ -197,40 +163,34 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     private val mAudioFocusHandler = Handler(Looper.getMainLooper())
 
-    // 字幕源列表
     var subtitleSourceList = emptyList<SubtitleSourceInfo>()
         set(value) {
             field = value
             updateSubtitleSourceList()
         }
 
-    // 当前选中字幕
     var currentSubtitleSource: SubtitleSourceInfo? = null
         set(value) {
             field = value
             updateCurrentSubtitleSource()
         }
 
-    // 当前模式
     var mode = PlayerMode.SMALL_TOP
         set(value) {
             field = value
             updateMode()
         }
 
-    // 是否处于画中画模式
     var isPicInPicMode = false
 
     var isHoldUp = false
 
-    // 是否显示当面
     var isShowDanmaku = true
         set(value) {
             field = value
             resolveDanmakuShow()
         }
 
-    // 弹幕开始位置
     var danmakuStartSeekPosition: Long = -1
     var danmakuParser: BaseDanmakuParser? = null
         set(value) {
@@ -241,16 +201,12 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     var danmakuContext: DanmakuContext? = null
 
-    // 状态栏
     var statusBarHelper: StatusBarHelper? = null
 
-    // 播放回调
     var videoPlayerCallBack: VideoPlayerCallBack? = null
 
-    // 加载字幕
     var subtitleLoader: ((url: String) -> Unit)? = null
 
-    // 字幕源选择
     var subtitleSourceSelector: ((list: List<SubtitleSourceInfo>) -> SubtitleSourceInfo?)? = null
 
     var subtitleBody: List<SubtitleItemInfo> = emptyList()
@@ -270,14 +226,12 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         0L
     }
 
-    // 供外部访问
     val topContainer: ViewGroup get() = mTopContainer
     val qualityView: View get() = mQuality
     val speedView: View get() = mPlaySpeed
     val speedValueTextView: View get() = mPlaySpeedValue
     val moreBtn: View get() = mMoreBtn
 
-    // 是否处于锁定状态
     var isLock: Boolean = false
         set(value) {
             field = value
@@ -288,13 +242,9 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
                 mLockContainer.visibility = GONE
             }
         }
-    // 全屏状态下显示底部进度条
     var showBottomProgressBarInFullMode = true
-    // 小屏状态下显示底部进度条
     var showBottomProgressBarInSmallMode = true
-    // 画中画状态下显示底部进度条
     var showBottomProgressBarInPipMode = true
-    // 占用音频焦点
     var enabledAudioFocus = true
 
     constructor(context: Context?, fullFlag: Boolean?) : super(context, fullFlag) {
@@ -340,7 +290,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             pm.show()
         }
         mBottomSubtitleTV.setTextColor(Color.parseColor("#FFFFFF"))
-        mBottomSubtitleTV.backgroundColor = Color.parseColor("#66000000")
+        mBottomSubtitleTV.setBackgroundColor(Color.parseColor("#66000000"))
 
         val lockClickListener = OnLockClickListener()
         mLock.setOnClickListener(lockClickListener)
@@ -348,7 +298,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mUnlockLeftIV.setOnClickListener(lockClickListener)
         mUnlockRightIV.setOnClickListener(lockClickListener)
 
-        // 缩放手势处理器初始化
         mScaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 mScaleFactor *= detector.scaleFactor
@@ -359,12 +308,10 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             }
         })
 
-        // 重置缩放按钮点击 (SnackBar 模式下点击文本按钮还原)
         mZoomResetTextBtn.setOnClickListener {
             resetScale()
         }
 
-        //android 版本 8.0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val attribute = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -406,9 +353,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 限制平移范围，防止画面拖出可见区域外
-     */
     private fun constrainTranslation() {
         val viewWidth = mTextureViewContainer?.width ?: 0
         val viewHeight = mTextureViewContainer?.height ?: 0
@@ -420,9 +364,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mPosY = mPosY.coerceIn(-maxTy, maxTy)
     }
 
-    /**
-     * 应用缩放和平移参数至 TextureViewContainer
-     */
     private fun applyScaleAndTranslation() {
         mTextureViewContainer?.let { container ->
             container.scaleX = mScaleFactor
@@ -433,10 +374,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         updateResetScaleBtn()
     }
 
-    /**
-     * 更新重置缩放提示条 (SnackBar) 的显示状态
-     * 独立于工具栏显示，只要放大了且非特定模式就一直存在
-     */
     private fun updateResetScaleBtn() {
         if (mScaleFactor > 1.0f && !isHoldUp && !isPicInPicMode) {
             mZoomTipLayout.visibility = VISIBLE
@@ -445,9 +382,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 重置缩放状态
-     */
     fun resetScale() {
         mScaleFactor = 1.0f
         mPosX = 0f
@@ -455,9 +389,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         applyScaleAndTranslation()
     }
 
-    /**
-     * 竖屏全屏时，防止挖孔屏挡住弹幕
-     */
     private fun updateDanmakuMargin() {
         val danmakuViewLP = mDanmakuView.layoutParams as MarginLayoutParams
         if (
@@ -496,21 +427,18 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     private var touchSurfaceDownTime = Long.MAX_VALUE
     private var isSpeedPlaying = false
-    private var lastSpeed = 0f  // init an invalid value
+    private var lastSpeed = 0f
 
     private val longClickControlTask = Runnable {
         if (System.currentTimeMillis() - touchSurfaceDownTime >= 500
             && mCurrentState == CURRENT_STATE_PLAYING
             && !mChangePosition && !mChangeVolume && !mBrightness
-            && mScaleFactor == 1.0f // 仅在未放大状态下允许长按加速
+            && mScaleFactor == 1.0f
         ) {
             startLongClickSpeedPlay()
         }
     }
 
-    /**
-     * 开始长按倍数播放
-     */
     private fun startLongClickSpeedPlay() {
         isSpeedPlaying = true
         lastSpeed = speed
@@ -518,13 +446,9 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mSpeedTips.visibility = View.VISIBLE
         mTouchingProgressBar = false
         (mSpeedTipsIV.drawable as? AnimationDrawable)?.start()
-        // 震动反馈
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
     }
 
-    /**
-     * 停止长按倍数播放
-     */
     private fun stopLongClickSpeedPlay() {
         mSpeedTips.visibility = View.GONE
         isSpeedPlaying = false
@@ -535,12 +459,10 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if (event == null) return super.onTouch(v, event)
 
-        // 1. 将事件交由缩放手势检测器处理
         mScaleDetector?.onTouchEvent(event)
 
         val action = event.actionMasked
 
-        // 2. 双指以上触摸，或缩放进行中：完全拦截，绝不让底层手势（快进/音量/亮度）介入
         if (event.pointerCount >= 2 || (mScaleDetector?.isInProgress == true)) {
             mChangePosition = false
             mChangeVolume = false
@@ -556,7 +478,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             return true
         }
 
-        // 3. 画面放大状态 (mScaleFactor > 1.0f)：单指仅用于画面平移 (Pan)，彻底拦截快进/快退/音量/亮度
         if (mScaleFactor > 1.0f) {
             mChangePosition = false
             mChangeVolume = false
@@ -605,7 +526,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             return true
         }
 
-        // 4. 原比例状态：处理长按加速取消
         when (action) {
             MotionEvent.ACTION_CANCEL,
             MotionEvent.ACTION_UP -> {
@@ -621,7 +541,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun touchSurfaceDown(x: Float, y: Float) {
-        // 若处于放大状态或缩放手势中，直接忽略底层手势判定
         if (mScaleFactor > 1.0f || (mScaleDetector?.isInProgress == true)) {
             mChangePosition = false
             mChangeVolume = false
@@ -632,12 +551,12 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         super.touchSurfaceDown(x, y)
         val curWidth = measuredWidth
         val curHeight = measuredHeight
-        val edgeSize = context.dip(80).let {
+        val density = resources.displayMetrics.density
+        val edgeSize = (80 * density).toInt().let {
             min(min(curWidth, curHeight), it) / 2
         }
         if (x.toInt() in edgeSize..(curWidth - edgeSize)
             && y.toInt() in edgeSize..(curHeight - edgeSize)) {
-            // 屏幕边缘不触发长按倍数，且只有未放大时才启动长按计时
             if (mScaleFactor == 1.0f) {
                 touchSurfaceDownTime = System.currentTimeMillis()
                 postDelayed(longClickControlTask, 500)
@@ -652,8 +571,8 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             mBrightness = false
             return
         }
-        if (mDownY < context.dip(25)) {
-            // 顶部防误触
+        val density = resources.displayMetrics.density
+        if (mDownY < (25 * density)) {
             mChangePosition = false
             return
         }
@@ -667,7 +586,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
                 mDownPosition = currentPosition
             }
             val totalTimeDuration = duration
-            val offsetPosition = deltaX / context.dip(1) * mSeekRatio
+            val offsetPosition = deltaX / density * mSeekRatio
             mSeekTimePosition = (mDownPosition + offsetPosition).toLong()
             if (mSeekTimePosition < 0) {
                 mSeekTimePosition = 0
@@ -719,7 +638,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     private fun setBottomSubtitleText() {
         if (subtitleBody.isEmpty()) return
         val currentTime = currentPositionWhenPlaying
-        // 读取上一次索引位置，顺便检查是否在范围内
         var index = if (subtitleIndex < 0) {
             0
         } else if (subtitleIndex < subtitleBody.size) {
@@ -728,22 +646,19 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             subtitleBody.size - 1
         }
         while (index in subtitleBody.indices) {
-            val item = subtitleBody[index] // 索引位置字幕信息
+            val item = subtitleBody[index]
             if (item.from > currentTime) {
-                // 字幕开始时间大于当前时间
                 if (index != 0 && currentTime > subtitleBody[index - 1].to) {
-                    // 上一个字幕结束时间小于当前时间
                     mBottomSubtitleTV.visibility = GONE
                     break
                 } else {
                     index--
                 }
             } else if (item.to < currentTime) {
-                // 字幕结束时间小于当前时间
                 index++
             } else {
-                subtitleIndex = index // 保存当前索引
-                mBottomSubtitleTV.text = item.content // 设置字幕内容
+                subtitleIndex = index
+                mBottomSubtitleTV.text = item.content
                 mBottomSubtitleTV.visibility = VISIBLE
                 break
             }
@@ -809,6 +724,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun setViewShowState(view: View, visibility: Int) {
+        val density = resources.displayMetrics.density
         if (isPicInPicMode) {
             if (view.id == mStartButton.id || view.id == mBottomProgressBar.id) {
                 view.visibility = visibility
@@ -823,7 +739,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             super.setViewShowState(view, visibility)
             if (view.id == mBottomLayout.id) {
                 mBottomSubtitleTV.translationY =
-                    if (visibility == VISIBLE) 0f else dip(40).toFloat()
+                    if (visibility == VISIBLE) 0f else (40 * density)
                 
                 when (mode) {
                     PlayerMode.SMALL_FLOAT -> {
@@ -854,10 +770,8 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     override fun startPrepare() {
-        // 加载新视频时，强制重置视频画面的缩放状态
         resetScale()
         
-        // 重写方法，加入音频焦点开关
         this.gsyVideoManager.listener()?.onCompletion()
 
         if (mVideoAllCallBack != null) {
@@ -991,18 +905,12 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 开始播放弹幕
-     */
     private fun onPrepareDanmaku(gsyVideoPlayer: DanmakuVideoPlayer) {
         if (danmakuParser != null) {
             mDanmakuView.prepare(danmakuParser, danmakuContext)
         }
     }
 
-    /**
-     * 弹幕的显示与关闭
-     */
     private fun resolveDanmakuShow() {
         post {
             mDanmakuView.show()
@@ -1024,25 +932,16 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         }
     }
 
-    /**
-     * 弹幕偏移
-     */
     private fun resolveDanmakuSeek(gsyVideoPlayer: DanmakuVideoPlayer, time: Long) {
         if (mHadPlay && mDanmakuView.isPrepared) {
             mDanmakuView.seekTo(time)
         }
     }
 
-    /**
-     * 添加弹幕
-     */
     fun addDanmaku(danmaku: BaseDanmaku) {
         mDanmakuView.addDanmaku(danmaku)
     }
 
-    /**
-     * 控制器拓展按钮
-     */
     fun setDanmakuSwitchOnClickListener(l: OnClickListener) {
         mDanmakuSwitch.setOnClickListener {
             startDismissControlViewTimer()
@@ -1076,10 +975,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mHoldUpBtn.setOnClickListener(l)
     }
 
-    /**
-     * 更新定时关闭倒计时显示
-     * @param seconds 剩余秒数，0或负数表示关闭
-     */
     fun updateAutoStopTimer(seconds: Int) {
         if (seconds > 0) {
             val minute = seconds / 60
@@ -1258,13 +1153,14 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
     }
 
     fun setWindowInsets(left: Int, top: Int, right: Int, bottom: Int, displayCutout: DisplayCutout?) {
+        val density = resources.displayMetrics.density
         if (mode == PlayerMode.FULL) {
             mTopContainer.setPadding(left, top, right, 0)
             mBottomContainer.setPadding(left, 0, right, 0)
             mLockContainer.setPadding(left, 0, right, 0)
         } else {
             if (mode == PlayerMode.SMALL_FLOAT) {
-                mTopContainer.setPadding(0, dip(24), 0, 0)
+                mTopContainer.setPadding(0, (24 * density).toInt(), 0, 0)
             } else {
                 mTopContainer.setPadding(0, 0, 0, 0)
             }
@@ -1342,9 +1238,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         setDialogProgressBar(PlayerViewDrawable.dialogProgressBar(context, themeColor))
     }
 
-    /**
-     * 锁定控制按钮相关
-     */
     inner class OnLockClickListener : OnClickListener {
 
         val isShowButton get() = mUnlockLeftIV.visibility == VISIBLE
@@ -1385,9 +1278,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     }
 
-    /**
-     * 字幕源信息
-     */
     data class SubtitleSourceInfo(
         val id: String,
         val lan: String,
@@ -1396,9 +1286,6 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         val ai_status: Int,
     )
 
-    /**
-     * 字幕信息
-     */
     data class SubtitleItemInfo(
         val from: Long,
         val to: Long,
