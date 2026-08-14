@@ -28,13 +28,13 @@ data class GiteeAsset(
 )
 
 sealed class UpdateCheckResult {
-    data class Success(val version: String, val content: String, val url: String) : UpdateCheckResult()
+    data class Success(val version: String, val content: String, val assets: List<GiteeAsset>) : UpdateCheckResult()
     data object NoUpdate : UpdateCheckResult()
     data class Error(val message: String) : UpdateCheckResult()
 }
 
 object UpdateChecker {
-    private const val GITEE_RELEASE_URL = "https://gitee.com/api/v5/repos/Voltula/vb/releases/latest"
+    private const val GITEE_RELEASE_URL = "https://gitee.com/api/v5/repos/Voltula/as/releases/latest"
 
     suspend fun checkForUpdates(currentVersionName: String): UpdateCheckResult = withContext(Dispatchers.IO) {
         try {
@@ -47,12 +47,19 @@ object UpdateChecker {
             val currentVersion = currentVersionName.replace(Regex("[^\\d.]"), "")
 
             if (compareVersions(newVersion, currentVersion) > 0) {
-                val apkUrl = res.assets.firstOrNull { it.name.endsWith(".apk") }?.browser_download_url
-                    ?: "https://gitee.com/Voltula/vb/releases"
+                val apkAssets = res.assets.filter { it.name.endsWith(".apk") }
+                val finalAssets = apkAssets.ifEmpty {
+                    listOf(
+                        GiteeAsset(
+                            name = "去发布页下载",
+                            browser_download_url = "https://gitee.com/Voltula/as/releases"
+                        )
+                    )
+                }
                 UpdateCheckResult.Success(
                     version = newVersion,
                     content = res.body,
-                    url = apkUrl
+                    assets = finalAssets
                 )
             } else {
                 UpdateCheckResult.NoUpdate

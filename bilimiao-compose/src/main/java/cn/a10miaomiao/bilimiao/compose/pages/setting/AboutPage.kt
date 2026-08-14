@@ -11,10 +11,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,6 +45,7 @@ import cn.a10miaomiao.bilimiao.compose.pages.TestPage
 import com.a10miaomiao.bilimiao.comm.utils.BiliUrlMatcher
 import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
 import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
+import com.a10miaomiao.bilimiao.comm.utils.GiteeAsset
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.kongzue.dialogx.dialogs.PopTip
@@ -77,7 +78,7 @@ sealed class AppVersionState {
     data object None: AppVersionState()
     data object Checking: AppVersionState()
     data class Fail(val message: String): AppVersionState()
-    data class HasUpdate(val version: String, val url: String): AppVersionState()
+    data class HasUpdate(val version: String, val assets: List<GiteeAsset>): AppVersionState()
     data object NotUpdate: AppVersionState()
 }
 
@@ -128,7 +129,7 @@ class AboutPageViewModel(
                     is UpdateCheckResult.Success -> {
                         versionState.value = AppVersionState.HasUpdate(
                             version = result.version,
-                            url = result.url
+                            assets = result.assets
                         )
                     }
                     is UpdateCheckResult.NoUpdate -> {
@@ -171,16 +172,38 @@ class AboutPageViewModel(
         }
     }
 
-    fun openUpdateUrl() {
+    fun openUpdateUrl(ctx: Context) {
         val version = versionState.value
         if (version is AppVersionState.HasUpdate) {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.data = Uri.parse(version.url)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                PopTip.show("打开失败:" + version.url)
+            val assets = version.assets
+            if (assets.isEmpty()) {
+                PopTip.show("没有可用的安装包链接")
+                return
+            }
+            if (assets.size == 1) {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.data = Uri.parse(assets[0].browser_download_url)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    ctx.startActivity(intent)
+                } catch (e: Exception) {
+                    PopTip.show("打开失败:" + assets[0].browser_download_url)
+                }
+            } else {
+                val names = assets.map { it.name }.toTypedArray()
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(ctx)
+                    .setTitle("选择要下载的版本")
+                    .setItems(names) { _, which ->
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW)
+                            intent.data = Uri.parse(assets[which].browser_download_url)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            ctx.startActivity(intent)
+                        } catch (e: Exception) {
+                            PopTip.show("打开失败:" + assets[which].browser_download_url)
+                        }
+                    }
+                    .show()
             }
         } else {
             PopTip.show("没有更新")
@@ -286,8 +309,9 @@ private fun AboutPageContent(
                         }
                     }
                     is AppVersionState.HasUpdate -> {
+                        val ctx = androidx.compose.ui.platform.LocalContext.current
                         TextButton(
-                            onClick = viewModel::openUpdateUrl,
+                            onClick = { viewModel.openUpdateUrl(ctx) },
                         ) {
                             Text(text = "有新版本：" + versionState.version)
                         }

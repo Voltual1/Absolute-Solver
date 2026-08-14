@@ -60,13 +60,14 @@ import com.a10miaomiao.bilimiao.comm.store.AppStore
 import com.a10miaomiao.bilimiao.comm.store.AppStore.HomeSettingState
 import com.a10miaomiao.bilimiao.comm.utils.UpdateCheckResult
 import com.a10miaomiao.bilimiao.comm.utils.UpdateChecker
+import com.a10miaomiao.bilimiao.comm.utils.GiteeAsset
 import com.a10miaomiao.bilimiao.store.WindowStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kongzue.dialogx.dialogs.PopTip
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -188,7 +189,7 @@ internal class HomePageViewModel(
                 if (result is UpdateCheckResult.Success) {
                     if (result.version != ignoreUpdateVersion) {
                         withContext(Dispatchers.Main) {
-                            showUpdateDialog(result.version, result.content, result.url)
+                            showUpdateDialog(result.version, result.content, result.assets)
                         }
                     }
                 }
@@ -198,11 +199,15 @@ internal class HomePageViewModel(
         }
     }
 
-    private fun showUpdateDialog(versionName: String, content: String, url: String) {
-        val dialog = MaterialAlertDialogBuilder(context).apply {
+    private fun showUpdateDialog(versionName: String, content: String, assets: List<GiteeAsset>) {
+        val dialog = MaterialAlertDialogBuilder(activity).apply {
             setTitle("有新版本：$versionName")
             setMessage(content)
-            setPositiveButton("去更新", null)
+            if (assets.size == 1) {
+                setPositiveButton("去更新 (${assets[0].name})", null)
+            } else {
+                setPositiveButton("去更新", null)
+            }
             setNegativeButton("取消", null)
             setNeutralButton("不再提醒此版本") { _, _ ->
                 setIgnoreUpdateVersion(versionName)
@@ -210,10 +215,23 @@ internal class HomePageViewModel(
         }.create()
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse(url)
-            context.startActivity(intent)
-            dialog.dismiss()
+            if (assets.size == 1) {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = Uri.parse(assets[0].browser_download_url)
+                activity.startActivity(intent)
+                dialog.dismiss()
+            } else {
+                val names = assets.map { it.name }.toTypedArray()
+                MaterialAlertDialogBuilder(activity)
+                    .setTitle("选择要下载的版本")
+                    .setItems(names) { _, which ->
+                        val intent = Intent(Intent.ACTION_VIEW)
+                        intent.data = Uri.parse(assets[which].browser_download_url)
+                        activity.startActivity(intent)
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
         }
     }
 
