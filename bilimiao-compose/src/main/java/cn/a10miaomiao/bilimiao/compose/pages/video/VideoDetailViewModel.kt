@@ -779,19 +779,19 @@ class VideoDetailViewModel(
         clipboard.setPrimaryClip(clip)
     }
 
-    fun menuItemClick(view: View, item: MenuItemPropInfo) {
+fun menuItemClick(view: View, item: MenuItemPropInfo) {
         val videoDetail = detailData.value ?: return
         val videoArc = videoDetail.getArcData() ?: return
         val viewPages = videoDetail.getPages()
         when (item.key) {
             MenuKeys.download -> {
                 viewModelScope.launch {
-                    val downloadService = DownloadService.getService(context)
+                    val downloadService = DownloadService.getService(activity)
                     downloadDialogState.show(
                         downloadService,
                         videoDetail.getBvid(),
                         videoArc,
-                        viewPages,
+                        viewPages.mapNotNull { it.page },
                     )
                 }
             }
@@ -799,31 +799,38 @@ class VideoDetailViewModel(
                 openAddFavoriteDialog(videoArc.aid.toString())
             }
             1 -> {
+                // 分享
                 openShare(videoDetail.getBvid(), videoArc.title)
             }
             2 -> {
+                // 浏览器打开
                 val url = "http://www.bilibili.com/video/${videoDetail.getBvid()}"
                 pageNavigation.launchWebBrowser(url)
             }
             3 -> {
+                // 复制链接
                 val text = "http://www.bilibili.com/video/${videoDetail.getBvid()}"
                 copyPlainText("URL", text)
-                PopTip.show("import org.koin.compose.koinInject")
+                PopTip.show("已复制：$text")
             }
             4 -> {
+                // 复制AV号
                 val text = "av${videoArc.aid}"
                 copyPlainText("URL", text)
                 PopTip.show("已复制：$text")
             }
             5 -> {
+                // 复制BV号
                 val text = videoDetail.getBvid()
                 copyPlainText("URL", text)
                 PopTip.show("已复制：$text")
             }
             6 -> {
+                // 保存封面
                 openCoverActivity()
             }
             11 -> {
+                // 添加至下一个播放
                 val current = playerStore.getPlayListCurrentPosition()
                 if (current != -1) {
                     playListStore.run {
@@ -838,6 +845,7 @@ class VideoDetailViewModel(
                 }
             }
             12 -> {
+                // 添加至最后一个播放
                 playListStore.run {
                     addItem(
                         videoArc.toPlayListItem(viewPages),
@@ -847,6 +855,7 @@ class VideoDetailViewModel(
                 PopTip.show("已添加至最后一个播放")
             }
             13 -> {
+                // 添加至稍后再看
                 addVideoHistoryToview()
             }
         }
