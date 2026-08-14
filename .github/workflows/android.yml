@@ -68,11 +68,16 @@ jobs:
           name: "Android Successful Build"
           draft: true
           files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/foss/release/*.apk
-            app/build/outputs/mapping/**/mapping.txt
+            app/build/outputs/apk/foss/debug/*.apk            
+            app/build/outputs/apk/full/debug/*.apk            
+            app/build/outputs/apk/full/release/*.apk
+            app/build/outputs/mapping/fossRelease/mapping.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          
       - name: Save Gradle cache
         if: success()
         uses: actions/cache@v3
@@ -82,3 +87,4 @@ jobs:
             ~/.gradle/wrapper
             ${{ github.workspace }}/.gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
+
