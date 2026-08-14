@@ -22,7 +22,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Vibrator
 import android.util.AttributeSet
-import android.view.DisplayCutout
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -109,6 +108,23 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     private val mDanmakuSwitchTV: TextView by lazy { findViewById(R.id.danmaku_switch_text) }
 
+    private val mDanmakuTime = object : DanmakuTimer() {
+        private var lastTime = 0L
+        override fun currMillisecond(): Long {
+            lastTime = try {
+                gsyVideoManager.currentPosition
+            } catch (e: Exception) {
+                0L
+            }
+            return lastTime
+        }
+
+        override fun update(curr: Long): Long {
+            lastInterval = curr - lastTime
+            return lastInterval
+        }
+    }
+
     private val mMiniSendDanmakuIV: ImageView by lazy { findViewById(R.id.send_danmaku_mini) }
     private val mSendDanmakuTV: TextView by lazy { findViewById(R.id.send_danmaku) }
 
@@ -140,24 +156,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
 
     private val mAutoStopTimerTV: TextView by lazy { findViewById(R.id.auto_stop_timer) }
 
-    private val mDanmakuTime = object : DanmakuTimer() {
-        private var lastTime = 0L
-        override fun currMillisecond(): Long {
-            lastTime = try {
-                gsyVideoManager.currentPosition
-            } catch (e: Exception) {
-                0L
-            }
-            return lastTime
-        }
-
-        override fun update(curr: Long): Long {
-            lastInterval = curr - lastTime
-            return lastInterval
-        }
-    }
-
-    private var mDisplayCutout: DisplayCutout? = null
+    private var mDisplayCutoutTop: Int = 0
 
     private var mFocusRequest: AudioFocusRequest? = null
 
@@ -396,7 +395,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             && mode == PlayerMode.FULL
             && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
         ) {
-            danmakuViewLP.topMargin = mDisplayCutout?.safeInsetTop ?: 0
+            danmakuViewLP.topMargin = mDisplayCutoutTop
         } else {
             danmakuViewLP.topMargin = 0
         }
@@ -1152,7 +1151,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
         mAudioManager.abandonAudioFocus(onAudioFocusChangeListener)
     }
 
-    fun setWindowInsets(left: Int, top: Int, right: Int, bottom: Int, displayCutout: DisplayCutout?) {
+    fun setWindowInsets(left: Int, top: Int, right: Int, bottom: Int, displayCutoutTop: Int) {
         val density = resources.displayMetrics.density
         if (mode == PlayerMode.FULL) {
             mTopContainer.setPadding(left, top, right, 0)
@@ -1167,7 +1166,7 @@ class DanmakuVideoPlayer : StandardGSYVideoPlayer {
             mBottomContainer.setPadding(0, 0, 0, 0)
             mLockContainer.setPadding(0, 0, 0, 0)
         }
-        mDisplayCutout = displayCutout
+        mDisplayCutoutTop = displayCutoutTop
         updateDanmakuMargin()
     }
 

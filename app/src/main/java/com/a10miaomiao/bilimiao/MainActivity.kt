@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -633,7 +632,12 @@ class MainActivity : AppCompatActivity() {
                 0, 0, 0, 0
             )
         }
-        basePlayerDelegate.setWindowInsets(left, top, right, bottom, displayCutout)
+        val displayCutoutTop = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            displayCutout?.safeInsetTop ?: 0
+        } else {
+            0
+        }
+        basePlayerDelegate.setWindowInsets(left, top, right, bottom, displayCutoutTop)
         ui.root.statusBarHeight = top
         ui.root.updateLayout(false)
     }

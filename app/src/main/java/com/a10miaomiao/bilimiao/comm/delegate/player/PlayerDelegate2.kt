@@ -128,19 +128,16 @@ class PlayerDelegate2(
 
     var playerSourceInfo: PlayerSourceInfo? = null
 
-    // 未登陆：48[480P 清晰]及以下
-    // 已登陆无大会员：80[1080P 高清]及以下
-    // 大会员：无限制
-    val MAX_QUALITY_NOT_LOGIN = 48 // 48[480P 清晰]
-    val MAX_QUALITY_NOT_VIP = 80 // 80[1080P 高清]
-    var quality = 64 // 默认[高清 720P]
-    var fnval = 4048 // 视频格式: 0:flv,1:mp4,4048:dash
+    val MAX_QUALITY_NOT_LOGIN = 48
+    val MAX_QUALITY_NOT_VIP = 80
+    var quality = 64
+    var fnval = 4048
 
-    var speed = 1f // 播放速度
+    var speed = 1f
     private var lastPosition = 0L
     private val playerCoroutineScope = PlayerCoroutineScope()
 
-    private var lastReportProgress = 0L // 最后记录的播放位置
+    private var lastReportProgress = 0L
     private var lastBackPressedTime = 0L
 
     var playerSource: BasePlayerSource? = null
@@ -157,9 +154,7 @@ class PlayerDelegate2(
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                // 耳机检测
                 AudioManager.ACTION_AUDIO_BECOMING_NOISY -> {
-                    //暂停播放
                     if (isPlaying())
                         views.videoPlayer.onVideoPause()
                 }
@@ -186,10 +181,8 @@ class PlayerDelegate2(
         controller.initController()
         views.videoPlayer.subtitleLoader = this::loadSubtitleData
         views.videoPlayer.subtitleSourceSelector = controller::getDefaultSubtitle
-        //音频焦点冲突时是否释放
         views.videoPlayer.isReleaseWhenLossAudio = true
 
-        // 主题监听
         themeDelegate.observeTheme(activity, Observer {
             val themeColor = it.toInt()
             views.videoPlayer.updateThemeColor(activity, themeColor)
@@ -292,7 +285,6 @@ class PlayerDelegate2(
         val userAgent = header["User-Agent"] ?: DEFAULT_USER_AGENT
         return when (dataSourceArr[0]) {
             "[local-merging]" -> {
-                // 本地音视频分离
                 val localSourceFactory = DefaultDataSource.Factory(activity)
                 val videoMedia = MediaItem.Builder().apply {
                     setUri(dataSourceArr[1])
@@ -311,7 +303,6 @@ class PlayerDelegate2(
             }
 
             "[merging]" -> {
-                // 音视频分离
                 val dataSourceFactory = DefaultHttpDataSource.Factory()
                 dataSourceFactory.setUserAgent(userAgent)
                 dataSourceFactory.setDefaultRequestProperties(header)
@@ -332,7 +323,6 @@ class PlayerDelegate2(
             }
 
             "[concatenating]" -> {
-                // 视频拼接
                 val dataSourceFactory = DefaultHttpDataSource.Factory()
                 dataSourceFactory.setUserAgent(userAgent)
                 dataSourceFactory.setDefaultRequestProperties(header)
@@ -351,11 +341,9 @@ class PlayerDelegate2(
             }
 
             "[dash-mpd]" -> {
-                // Create a data source factory.
                 val dataSourceFactory = DefaultHttpDataSource.Factory()
                 dataSourceFactory.setUserAgent(userAgent)
                 dataSourceFactory.setDefaultRequestProperties(header)
-                // Create a DASH media source pointing to a DASH manifest uri.
                 val uri = Uri.parse(dataSourceArr[1])
                 val dashStr = dataSourceArr[2]
                 val dashManifest =
@@ -402,10 +390,6 @@ class PlayerDelegate2(
     }
 
     internal fun historyReport(currentPosition: Long) {
-//        if (!userStore.isLogin()) {
-//            return
-//        }
-        // 5秒记录一次
         if (currentPosition > 0 && currentPosition - lastReportProgress < 5000) {
             return
         }
@@ -484,7 +468,7 @@ class PlayerDelegate2(
                 lastPosition = 0L
             } else if (
                 sourceInfo.lastPlayCid == source.id
-                && !source.isLoop // 循环的视频不恢复播放
+                && !source.isLoop
                 && sourceInfo.lastPlayTime > 0L
                 && sourceInfo.lastPlayTime < sourceInfo.duration - 10000
             ) {
@@ -501,7 +485,6 @@ class PlayerDelegate2(
                         }
                 }
             } else if (sourceInfo.lastPlayCid == source.id) {
-                // 从进度0开始记录播放历史
                 historyReport(0L)
             }
             lastReportProgress = 0L
@@ -542,9 +525,6 @@ class PlayerDelegate2(
     }
 
 
-    /**
-     * 加载字幕数据
-     */
     private fun loadSubtitleData(subtitleUrl: String) {
         if (subtitleUrl.isBlank()) {
             return
@@ -570,9 +550,6 @@ class PlayerDelegate2(
         }
     }
 
-    /**
-     * 记录播放位置
-     */
     fun reloadPlayer() {
         lastPosition = views.videoPlayer.currentPositionWhenPlaying
         playerCoroutineScope.launch(Dispatchers.Main) {
@@ -607,24 +584,19 @@ class PlayerDelegate2(
                 fnval = it[PlayerFnval] ?: SettingConstants.PLAYER_FNVAL_DASH
                 quality = it[PlayerQuality] ?: 64
                 if (!userStore.isLogin() && quality > MAX_QUALITY_NOT_LOGIN) {
-                    // 未登陆：48[480P 清晰]及以下
                     quality = MAX_QUALITY_NOT_LOGIN
                 } else if (!userStore.isVip() && quality > MAX_QUALITY_NOT_VIP) {
-                    // 无大会员：80[1080P 高清]及以下
                     quality = MAX_QUALITY_NOT_VIP
                 }
                 speed = it[PlayerSpeed] ?: 1f
             }
             loadPlayerSource()
             views.videoPlayer.setSpeed(speed, true)
-            // 播放倍速提示
             if (speed != 1f) {
                 PopTip.show("注意，当前为${speed}倍速").showTop()
             }
         }
-        // 播放器是否默认全屏播放
         controller.checkIsPlayerDefaultFull()
-        // 是否显示分P和剧集按钮
         if (source is VideoPlayerSource && source.pages.size > 1) {
             views.videoPlayer.setExpandButtonText("分P")
             views.videoPlayer.showExpandButton()
@@ -634,7 +606,6 @@ class PlayerDelegate2(
         } else {
             views.videoPlayer.hideExpandButton()
         }
-        // 添加到用户库历史记录
         if (source is VideoPlayerSource) {
             userLibraryStore.appendHistory(
                 UserLibraryStore.HistoryInfo(
@@ -679,9 +650,9 @@ class PlayerDelegate2(
         top: Int,
         right: Int,
         bottom: Int,
-        displayCutout: DisplayCutout?
+        displayCutoutTop: Int
     ) {
-        views.videoPlayer.setWindowInsets(left, top, right, bottom, displayCutout)
+        views.videoPlayer.setWindowInsets(left, top, right, bottom, displayCutoutTop)
         if (views.videoPlayer.mode == DanmakuVideoPlayer.PlayerMode.FULL) {
             loadingBoxController.setWindowInsets(left, top, right, bottom)
         } else if (views.videoPlayer.mode == DanmakuVideoPlayer.PlayerMode.SMALL_FLOAT) {
@@ -697,14 +668,10 @@ class PlayerDelegate2(
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             picInPicHelper?.onPictureInPictureModeChanged(isInPictureInPictureMode)
-            if (isInPictureInPictureMode) { // 进入画中画模式，则隐藏其它控件
-                // 隐藏视频控制器
+            if (isInPictureInPictureMode) {
                 views.videoPlayer.hideController()
-                //
                 views.videoPlayer.isPicInPicMode = true
-                // 视频组件全屏
                 scaffoldApp.fullScreenPlayer = true
-                // 调整弹幕样式，调小字体，限制行数
             } else {
                 scaffoldApp.fullScreenPlayer =
                     views.videoPlayer.mode == DanmakuVideoPlayer.PlayerMode.FULL
