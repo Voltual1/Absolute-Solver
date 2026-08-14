@@ -59,7 +59,6 @@ import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
 import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
-import com.a10miaomiao.bilimiao.comm.network.BiliGRPCConfig
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
 import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
@@ -78,20 +77,44 @@ import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.common.util.concurrent.MoreExecutors
 import com.kongzue.dialogx.dialogs.PopTip
-import com.materialkolor.dynamiccolor.MaterialDynamicColors
 import com.materialkolor.hct.Hct
-import com.materialkolor.ktx.DynamicScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
 import org.koin.dsl.module
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        @Volatile
+        var activePlayerDelegate: BasePlayerDelegate? = null
+
+        // 动态代理：将所有对 BasePlayerDelegate 的接口调用动态路由至当前 active 的 delegate 实例上
+        val playerDelegateProxy: BasePlayerDelegate by lazy {
+            Proxy.newProxyInstance(
+                BasePlayerDelegate::class.java.classLoader,
+                arrayOf(BasePlayerDelegate::class.java),
+                object : InvocationHandler {
+                    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+                        val delegate = activePlayerDelegate
+                            ?: throw IllegalStateException("MainActivity: No active player delegate available")
+                        return if (args == null) {
+                            method.invoke(delegate)
+                        } else {
+                            method.invoke(delegate, *args)
+                        }
+                    }
+                }
+            ) as BasePlayerDelegate
+        }
+    }
 
     private var mainUi: MainUi? = null
     private val ui get() = mainUi!!
@@ -111,7 +134,7 @@ class MainActivity : AppCompatActivity() {
     private val statusBarHelper by lazy { StatusBarHelper(this) }
     private val supportHelper by lazy { SupportHelper(this) }
     private val biliGeetestUtil: BiliGeetestUtil by lazy { BiliGeetestUtilImpl(this, lifecycle) }
-    private val basePlayerDelegate: BasePlayerDelegate by lazy {
+    val basePlayerDelegate: BasePlayerDelegate by lazy {
         PlayerDelegate2(
             activity = this,
             userStore = org.koin.core.context.GlobalContext.get().get(),
@@ -130,7 +153,8 @@ class MainActivity : AppCompatActivity() {
         single<AppCompatActivity> { this@MainActivity }
         single<Activity> { this@MainActivity }
         single<Context> { this@MainActivity }
-        single<BasePlayerDelegate> { basePlayerDelegate }
+        // 注入代理：确保 viewmodel 持有的永远是代理实例，解决 Activity 销毁重建后引用失效、一一直加载中的问题
+        single<BasePlayerDelegate> { playerDelegateProxy }
         single<PlayerDelegate2> { basePlayerDelegate as PlayerDelegate2 }
         single<ThemeDelegate> { themeDelegate }
         single<StatusBarHelper> { statusBarHelper }
@@ -183,6 +207,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         loadKoinModules(activityModule)
+        activePlayerDelegate = basePlayerDelegate
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         }
@@ -625,6 +651,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        if (activePlayerDelegate === basePlayerDelegate) {
+            activePlayerDelegate = null
+        }
         basePlayerDelegate.onDestroy()
         store.onDestroy()
         unloadKoinModules(activityModule)
