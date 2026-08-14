@@ -28,6 +28,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentOnAttachListener
 import androidx.lifecycle.Lifecycle
@@ -96,7 +97,6 @@ class MainActivity : AppCompatActivity() {
         @Volatile
         var activePlayerDelegate: BasePlayerDelegate? = null
 
-        // 动态代理：将所有对 BasePlayerDelegate 的接口调用动态路由至当前 active 的 delegate 实例上
         val playerDelegateProxy: BasePlayerDelegate by lazy {
             Proxy.newProxyInstance(
                 BasePlayerDelegate::class.java.classLoader,
@@ -151,9 +151,9 @@ class MainActivity : AppCompatActivity() {
     private val activityModule = module {
         single<MainActivity> { this@MainActivity }
         single<AppCompatActivity> { this@MainActivity }
+        single<FragmentActivity> { this@MainActivity }
         single<Activity> { this@MainActivity }
         single<Context> { this@MainActivity }
-        // 注入代理：确保 viewmodel 持有的永远是代理实例，解决 Activity 销毁重建后引用失效、一一直加载中的问题
         single<BasePlayerDelegate> { playerDelegateProxy }
         single<PlayerDelegate2> { basePlayerDelegate as PlayerDelegate2 }
         single<ThemeDelegate> { themeDelegate }
