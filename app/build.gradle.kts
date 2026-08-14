@@ -56,10 +56,14 @@ android {
     }
 
     packaging {
-        resources {
-            excludes.add("/google/protobuf/**")
-        }
+    resources {
+        excludes.add("/google/protobuf/**")
+        excludes.add("bilibili/**")
+        excludes.add("pgc/**")
+        excludes.add("datacenter/**")
+        excludes.add("DebugProbesKt.bin")
     }
+}
 
     buildTypes {
         debug {
