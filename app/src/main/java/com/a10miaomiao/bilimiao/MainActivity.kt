@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -15,7 +16,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.view.DisplayCutout
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -25,18 +25,12 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentOnAttachListener
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import cn.a10miaomiao.bilimiao.compose.BilimiaoPageRoute
 import cn.a10miaomiao.bilimiao.compose.ComposeFragment
 import cn.a10miaomiao.bilimiao.compose.StartViewWrapper
 import cn.a10miaomiao.bilimiao.compose.base.BottomSheetState
@@ -44,23 +38,22 @@ import cn.a10miaomiao.bilimiao.compose.base.ComposePage
 import cn.a10miaomiao.bilimiao.compose.base.PageSearchMethod
 import cn.a10miaomiao.bilimiao.compose.common.navigation.PageNavigation
 import cn.a10miaomiao.bilimiao.compose.components.dialogs.MessageDialogState
-import cn.a10miaomiao.bilimiao.compose.pages.search.SearchResultPage
 import com.a10miaomiao.bilimiao.comm.BiliGeetestUtilImpl
 import com.a10miaomiao.bilimiao.comm.BilimiaoStatService
-import com.a10miaomiao.bilimiao.comm.datastore.SettingConstants
 import com.a10miaomiao.bilimiao.comm.datastore.SettingPreferences
 import com.a10miaomiao.bilimiao.comm.delegate.helper.StatusBarHelper
 import com.a10miaomiao.bilimiao.comm.delegate.helper.SupportHelper
 import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerDelegate
 import com.a10miaomiao.bilimiao.comm.delegate.player.PlayerDelegate2
+import com.a10miaomiao.bilimiao.comm.delegate.player.BasePlayerSource
+import com.a10miaomiao.bilimiao.comm.delegate.player.entity.PlayerSourceIds
+import com.a10miaomiao.bilimiao.comm.proxy.ProxyServerInfo
 import com.a10miaomiao.bilimiao.comm.delegate.theme.ThemeDelegate
 import com.a10miaomiao.bilimiao.comm.mypage.MenuActions
 import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
-import com.a10miaomiao.bilimiao.comm.navigation.openBottomSheet
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
-import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.config.config
@@ -68,10 +61,8 @@ import com.a10miaomiao.bilimiao.page.MainBackPopupMenu
 import com.a10miaomiao.bilimiao.service.PlaybackService
 import com.a10miaomiao.bilimiao.store.Store
 import com.a10miaomiao.bilimiao.store.WindowStore
-import com.a10miaomiao.bilimiao.comm.store.*
 import com.a10miaomiao.bilimiao.widget.scaffold.ScaffoldView
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.DrawerBehaviorDelegate
-import com.shuyu.gsyvideoplayer.video.base.GSYVideoPlayer
 import com.a10miaomiao.bilimiao.widget.scaffold.behavior.PlayerBehavior
 import com.a10miaomiao.bilimiao.widget.scaffold.getScaffoldView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -80,7 +71,6 @@ import com.kongzue.dialogx.dialogs.PopTip
 import com.materialkolor.hct.Hct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.koin.core.context.loadKoinModules
@@ -559,6 +549,7 @@ class MainActivity : AppCompatActivity() {
         val rectangle = Rect()
         val displayMetrics = DisplayMetrics()
         window.decorView.getWindowVisibleDisplayFrame(rectangle)
+        @Suppress("DEPRECATION")
         windowManager.defaultDisplay.getRealMetrics(displayMetrics)
         val top = statusBarHelper.getStatusBarHeight()
         val bottom = displayMetrics.heightPixels - rectangle.bottom - rectangle.top
@@ -571,11 +562,12 @@ class MainActivity : AppCompatActivity() {
         val top = insets.systemWindowInsetTop
         val right = insets.stableInsetRight
         val bottom = insets.systemWindowInsetBottom
-        var displayCutout: DisplayCutout? = null
+        var displayCutout: Any? = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             displayCutout = insets.displayCutout
         }
-        setWindowInsets(left, top, right, bottom, displayCutout)
+        @Suppress("UNCHECKED_CAST")
+        setWindowInsets(left, top, right, bottom, displayCutout as? android.view.DisplayCutout)
     }
 
     fun setWindowInsets(
@@ -583,7 +575,7 @@ class MainActivity : AppCompatActivity() {
         top: Int,
         right: Int,
         bottom: Int,
-        displayCutout: DisplayCutout?
+        displayCutout: android.view.DisplayCutout?
     ) {
         val windowStore = store.windowStore
         windowStore.setWindowInsets(
@@ -709,7 +701,9 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyUp(keyCode, event)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             BilimiaoScanner.REQUEST_CODE -> {
@@ -776,6 +770,7 @@ class MainActivity : AppCompatActivity() {
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration
     ) {
+        @Suppress("DEPRECATION")
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         basePlayerDelegate.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
     }
@@ -811,6 +806,7 @@ class MainActivity : AppCompatActivity() {
         if (onHostNavBack()) {
             return
         }
+        @Suppress("DEPRECATION")
         super.onBackPressed()
     }
 
