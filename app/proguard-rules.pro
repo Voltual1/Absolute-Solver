@@ -1,1 +1,1 @@
-
+-keep class com.a10miaomiao.bilimiao.widget.** { *; }
