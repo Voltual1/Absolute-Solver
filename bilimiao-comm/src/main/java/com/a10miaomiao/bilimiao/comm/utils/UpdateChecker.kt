@@ -34,7 +34,7 @@ sealed class UpdateCheckResult {
 }
 
 object UpdateChecker {
-    private const val GITEE_RELEASE_URL = "https://gitee.com/api/v5/repos/Voltula/as/releases/latest"
+    private const val GITEE_RELEASE_URL = "https://gitee.com/api/v5/repos/Voltula/vb/releases/latest"
 
     suspend fun checkForUpdates(currentVersionName: String): UpdateCheckResult = withContext(Dispatchers.IO) {
         try {
@@ -48,7 +48,7 @@ object UpdateChecker {
 
             if (compareVersions(newVersion, currentVersion) > 0) {
                 val apkUrl = res.assets.firstOrNull { it.name.endsWith(".apk") }?.browser_download_url
-                    ?: "https://gitee.com/Voltula/as/releases"
+                    ?: "https://gitee.com/Voltula/vb/releases"
                 UpdateCheckResult.Success(
                     version = newVersion,
                     content = res.body,
