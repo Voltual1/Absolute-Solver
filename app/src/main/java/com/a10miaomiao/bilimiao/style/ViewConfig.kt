@@ -8,17 +8,17 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.a10miaomiao.bilimiao.R
 import com.a10miaomiao.bilimiao.comm.attr
-import splitties.dimensions.dip
-import splitties.views.dsl.core.matchParent
 
 class ViewConfig(val context: Context) {
-    val pagePadding = context.dip(10)
-    val bottomSheetTitleHeight = context.dip(48)
+    private fun dip(value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
-    val smallPadding = context.dip(5)
-    val largePadding = context.dip(20)
+    val pagePadding = dip(10)
+    val bottomSheetTitleHeight = dip(48)
 
-    val dividerSize = context.dip(8)
+    val smallPadding = dip(5)
+    val largePadding = dip(20)
+
+    val dividerSize = dip(8)
 
     val themeName = context.resources.getString(context.attr(R.attr.themeName))
 
@@ -29,7 +29,6 @@ class ViewConfig(val context: Context) {
     val windowBackgroundResource = context.attr(R.attr.defaultBackgroundColor)
     val windowBackgroundColor = getColor(windowBackgroundResource)
 
-    //    val blockBackgroundResource = context.attr(com.google.android.material.R.attr.colorSurface)
     val blockBackgroundResource = context.attr(R.attr.blockBackground)
     val blockBackgroundColor = getColor(blockBackgroundResource)
     val blockBackgroundAlpha45Color = (blockBackgroundColor and 0x00FFFFFF) or 0x71000000
@@ -52,10 +51,10 @@ class ViewConfig(val context: Context) {
     val selectableItemBackgroundBorderless =
         context.attr(android.R.attr.selectableItemBackgroundBorderless)
 
-    val appBarHeight = context.dip(70)
-    val appBarTitleHeight = context.dip(20)
-    val appBarMenuHeight = context.dip(50)
-    val appBarMenuWidth = context.dip(120)
+    val appBarHeight = dip(70)
+    val appBarTitleHeight = dip(20)
+    val appBarMenuHeight = dip(50)
+    val appBarMenuWidth = dip(120)
 
     internal fun getColor(resId: Int): Int {
         return ContextCompat.getColor(context, resId)
