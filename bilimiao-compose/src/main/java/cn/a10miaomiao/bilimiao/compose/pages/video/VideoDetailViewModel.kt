@@ -786,12 +786,12 @@ fun menuItemClick(view: View, item: MenuItemPropInfo) {
         when (item.key) {
             MenuKeys.download -> {
                 viewModelScope.launch {
-                    val downloadService = DownloadService.getService(activity)
+                    val downloadService = DownloadService.getService(context)
                     downloadDialogState.show(
                         downloadService,
                         videoDetail.getBvid(),
                         videoArc,
-                        viewPages.mapNotNull { it.page },
+                        viewPages,
                     )
                 }
             }
