@@ -54,6 +54,7 @@ import com.a10miaomiao.bilimiao.comm.mypage.MyPage
 import com.a10miaomiao.bilimiao.comm.mypage.MyPageConfigInfo
 import com.a10miaomiao.bilimiao.comm.mypage.MyPopupMenu
 import com.a10miaomiao.bilimiao.comm.scanner.BilimiaoScanner
+import com.a10miaomiao.bilimiao.comm.utils.BiliGeetestUtil
 import com.a10miaomiao.bilimiao.comm.utils.ScreenDpiUtil
 import com.a10miaomiao.bilimiao.comm.utils.miaoLogger
 import com.a10miaomiao.bilimiao.config.config
@@ -554,7 +555,7 @@ class MainActivity : AppCompatActivity() {
         val top = statusBarHelper.getStatusBarHeight()
         val bottom = displayMetrics.heightPixels - rectangle.bottom - rectangle.top
         val right = displayMetrics.widthPixels - rectangle.right
-        setWindowInsets(0, top, right, bottom, null)
+        setWindowInsets(0, top, right, bottom, 0)
     }
 
     fun setWindowInsets(insets: WindowInsets) {
@@ -562,12 +563,11 @@ class MainActivity : AppCompatActivity() {
         val top = insets.systemWindowInsetTop
         val right = insets.stableInsetRight
         val bottom = insets.systemWindowInsetBottom
-        var displayCutout: Any? = null
+        var displayCutoutTop = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            displayCutout = insets.displayCutout
+            displayCutoutTop = insets.displayCutout?.safeInsetTop ?: 0
         }
-        @Suppress("UNCHECKED_CAST")
-        setWindowInsets(left, top, right, bottom, displayCutout as? android.view.DisplayCutout)
+        setWindowInsets(left, top, right, bottom, displayCutoutTop)
     }
 
     fun setWindowInsets(
@@ -575,7 +575,7 @@ class MainActivity : AppCompatActivity() {
         top: Int,
         right: Int,
         bottom: Int,
-        displayCutout: android.view.DisplayCutout?
+        displayCutoutTop: Int
     ) {
         val windowStore = store.windowStore
         windowStore.setWindowInsets(
@@ -623,11 +623,6 @@ class MainActivity : AppCompatActivity() {
             ui.mPlayerLayout.setPadding(
                 0, 0, 0, 0
             )
-        }
-        val displayCutoutTop = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            displayCutout?.safeInsetTop ?: 0
-        } else {
-            0
         }
         basePlayerDelegate.setWindowInsets(left, top, right, bottom, displayCutoutTop)
         ui.root.statusBarHeight = top
