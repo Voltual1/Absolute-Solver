@@ -159,11 +159,8 @@ val composeStoreModule = module {
     }
 
     // 注册 Dynamic 相关 ViewModel
-    viewModel { (pageNavigation: PageNavigation) ->
-        DynamicViewModel(
-            pageNavigation = pageNavigation
-        )
-    }
+    viewModelOf(::DynamicViewModel)
+    
     viewModel { (dynamicViewModel: DynamicViewModel) ->
         DynamicAllListContentViewModel(
             dynamicViewModel = dynamicViewModel,
