@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="
+        @drawable/ic_add_white_24dp,
+        @drawable/ic_arrow_downward_gray_24dp,
+        @drawable/ic_baseline_check_24,
+        @drawable/ic_baseline_clear_all_24,
+        @drawable/ic_baseline_delete_outline_24,
+        @drawable/ic_baseline_edit_note_24,
+        @drawable/ic_baseline_favorite_24,
+        @drawable/ic_baseline_filter_list_alt_24,
+        @drawable/ic_baseline_filter_list_grey_24,
+        @drawable/ic_baseline_home_24,
+        @drawable/ic_baseline_icecream_24,
+        @drawable/ic_baseline_lightbulb_24,
+        @drawable/ic_baseline_save_24,
+        @drawable/ic_baseline_send_24,
+        @drawable/ic_baseline_star_24,
+        @drawable/ic_baseline_star_outline_24,
+        @drawable/ic_history_gray_24dp,
+        @drawable/ic_link_black_24dp,
+        @drawable/ic_more_vert_grey_24dp,
+        @drawable/ic_outline_favorite_border_24,
+        @drawable/ic_search_gray
+    " />
