@@ -47,18 +47,14 @@ jobs:
         run: |
           echo $ENCODED_STRING | base64 -d > app/release.keystore
 
-      - name: Build Release APK
+      - name: Build with Gradle
         if: github.event_name != 'pull_request'
-        run: ./gradlew assembleFossRelease
+        run: ./gradlew assembleFossDebug
         env:
           KEYSTORE_PATH: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-#      - name: Build Debug APK
-#        if: github.event_name != 'pull_request'
-#        run: ./gradlew assembleFossDebug
 
       - name: Create Draft Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
