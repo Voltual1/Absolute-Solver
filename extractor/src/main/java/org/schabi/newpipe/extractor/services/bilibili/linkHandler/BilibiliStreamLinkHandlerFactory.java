@@ -42,8 +42,12 @@ public class BilibiliStreamLinkHandlerFactory extends LinkHandlerFactory {
 
         String p = "1";
         String t = "0";
+        String cid = "";
         if (url.contains("p=")) {
             p = url.split("p=")[1].split("&")[0];
+        }
+        if (url.contains("cid=")) {
+            cid = url.split("cid=")[1].split("&")[0];
         }
         if (url.contains("t=")) {
             t = url.split("t=")[1].split("&")[0];
@@ -55,18 +59,23 @@ public class BilibiliStreamLinkHandlerFactory extends LinkHandlerFactory {
             url = url.replace("/?", "?");
         }
 
+        String queryParams = "?p=" + p;
+        if (!cid.isEmpty()) {
+            queryParams += "&cid=" + cid;
+        }
+
         if (url.split("/")[url.split("/").length - 1].startsWith("BV")) {
             String parseResult = url.split(Pattern.quote("/BV"))[1].split("\\?")[0].split("/")[0];
-            url = "BV" + parseResult + "?p=" + p;
+            url = "BV" + parseResult + queryParams;
         } else if (url.contains("bvid=")) {
             String parseResult = url.split(Pattern.quote("bvid="))[1].split("&")[0];
-            url = parseResult + "?p=" + p;
+            url = parseResult + queryParams;
         } else if (url.split("/")[url.split("/").length - 1].startsWith("av")) {
             String parseResult = url.split(Pattern.quote("av"))[1].split("\\?")[0];
-            url = utils.av2bv(Long.parseLong(parseResult)) + "?p=" + p;
+            url = utils.av2bv(Long.parseLong(parseResult)) + queryParams;
         } else if (url.contains("aid=")) {
             String parseResult = url.split(Pattern.quote("aid="))[1].split("&")[0];
-            url = utils.av2bv(Long.parseLong(parseResult)) + "?p=" + p;
+            url = utils.av2bv(Long.parseLong(parseResult)) + queryParams;
         } else if (url.contains(LIVE_BASE_URL) || url.contains("bangumi/play/")) {
             url = url.split("/")[url.split("/").length - 1].split("\\?")[0];
         } else {

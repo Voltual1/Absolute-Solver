@@ -53,7 +53,11 @@ class PlayerAPI {
     ): PlayurlData {
         return withContext(Dispatchers.IO) {
             val service = ServiceList.BiliBili
-            val url = "https://www.bilibili.com/video/av$avid?p=1"
+            val url = if (cid.isNotBlank() && cid != "0") {
+                "https://www.bilibili.com/video/av$avid?cid=$cid"
+            } else {
+                "https://www.bilibili.com/video/av$avid?p=1"
+            }
             val linkHandler = service.streamLHFactory.fromUrl(url)
             val extractor = service.getStreamExtractor(linkHandler)
             extractor.fetchPage()

@@ -399,16 +399,45 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             } catch (JsonParserException e) {
                 e.printStackTrace();
             }
-            String pageNumString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getUrl()), "p");
-            int pageNum = 1;
-            if (pageNumString != null) {
-                pageNum = Integer.parseInt(pageNumString);
+            JsonArray pages = watch.getArray("pages");
+            String cidString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getUrl()), "cid");
+            if (cidString == null && getLinkHandler().getOriginalUrl() != null) {
+                cidString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getOriginalUrl()), "cid");
             }
-            page = watch.getArray("pages").getObject(pageNum - 1);
-            cid = page.getLong("cid");
+            if (cidString != null && !cidString.isEmpty()) {
+                try {
+                    long targetCid = Long.parseLong(cidString);
+                    for (int i = 0; i < pages.size(); i++) {
+                        JsonObject pObj = pages.getObject(i);
+                        if (pObj.getLong("cid") == targetCid) {
+                            page = pObj;
+                            break;
+                        }
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            if (page == null) {
+                String pageNumString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getUrl()), "p");
+                int pageNum = 1;
+                if (pageNumString != null) {
+                    try {
+                        pageNum = Integer.parseInt(pageNumString);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+                if (pageNum > 0 && pageNum <= pages.size()) {
+                    page = pages.getObject(pageNum - 1);
+                } else if (!pages.isEmpty()) {
+                    page = pages.getObject(0);
+                }
+            }
+            if (page != null) {
+                cid = page.getLong("cid");
+                duration = page.getInt("duration");
+            }
             watchDataCache.setCid(getId(), cid);
             watchDataCache.setBvid(getId(), bvid);
-            duration = page.getInt("duration");
             isPaid = watch.getObject("rights").getInt("pay");
         }
 
@@ -677,7 +706,7 @@ public class BillibiliStreamExtractor extends StreamExtractor {
     @Override
     public List<SubtitlesStream> getSubtitlesDefault() throws IOException, ExtractionException {
         if (getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle") == null || getStreamType().equals(StreamType.LIVE_STREAM)
-                || isPremiumContent == 1) {
+| isPremiumContent == 1) {
             return new ArrayList<>();
         }
         waitForCall(subtitleCall);
@@ -797,7 +826,7 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             int totalFrames = timeIndex.size() - 1;
 
             if (frameWidth <= 0 || frameHeight <= 0 || framesPerPageX <= 0
-                    || framesPerPageY <= 0 || totalFrames <= 0) {
+| framesPerPageY <= 0 || totalFrames <= 0) {
                 return Collections.emptyList();
             }
 
