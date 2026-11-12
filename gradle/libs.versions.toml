@@ -86,7 +86,7 @@ compose-material = { group = "androidx.compose.material", name = "material" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material3-window-size = { group = "androidx.compose.material3", name = "material3-window-size-class" }
-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive-android" }
+compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive-android", version = "1.1.0" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 # kotlin libraries
