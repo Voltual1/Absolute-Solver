@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
     implementation(libs.compose.material3)
     implementation(libs.compose.material3.window.size)
-//    implementation(libs.compose.material3.adaptive)
+    implementation(libs.compose.material3.adaptive)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)
     implementation(libs.compose.navigation)
