@@ -82,7 +82,7 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
             case "Recommended Videos":
             default:
                 try {
-                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/index/top/rcmd?fresh_type=3", getHeaders(getOriginalUrl())).responseBody());
+                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/index/top/rcmd", getHeaders(getOriginalUrl())).responseBody());
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
