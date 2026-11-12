@@ -27,18 +27,7 @@ jobs:
           distribution: "temurin"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Gradle Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ${{ github.workspace }}/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Decode Keystore
         if: github.event_name != 'pull_request'
@@ -49,7 +38,7 @@ jobs:
 
       - name: Build with Gradle
         if: github.event_name != 'pull_request'
-        run: ./gradlew assembleFossRelease
+        run: ./gradlew assembleFossDebug
         env:
           KEYSTORE_PATH: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -72,15 +61,4 @@ jobs:
             app/build/outputs/apk/full/release/*.apk
             app/build/outputs/mapping/fossRelease/mapping.txt
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Save Gradle cache
-        if: success()
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ${{ github.workspace }}/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts', '**/settings.gradle.kts') }}
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
